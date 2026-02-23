@@ -1,0 +1,118 @@
+<div class="es-perm-editor">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="es-perm-editor__header">
+    <img src="{{character.thumbnail}}" class="es-perm-editor__avatar" alt="{{character.name}}">
+    <div class="es-perm-editor__info">
+      <h2 class="es-perm-editor__name">{{character.name}}</h2>
+      <p class="es-perm-editor__desc">{{localize "EXALTED-SCENES.Permissions.Desc"}}</p>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENT
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="es-perm-editor__content">
+
+    <!-- Default Permission Section -->
+    <section class="es-perm-editor__section">
+      <div class="es-perm-editor__section-header">
+        <i class="fas fa-shield-alt"></i>
+        <span>{{localize "EXALTED-SCENES.Permissions.DefaultPermission"}}</span>
+      </div>
+      <select name="defaultPermission" class="es-perm-editor__select">
+        {{#each permissionLevels}}
+          <option value="{{key}}" {{#if (eq key ../defaultPermission)}}selected{{/if}}>
+            {{name}} - {{description}}
+          </option>
+        {{/each}}
+      </select>
+      <span class="es-perm-editor__hint">{{localize "EXALTED-SCENES.Permissions.DefaultHint"}}</span>
+    </section>
+
+    <!-- Player List Section -->
+    <section class="es-perm-editor__section">
+      <div class="es-perm-editor__section-header">
+        <i class="fas fa-users"></i>
+        <span>{{localize "EXALTED-SCENES.Permissions.PlayerPermissions"}}</span>
+        {{#if players.length}}
+          <span class="es-perm-editor__section-count">{{players.length}}</span>
+        {{/if}}
+      </div>
+
+      {{#if players.length}}
+        <div class="es-perm-editor__players">
+          {{#each players}}
+            <div class="es-perm-editor__player {{#unless active}}es-perm-editor__player--offline{{/unless}}">
+              <div class="es-perm-editor__player-info">
+                <img src="{{avatar}}" class="es-perm-editor__player-avatar" style="border-color: {{color}}">
+                <span class="es-perm-editor__player-name">{{name}}</span>
+                {{#unless active}}<span class="es-perm-editor__badge es-perm-editor__badge--offline">{{localize "EXALTED-SCENES.Status.Offline"}}</span>{{/unless}}
+              </div>
+              <div class="es-perm-editor__player-buttons">
+                <button type="button" class="es-perm-editor__perm-btn {{#if isNone}}es-perm-editor__perm-btn--active{{/if}}"
+                        data-action="set-permission" data-user-id="{{id}}" data-level="none"
+                        title="{{localize "EXALTED-SCENES.Permissions.NoAccess"}}">
+                  <i class="fas fa-ban"></i>
+                </button>
+                <button type="button" class="es-perm-editor__perm-btn {{#if isView}}es-perm-editor__perm-btn--active{{/if}}"
+                        data-action="set-permission" data-user-id="{{id}}" data-level="view"
+                        title="{{localize "EXALTED-SCENES.Permissions.ViewOnly"}}">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button type="button" class="es-perm-editor__perm-btn {{#if isEmotion}}es-perm-editor__perm-btn--active{{/if}}"
+                        data-action="set-permission" data-user-id="{{id}}" data-level="emotion"
+                        title="{{localize "EXALTED-SCENES.Permissions.CanChangeEmotions"}}">
+                  <i class="fas fa-theater-masks"></i>
+                </button>
+                <button type="button" class="es-perm-editor__perm-btn {{#if isFull}}es-perm-editor__perm-btn--active{{/if}}"
+                        data-action="set-permission" data-user-id="{{id}}" data-level="full"
+                        title="{{localize "EXALTED-SCENES.Permissions.FullControl"}}">
+                  <i class="fas fa-crown"></i>
+                </button>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="es-perm-editor__empty">
+          <i class="fas fa-users-slash"></i>
+          <p>{{localize "EXALTED-SCENES.Permissions.NoPlayersInWorld"}}</p>
+        </div>
+      {{/if}}
+    </section>
+
+    <!-- Legend -->
+    <div class="es-perm-editor__legend">
+      <div class="es-perm-editor__legend-item">
+        <i class="fas fa-ban"></i> {{localize "EXALTED-SCENES.Permissions.None"}}
+      </div>
+      <div class="es-perm-editor__legend-item">
+        <i class="fas fa-eye"></i> {{localize "EXALTED-SCENES.Permissions.View"}}
+      </div>
+      <div class="es-perm-editor__legend-item">
+        <i class="fas fa-theater-masks"></i> {{localize "EXALTED-SCENES.Permissions.EmotionsLabel"}}
+      </div>
+      <div class="es-perm-editor__legend-item">
+        <i class="fas fa-crown"></i> {{localize "EXALTED-SCENES.Permissions.Full"}}
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="es-perm-editor__footer">
+    <button type="button" class="es-perm-editor__btn es-perm-editor__btn--ghost" data-action="close">
+      {{localize "EXALTED-SCENES.Common.Cancel"}}
+    </button>
+    <button type="button" class="es-perm-editor__btn es-perm-editor__btn--primary" data-action="save">
+      <i class="fas fa-check"></i>
+      {{localize "EXALTED-SCENES.Common.SavePermissions"}}
+    </button>
+  </footer>
+
+</div>

@@ -1,0 +1,257 @@
+/* ═══════════════════════════════════════════════════════════════
+   RESET & BASE
+   App wrapper, window header, window controls
+   Linear-Style: Clean, minimal, no decorative elements
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────────
+   APP CONTAINER
+   Main window wrapper with glass effect
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes {
+  background: var(--es-bg-app);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-xl);
+  box-shadow: var(--es-shadow-xl);
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  font-weight: var(--es-font-regular);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Subtle glass effect */
+  backdrop-filter: var(--es-glass-blur);
+  -webkit-backdrop-filter: var(--es-glass-blur);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   WINDOW HEADER
+   Minimal header with subtle border
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes .window-header {
+  background: var(--es-bg-panel);
+  border-bottom: 1px solid var(--es-border-subtle);
+  color: var(--es-text-primary);
+  font-family: var(--es-font-sans);
+  font-weight: var(--es-font-medium);
+  height: 48px;
+  flex: 0 0 48px;
+  padding: 0 var(--es-space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Hide default Foundry icon */
+.exalted-scenes .window-header .window-icon {
+  display: none;
+}
+
+/* Window title with optional logo */
+.exalted-scenes .window-header .window-title {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  color: var(--es-text-primary);
+  font-size: var(--es-font-size-md);
+  font-weight: var(--es-font-medium);
+  letter-spacing: -0.01em;
+}
+
+/* Small, subtle logo */
+.exalted-scenes .window-header .window-title::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: url('../../assets/logo_exalted_scenes.png') no-repeat center;
+  background-size: contain;
+  opacity: 0.9;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   WINDOW CONTROLS
+   Close, minimize buttons
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes .window-header .window-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-1);
+}
+
+.exalted-scenes .window-header .window-controls button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--es-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--es-radius-md);
+  transition: var(--es-transition-colors), var(--es-transition-transform);
+  cursor: pointer;
+}
+
+.exalted-scenes .window-header .window-controls button:hover {
+  color: var(--es-text-primary);
+  background: var(--es-bg-interactive);
+}
+
+.exalted-scenes .window-header .window-controls button:active {
+  transform: scale(0.95);
+}
+
+/* Close button special hover */
+.exalted-scenes .window-header .window-controls button.close:hover {
+  color: var(--es-text-on-error);
+  background: var(--es-error);
+}
+
+/*
+ * Force close button to use the standard X icon
+ * Foundry V12/V13 ApplicationV2 structure:
+ * <button class="header-control icon fa-solid fa-xmark" data-action="close">
+ * The fa-xmark shows as rectangle, so we override with fa-times character.
+ * Using maximum specificity to override Font Awesome's own CSS.
+ */
+
+/* Maximum specificity selector to override FA's ::before */
+/* GM Panel */
+form#exalted-scenes-gm-panel > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-gm-panel button.fa-solid.fa-xmark::before,
+/* Player Panel */
+form#exalted-scenes-player-panel > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-player-panel button.fa-solid.fa-xmark::before,
+/* Scene Editor */
+form#exalted-scenes-scene-editor > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-scene-editor button.fa-solid.fa-xmark::before,
+/* Character Editor */
+div#exalted-scenes-character-editor > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-character-editor button.fa-solid.fa-xmark::before,
+/* Permission Editor */
+form#exalted-scenes-permission-editor > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-permission-editor button.fa-solid.fa-xmark::before,
+/* Slideshow Editor */
+div#exalted-scenes-slideshow-editor > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-slideshow-editor button.fa-solid.fa-xmark::before,
+/* Smart Creator */
+div#exalted-scenes-smart-creator > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-smart-creator button.fa-solid.fa-xmark::before,
+/* Player View */
+div#exalted-scenes-player-view > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-player-view button.fa-solid.fa-xmark::before {
+  content: "\f00d" !important; /* Font Awesome: fa-times / fa-xmark (X icon) */
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  line-height: 1 !important;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   WINDOW CONTENT
+   Main content area
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes .window-content {
+  background: var(--es-bg-app);
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   FOUNDRY OVERRIDES
+   Reset Foundry's default styles within our app
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes *,
+.exalted-scenes *::before,
+.exalted-scenes *::after {
+  box-sizing: border-box;
+}
+
+.exalted-scenes a {
+  color: var(--es-accent-base);
+  text-decoration: none;
+  transition: var(--es-transition-colors);
+}
+
+.exalted-scenes a:hover {
+  color: var(--es-accent-hover);
+}
+
+/* Reset Foundry inputs */
+.exalted-scenes input,
+.exalted-scenes select,
+.exalted-scenes textarea {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SELECT DROPDOWN STYLING
+   Fix for dropdown options to match dark theme
+   Browser default options are often light, making text unreadable
+   ─────────────────────────────────────────────────────────────── */
+
+.exalted-scenes select {
+  appearance: none;
+  background-color: var(--es-bg-interactive);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+/* Style dropdown options for dark theme */
+.exalted-scenes select option {
+  background-color: #18181b; /* --es-bg-panel fallback for option elements */
+  color: #e4e4e7; /* --es-text-body fallback */
+  padding: 8px 12px;
+}
+
+.exalted-scenes select option:hover,
+.exalted-scenes select option:focus {
+  background-color: #27272a; /* --es-bg-interactive fallback */
+}
+
+.exalted-scenes select option:checked {
+  background-color: #6366f1; /* --es-accent-base fallback */
+  color: #ffffff;
+}
+
+/* Disabled options */
+.exalted-scenes select option:disabled {
+  color: #52525b; /* --es-text-disabled fallback */
+  background-color: #18181b;
+}
+
+/* Reset Foundry buttons */
+.exalted-scenes button {
+  font-family: var(--es-font-sans);
+  cursor: pointer;
+}
+
+/* Focus visible for accessibility */
+.exalted-scenes :focus-visible {
+  outline: 2px solid var(--es-accent-base);
+  outline-offset: 2px;
+}
+
+/* Remove default focus ring */
+.exalted-scenes :focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,0 +1,295 @@
+/* ═══════════════════════════════════════════════════════════════
+   EXALTED SCENES V5.0 - THEME & TOKENS
+   "Linear-Style" Design System
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Base variables on .exalted-scenes to allow theme overrides */
+.exalted-scenes {
+  /* ═══════════════════════════════════════════════════════════════
+     SURFACE HIERARCHY
+     Define hierarchy using lightness, not borders.
+     Rich, deep grays with subtle warm undertone for theatrical feel.
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Level 1: App Background (deepest) - subtle warm/rose undertone */
+  --es-bg-app: #110f12;
+
+  /* Level 2: Panels, Cards, Containers */
+  --es-bg-panel: #1a1718;
+  --es-bg-surface: #1a1718;
+
+  /* Level 3: Interactive elements, Hover states */
+  --es-bg-interactive: #292526;
+  --es-bg-hover: #292526;
+
+  /* Level 4: Elevated, Active, Pressed states */
+  --es-bg-elevated: #3d3839;
+  --es-bg-active: #3d3839;
+
+  /* ═══════════════════════════════════════════════════════════════
+     BORDERS
+     All borders: 1px solid, subtle RGBA whites. No thick borders.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-border-subtle: rgba(255, 255, 255, 0.06);
+  --es-border-default: rgba(255, 255, 255, 0.08);
+  --es-border-hover: rgba(255, 255, 255, 0.15);
+  --es-border-focus: var(--es-accent-base);
+
+  /* ═══════════════════════════════════════════════════════════════
+     ACCENT COLOR (Primary)
+     Rose/Crimson - theatrical, dramatic, like stage curtains.
+     Single primary color for active states and primary actions.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-accent-base: #e11d48;
+  --es-accent-hover: #f43f5e;
+  --es-accent-dim: #be123c;
+  --es-accent-subtle: rgba(225, 29, 72, 0.15);
+  --es-accent-glow: rgba(225, 29, 72, 0.4);
+
+  /* ═══════════════════════════════════════════════════════════════
+     FEEDBACK STATES
+     Success, Warning, Error, Info
+     ═══════════════════════════════════════════════════════════════ */
+  --es-success: #22c55e;
+  --es-success-dim: #16a34a;
+  --es-success-subtle: rgba(34, 197, 94, 0.15);
+
+  --es-warning: #f59e0b;
+  --es-warning-dim: #d97706;
+  --es-warning-subtle: rgba(245, 158, 11, 0.15);
+
+  --es-error: #ef4444;
+  --es-error-dim: #dc2626;
+  --es-error-subtle: rgba(239, 68, 68, 0.15);
+
+  --es-info: #3b82f6;
+  --es-info-dim: #2563eb;
+  --es-info-subtle: rgba(59, 130, 246, 0.15);
+
+  /* Live/Broadcasting state */
+  --es-live-color: var(--es-error);
+  --es-live-glow: rgba(239, 68, 68, 0.6);
+
+  /* ═══════════════════════════════════════════════════════════════
+     GLASS EFFECTS
+     For panels with backdrop blur
+     ═══════════════════════════════════════════════════════════════ */
+  --es-glass-bg: rgba(26, 23, 24, 0.8);
+  --es-glass-bg-solid: rgba(26, 23, 24, 0.95);
+  --es-glass-blur: blur(12px);
+  --es-glass-border: var(--es-border-default);
+
+  /* ═══════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     Inter or system sans-serif. Clean and precise.
+     Weights: 400 (Regular), 500 (Medium). Avoid Bold.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --es-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Font Sizes */
+  --es-font-size-xs: 11px;
+  --es-font-size-sm: 12px;
+  --es-font-size-base: 13px;
+  --es-font-size-md: 14px;
+  --es-font-size-lg: 16px;
+  --es-font-size-xl: 18px;
+  --es-font-size-2xl: 20px;
+
+  /* Font Weights */
+  --es-font-regular: 400;
+  --es-font-medium: 500;
+  --es-font-semibold: 600;
+
+  /* ═══════════════════════════════════════════════════════════════
+     TEXT COLORS
+     Hierarchy via color: White > Zinc-200 > Zinc-400 > Zinc-500 > Zinc-600
+     ═══════════════════════════════════════════════════════════════ */
+  --es-text-primary: #ffffff;
+  --es-text-body: #e4e4e7;       /* Zinc 200 */
+  --es-text-secondary: #a1a1aa;  /* Zinc 400 */
+  --es-text-muted: #71717a;      /* Zinc 500 */
+  --es-text-disabled: #52525b;   /* Zinc 600 */
+
+  /* Text on colored backgrounds */
+  --es-text-on-accent: #ffffff;
+  --es-text-on-error: #ffffff;
+  --es-text-on-success: #ffffff;
+
+  /* ═══════════════════════════════════════════════════════════════
+     SPACING
+     Consistent spacing scale
+     ═══════════════════════════════════════════════════════════════ */
+  --es-space-0: 0;
+  --es-space-1: 4px;
+  --es-space-2: 8px;
+  --es-space-3: 12px;
+  --es-space-4: 16px;
+  --es-space-5: 20px;
+  --es-space-6: 24px;
+  --es-space-8: 32px;
+  --es-space-10: 40px;
+  --es-space-12: 48px;
+
+  /* Legacy aliases */
+  --es-space-xs: var(--es-space-1);
+  --es-space-sm: var(--es-space-2);
+  --es-space-md: var(--es-space-3);
+  --es-space-lg: var(--es-space-4);
+  --es-space-xl: var(--es-space-6);
+
+  /* ═══════════════════════════════════════════════════════════════
+     BORDER RADIUS
+     Consistent, modern rounding. 6px-12px range.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-radius-none: 0;
+  --es-radius-sm: 4px;
+  --es-radius-md: 6px;
+  --es-radius-lg: 8px;
+  --es-radius-xl: 12px;
+  --es-radius-2xl: 16px;
+  --es-radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════
+     SHADOWS
+     Subtle, realistic depth. Deep blacks for dark UI.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --es-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --es-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --es-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --es-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  /* Glow shadows for focus/accent */
+  --es-shadow-glow: 0 0 0 3px var(--es-accent-glow);
+  --es-shadow-glow-error: 0 0 0 3px var(--es-error-subtle);
+  --es-shadow-glow-success: 0 0 0 3px var(--es-success-subtle);
+
+  /* ═══════════════════════════════════════════════════════════════
+     TRANSITIONS & ANIMATIONS
+     Fast and snappy. 150ms hovers, 250ms layout shifts.
+     ═══════════════════════════════════════════════════════════════ */
+  --es-duration-instant: 50ms;
+  --es-duration-fast: 150ms;
+  --es-duration-normal: 250ms;
+  --es-duration-slow: 350ms;
+
+  /* Easing curves */
+  --es-ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --es-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --es-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Common transition presets */
+  --es-transition-colors: color var(--es-duration-fast) var(--es-ease-out),
+                          background-color var(--es-duration-fast) var(--es-ease-out),
+                          border-color var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-transform: transform var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-opacity: opacity var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-all: all var(--es-duration-fast) var(--es-ease-out);
+
+  /* ═══════════════════════════════════════════════════════════════
+     Z-INDEX SCALE
+     Consistent layering
+     ═══════════════════════════════════════════════════════════════ */
+  --es-z-base: 0;
+  --es-z-dropdown: 100;
+  --es-z-sticky: 200;
+  --es-z-overlay: 300;
+  --es-z-modal: 400;
+  --es-z-popover: 500;
+  --es-z-tooltip: 600;
+  --es-z-toast: 700;
+
+  /* ═══════════════════════════════════════════════════════════════
+     COMPONENT-SPECIFIC TOKENS
+     Sizes and dimensions for common components
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Buttons */
+  --es-btn-height: 32px;
+  --es-btn-height-sm: 28px;
+  --es-btn-height-lg: 36px;
+  --es-btn-padding-x: 12px;
+  --es-btn-padding-x-sm: 8px;
+
+  /* Inputs */
+  --es-input-height: 32px;
+  --es-input-height-sm: 28px;
+  --es-input-padding-x: 10px;
+
+  /* Cards */
+  --es-card-padding: var(--es-space-3);
+  --es-card-radius: var(--es-radius-lg);
+
+  /* Modals */
+  --es-modal-radius: var(--es-radius-xl);
+  --es-modal-padding: var(--es-space-5);
+  --es-overlay-bg: rgba(0, 0, 0, 0.6);
+  --es-overlay-blur: blur(4px);
+}
+
+/* Also set on body when theme class is applied for elements outside .exalted-scenes */
+body.es-theme-rose,
+body.es-theme-purple,
+body.es-theme-teal,
+body.es-theme-amber,
+body.es-theme-steel,
+body.es-theme-emerald,
+body.es-theme-parchment,
+body.es-theme-blood,
+body.es-theme-cyberpunk,
+body.es-theme-solar,
+body.es-theme-void,
+body.es-theme-jade,
+body.es-theme-ice,
+body.es-theme-inferno {
+  /* Theme variables will be inherited by PlayerView which is a direct body child */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR STYLES
+   Minimal, Linear-style scrollbars
+   ═══════════════════════════════════════════════════════════════ */
+
+.exalted-scenes ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.exalted-scenes ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.exalted-scenes ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+.exalted-scenes {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TEXT SELECTION
+   Accent-colored selection
+   ═══════════════════════════════════════════════════════════════ */
+
+.exalted-scenes ::selection {
+  background: var(--es-accent-glow);
+  color: var(--es-text-primary);
+}
+
+.exalted-scenes ::-moz-selection {
+  background: var(--es-accent-glow);
+  color: var(--es-text-primary);
+}

@@ -1,0 +1,662 @@
+/* ═══════════════════════════════════════════════════════════════
+   SMART CREATOR - Modern BEM Redesign
+   Step wizard for character creation with drag-drop & review
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ---------------------------------------------------------------
+   Base Structure
+   --------------------------------------------------------------- */
+
+.es-smart-creator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--es-bg-app);
+  color: var(--es-text-primary);
+  font-family: var(--es-font-sans);
+}
+
+/* ---------------------------------------------------------------
+   Header & Steps
+   --------------------------------------------------------------- */
+
+.es-smart-creator__header {
+  background: var(--es-bg-panel);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--es-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.es-smart-creator__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--es-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.es-smart-creator__title i {
+  color: var(--es-accent-base);
+}
+
+/* Step Indicator */
+.es-smart-creator__steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.es-smart-creator__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.5;
+  transition: opacity var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__step--active,
+.es-smart-creator__step--completed {
+  opacity: 1;
+}
+
+.es-smart-creator__step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--es-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--es-font-size-sm);
+  font-weight: 600;
+  background: var(--es-bg-panel);
+  color: var(--es-text-secondary);
+  transition: all var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__step--active .es-smart-creator__step-number {
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-base);
+  box-shadow: 0 0 0 4px var(--es-accent-glow);
+}
+
+.es-smart-creator__step--completed .es-smart-creator__step-number {
+  background: var(--es-accent-base);
+  border-color: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+.es-smart-creator__step--completed .es-smart-creator__step-number::before {
+  content: '\2713';
+}
+
+.es-smart-creator__step-label {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  font-weight: 500;
+}
+
+.es-smart-creator__step--active .es-smart-creator__step-label {
+  color: var(--es-text-body);
+}
+
+.es-smart-creator__step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--es-border-subtle);
+  max-width: 80px;
+  border-radius: 1px;
+  transition: background var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__step-line--completed {
+  background: var(--es-accent-base);
+}
+
+/* ---------------------------------------------------------------
+   Content Area
+   --------------------------------------------------------------- */
+
+.es-smart-creator__content {
+  flex: 1;
+  padding: 32px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.es-smart-creator__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.es-smart-creator__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-smart-creator__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.es-smart-creator__panel {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.es-smart-creator__panel--wide {
+  max-width: 640px;
+}
+
+/* ---------------------------------------------------------------
+   Sections
+   --------------------------------------------------------------- */
+
+.es-smart-creator__section {
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-lg);
+  padding: 20px;
+}
+
+.es-smart-creator__section--centered {
+  text-align: center;
+}
+
+.es-smart-creator__section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: var(--es-font-size-sm);
+  font-weight: 600;
+  color: var(--es-text-primary);
+}
+
+.es-smart-creator__section-header i {
+  color: var(--es-accent-base);
+  width: 16px;
+  text-align: center;
+}
+
+.es-smart-creator__section-count {
+  margin-left: auto;
+  background: var(--es-bg-panel);
+  padding: 2px 8px;
+  border-radius: var(--es-radius-full);
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  color: var(--es-text-muted);
+}
+
+.es-smart-creator__section-desc {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  margin: -4px 0 16px 0;
+}
+
+.es-smart-creator__required {
+  margin-left: auto;
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  color: var(--es-error);
+  text-transform: uppercase;
+}
+
+.es-smart-creator__optional {
+  margin-left: auto;
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  color: var(--es-text-muted);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------
+   Form Elements
+   --------------------------------------------------------------- */
+
+.es-smart-creator__input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-primary);
+  font-size: var(--es-font-size-base);
+  font-family: var(--es-font-sans);
+  transition: all var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__input:hover {
+  border-color: var(--es-border-hover);
+}
+
+.es-smart-creator__input:focus {
+  border-color: var(--es-accent-base);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-smart-creator__input::placeholder {
+  color: var(--es-text-muted);
+}
+
+.es-smart-creator__hint {
+  display: block;
+  margin-top: 8px;
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+}
+
+/* ---------------------------------------------------------------
+   Tags
+   --------------------------------------------------------------- */
+
+.es-smart-creator__tags {
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  transition: all var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__tags:hover {
+  border-color: var(--es-border-hover);
+}
+
+.es-smart-creator__tags:focus-within {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-smart-creator__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--es-accent-subtle);
+  border-radius: var(--es-radius-full);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-body);
+}
+
+.es-smart-creator__tag button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--es-text-muted);
+  font-size: 10px;
+  transition: color var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__tag button:hover {
+  color: var(--es-error);
+}
+
+.es-smart-creator__tag-input {
+  border: none !important;
+  background: transparent !important;
+  flex: 1;
+  min-width: 120px;
+  padding: 4px !important;
+  box-shadow: none !important;
+  height: auto !important;
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-primary);
+}
+
+.es-smart-creator__tag-input::placeholder {
+  color: var(--es-text-muted);
+}
+
+/* ---------------------------------------------------------------
+   Step 2: Intro & Drop Zone
+   --------------------------------------------------------------- */
+
+.es-smart-creator__intro {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--es-bg-panel);
+  border-radius: var(--es-radius-md);
+}
+
+.es-smart-creator__intro i {
+  color: var(--es-warning);
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+}
+
+.es-smart-creator__intro p {
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-body);
+  margin: 0 0 8px 0;
+}
+
+.es-smart-creator__example {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+}
+
+.es-smart-creator__example code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: var(--es-radius-sm);
+  font-family: monospace;
+  color: var(--es-accent-base);
+}
+
+.es-smart-creator__dropzone {
+  border: 2px dashed var(--es-border-default);
+  border-radius: var(--es-radius-lg);
+  padding: 48px 24px;
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.es-smart-creator__dropzone:hover,
+.es-smart-creator__dropzone--drag-over {
+  border-color: var(--es-accent-base);
+  background: var(--es-accent-subtle);
+}
+
+.es-smart-creator__dropzone i {
+  font-size: 3rem;
+  color: var(--es-text-muted);
+  transition: color var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__dropzone:hover i {
+  color: var(--es-accent-base);
+}
+
+.es-smart-creator__dropzone h3 {
+  font-size: var(--es-font-size-base);
+  font-weight: 600;
+  color: var(--es-text-primary);
+  margin: 0;
+}
+
+.es-smart-creator__dropzone p {
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-secondary);
+  margin: 0;
+}
+
+.es-smart-creator__dropzone--uploading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Progress Bar */
+.es-smart-creator__progress {
+  margin-top: 20px;
+  height: 8px;
+  background: var(--es-bg-panel);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.es-smart-creator__progress-bar {
+  height: 100%;
+  background: var(--es-accent-base);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.es-smart-creator__progress-text {
+  position: absolute;
+  right: 0;
+  top: 14px;
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+}
+
+/* ---------------------------------------------------------------
+   Step 3: Review Grid
+   --------------------------------------------------------------- */
+
+.es-smart-creator__review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.es-smart-creator__review-card {
+  background: var(--es-bg-panel);
+  border-radius: var(--es-radius-md);
+  padding: 8px;
+  border: 1px solid var(--es-border-subtle);
+  transition: all var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__review-card:hover {
+  border-color: var(--es-border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--es-shadow-md);
+}
+
+.es-smart-creator__review-card--excluded {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.es-smart-creator__review-thumb {
+  aspect-ratio: 1/1;
+  border-radius: var(--es-radius-sm);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 8px;
+  background: var(--es-bg-app);
+}
+
+.es-smart-creator__review-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--es-duration-normal) ease;
+}
+
+.es-smart-creator__review-card:hover .es-smart-creator__review-thumb img {
+  transform: scale(1.05);
+}
+
+.es-smart-creator__review-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__review-card:hover .es-smart-creator__review-actions {
+  opacity: 1;
+}
+
+.es-smart-creator__icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: var(--es-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__icon-btn:hover {
+  background: var(--es-bg-elevated);
+  transform: scale(1.1);
+}
+
+.es-smart-creator__icon-btn--active {
+  background: var(--es-accent-base);
+}
+
+.es-smart-creator__icon-btn--delete:hover {
+  background: var(--es-error);
+}
+
+.es-smart-creator__emotion-name {
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--es-text-primary);
+  text-align: center;
+  font-size: var(--es-font-size-xs);
+  font-family: var(--es-font-sans);
+  padding: 4px;
+  transition: border-color var(--es-duration-fast) ease;
+}
+
+.es-smart-creator__emotion-name:hover {
+  border-bottom-color: var(--es-border-default);
+}
+
+.es-smart-creator__emotion-name:focus {
+  border-bottom-color: var(--es-accent-base);
+  outline: none;
+}
+
+/* ---------------------------------------------------------------
+   Footer
+   --------------------------------------------------------------- */
+
+.es-smart-creator__footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--es-border-subtle);
+  background: var(--es-bg-panel);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.es-smart-creator__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 44px;
+  border-radius: var(--es-radius-md);
+  font-size: var(--es-font-size-sm);
+  font-weight: 600;
+  font-family: var(--es-font-sans);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease;
+  border: 1px solid transparent;
+}
+
+.es-smart-creator__btn--ghost {
+  background: transparent;
+  border-color: var(--es-border-default);
+  color: var(--es-text-secondary);
+}
+
+.es-smart-creator__btn--ghost:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-primary);
+}
+
+.es-smart-creator__btn--primary {
+  background: var(--es-accent-base);
+  border-color: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+.es-smart-creator__btn--primary:hover {
+  background: var(--es-accent-hover);
+  border-color: var(--es-accent-hover);
+}
+
+.es-smart-creator__btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.es-smart-creator__btn--primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+/* ---------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .es-smart-creator__content {
+    padding: 24px 16px;
+  }
+
+  .es-smart-creator__step-label {
+    display: none;
+  }
+
+  .es-smart-creator__step-line {
+    max-width: 40px;
+  }
+
+  .es-smart-creator__review-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 12px;
+  }
+
+  .es-smart-creator__dropzone {
+    padding: 32px 16px;
+  }
+
+  .es-smart-creator__dropzone i {
+    font-size: 2rem;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Reduced Motion
+   --------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-smart-creator__step,
+  .es-smart-creator__step-number,
+  .es-smart-creator__step-line,
+  .es-smart-creator__review-card,
+  .es-smart-creator__review-thumb img,
+  .es-smart-creator__icon-btn,
+  .es-smart-creator__dropzone,
+  .es-smart-creator__tag,
+  .es-smart-creator__btn,
+  .es-smart-creator__input,
+  .es-smart-creator__tags {
+    transition: none;
+  }
+}

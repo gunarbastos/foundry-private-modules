@@ -1,0 +1,182 @@
+/* =============================================================================
+   FLOATING CAST STRIP
+   Linear-style persistent cast strip overlay
+   ============================================================================= */
+
+.es-floating-cast {
+  position: absolute;
+  bottom: 0;
+  left: 220px; /* Sidebar width */
+  right: 0;
+  background: var(--es-bg-panel);
+  border-top: 1px solid var(--es-border-default);
+  z-index: 50;
+  animation: es-float-up 0.25s var(--es-ease-spring);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Adjust when inspector is open */
+.es-layout.with-inspector .es-floating-cast {
+  right: 320px; /* Inspector width */
+}
+
+/* Entry animation */
+@keyframes es-float-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   HEADER
+   ----------------------------------------------------------------------------- */
+
+.es-floating-cast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--es-space-sm) var(--es-space-md);
+  background: var(--es-bg-app);
+  border-bottom: 1px solid var(--es-border-subtle);
+  min-height: 40px;
+}
+
+.es-floating-cast-title {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  color: var(--es-text-body);
+}
+
+.es-floating-cast-title i {
+  color: var(--es-text-muted);
+  font-size: 0.85rem;
+}
+
+.es-floating-cast-title span {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--es-text-primary);
+}
+
+.es-floating-cast-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-xs);
+}
+
+/* Action buttons */
+.es-floating-cast-actions .es-btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--es-radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--es-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-floating-cast-actions .es-btn-icon:hover {
+  background: var(--es-bg-interactive);
+  color: var(--es-text-body);
+}
+
+.es-floating-cast-actions .es-btn-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-floating-cast-actions .es-btn-icon--close:hover {
+  color: var(--es-error);
+}
+
+/* -----------------------------------------------------------------------------
+   BODY
+   ----------------------------------------------------------------------------- */
+
+.es-floating-cast-body {
+  padding: 0;
+}
+
+.es-floating-cast .es-cast-strip {
+  height: auto;
+  border-top: none;
+  background: transparent;
+}
+
+.es-floating-cast .es-cast-row {
+  padding: var(--es-space-sm) var(--es-space-md);
+  min-height: 70px;
+}
+
+/* -----------------------------------------------------------------------------
+   COLLAPSE STATE
+   ----------------------------------------------------------------------------- */
+
+.es-floating-cast--collapsed {
+  animation: none;
+}
+
+.es-floating-cast--collapsed .es-floating-cast-body {
+  display: none;
+}
+
+.es-floating-cast--collapsed .es-floating-cast-header {
+  border-bottom: none;
+}
+
+/* Expand/collapse button animation */
+.es-floating-cast-toggle {
+  transition: transform var(--es-duration-fast) ease-out;
+}
+
+.es-floating-cast--collapsed .es-floating-cast-toggle {
+  transform: rotate(180deg);
+}
+
+/* -----------------------------------------------------------------------------
+   SCENE INFO
+   ----------------------------------------------------------------------------- */
+
+.es-floating-cast-scene {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  padding: var(--es-space-xs) var(--es-space-sm);
+  background: var(--es-bg-interactive);
+  border-radius: var(--es-radius-sm);
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-secondary);
+}
+
+.es-floating-cast-scene i {
+  color: var(--es-accent-base);
+}
+
+/* -----------------------------------------------------------------------------
+   REDUCED MOTION
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-floating-cast {
+    animation: none;
+  }
+
+  .es-floating-cast-toggle,
+  .es-floating-cast-actions .es-btn-icon {
+    transition: none;
+  }
+}

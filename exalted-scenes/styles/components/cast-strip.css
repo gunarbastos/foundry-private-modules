@@ -1,0 +1,406 @@
+/* ═══════════════════════════════════════════════════════════════
+   CAST STRIP
+   Character cast row in inspector - Linear-style redesign
+   ═══════════════════════════════════════════════════════════════ */
+
+/* -------------------------------------------------------------
+   Container
+   ------------------------------------------------------------- */
+
+.es-cast-strip {
+  height: 120px;
+  background: var(--es-bg-panel);
+  border-top: 1px solid var(--es-border-subtle);
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------------------------------------------------------------
+   Header
+   ------------------------------------------------------------- */
+
+.es-cast-header {
+  padding: var(--es-space-sm) var(--es-space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.es-cast-header-title {
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  color: var(--es-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.es-cast-count {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  font-weight: 400;
+}
+
+/* Action buttons in header */
+.es-cast-header-actions {
+  display: flex;
+  gap: var(--es-space-xs);
+}
+
+.es-cast-header-actions button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--es-radius-sm);
+  color: var(--es-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-cast-header-actions button:hover {
+  background: var(--es-bg-interactive);
+  color: var(--es-text-body);
+}
+
+.es-cast-header-actions button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--es-accent-glow);
+}
+
+/* -------------------------------------------------------------
+   Cast Row (Scrollable container)
+   ------------------------------------------------------------- */
+
+.es-cast-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-md);
+  padding: 0 var(--es-space-md) var(--es-space-sm);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Custom scrollbar for cast row */
+.es-cast-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.es-cast-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-cast-row::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.es-cast-row::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* -------------------------------------------------------------
+   Cast Member Item
+   ------------------------------------------------------------- */
+
+.es-cast-member {
+  width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--es-space-xs);
+  flex-shrink: 0;
+  cursor: pointer;
+  padding: var(--es-space-xs);
+  border-radius: var(--es-radius-md);
+  transition: background var(--es-duration-fast) ease-out;
+}
+
+.es-cast-member:hover {
+  background: var(--es-bg-interactive);
+}
+
+.es-cast-member:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--es-accent-glow);
+}
+
+/* Avatar image */
+.es-cast-member-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.es-cast-member-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--es-border-default);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-cast-member:hover .es-cast-member-avatar img {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 2px var(--es-accent-subtle);
+}
+
+/* Active/Selected state */
+.es-cast-member.is-active .es-cast-member-avatar img,
+.es-cast-member.is-selected .es-cast-member-avatar img {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+/* Status indicator (online/speaking/etc) */
+.es-cast-member-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--es-bg-panel);
+  background: var(--es-text-muted);
+}
+
+.es-cast-member-status.is-online {
+  background: var(--es-success);
+}
+
+.es-cast-member-status.is-speaking {
+  background: var(--es-accent-base);
+  animation: es-pulse 1.5s infinite;
+}
+
+@keyframes es-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Name label */
+.es-cast-name {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--es-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50px;
+  text-align: center;
+  transition: color var(--es-duration-fast) ease-out;
+}
+
+.es-cast-member:hover .es-cast-name {
+  color: var(--es-text-body);
+}
+
+.es-cast-member.is-active .es-cast-name,
+.es-cast-member.is-selected .es-cast-name {
+  color: var(--es-text-primary);
+}
+
+/* -------------------------------------------------------------
+   Add New Member Button
+   ------------------------------------------------------------- */
+
+.es-cast-member--add-new {
+  opacity: 0.7;
+  transition: opacity var(--es-duration-fast) ease-out;
+}
+
+.es-cast-member--add-new:hover {
+  opacity: 1;
+  background: transparent;
+}
+
+.es-cast-add-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px dashed var(--es-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--es-text-muted);
+  font-size: 16px;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-cast-member--add-new:hover .es-cast-add-circle {
+  border-color: var(--es-accent-base);
+  border-style: solid;
+  color: var(--es-accent-base);
+  background: var(--es-accent-subtle);
+}
+
+/* -------------------------------------------------------------
+   Empty State
+   ------------------------------------------------------------- */
+
+.es-cast-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--es-space-sm);
+  padding: var(--es-space-md);
+  flex: 1;
+  text-align: center;
+}
+
+.es-cast-empty-icon {
+  font-size: 20px;
+  color: var(--es-text-muted);
+  opacity: 0.5;
+}
+
+.es-cast-empty-text {
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+}
+
+.es-cast-empty-hint {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-disabled);
+}
+
+.es-cast-row--empty {
+  justify-content: center;
+}
+
+/* -------------------------------------------------------------
+   Drag & Drop States
+   ------------------------------------------------------------- */
+
+/* Dragging a member */
+.es-cast-member.is-dragging {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Drag ghost/preview */
+.es-cast-member.is-drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: scale(1.05);
+  box-shadow: var(--es-shadow-lg);
+}
+
+/* Drop zone indicator */
+.es-cast-row.is-drop-target {
+  background: var(--es-accent-subtle);
+  border-radius: var(--es-radius-md);
+}
+
+.es-cast-row.is-drop-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--es-accent-base);
+  border-radius: var(--es-radius-md);
+  pointer-events: none;
+}
+
+/* Drop position indicator */
+.es-cast-member.is-drop-before::before,
+.es-cast-member.is-drop-after::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 80%;
+  background: var(--es-accent-base);
+  border-radius: 2px;
+}
+
+.es-cast-member.is-drop-before::before {
+  left: -6px;
+}
+
+.es-cast-member.is-drop-after::after {
+  right: -6px;
+}
+
+/* -------------------------------------------------------------
+   Loading State (Skeleton)
+   ------------------------------------------------------------- */
+
+.es-cast-member--skeleton .es-cast-member-avatar,
+.es-cast-member--skeleton .es-cast-name {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: es-shimmer 1.5s infinite;
+}
+
+.es-cast-member--skeleton .es-cast-member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.es-cast-member--skeleton .es-cast-name {
+  width: 36px;
+  height: 10px;
+  border-radius: var(--es-radius-sm);
+}
+
+@keyframes es-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* -------------------------------------------------------------
+   Compact Variant
+   ------------------------------------------------------------- */
+
+.es-cast-strip--compact {
+  height: 80px;
+}
+
+.es-cast-strip--compact .es-cast-header {
+  padding: var(--es-space-xs) var(--es-space-md);
+}
+
+.es-cast-strip--compact .es-cast-member {
+  width: 44px;
+  gap: 2px;
+}
+
+.es-cast-strip--compact .es-cast-member-avatar,
+.es-cast-strip--compact .es-cast-member-avatar img,
+.es-cast-strip--compact .es-cast-add-circle {
+  width: 32px;
+  height: 32px;
+}
+
+.es-cast-strip--compact .es-cast-name {
+  font-size: 10px;
+  max-width: 42px;
+}
+
+/* -------------------------------------------------------------
+   Responsive: Hide names on very small containers
+   ------------------------------------------------------------- */
+
+.es-cast-strip--icons-only .es-cast-name {
+  display: none;
+}
+
+.es-cast-strip--icons-only .es-cast-member {
+  width: 44px;
+}

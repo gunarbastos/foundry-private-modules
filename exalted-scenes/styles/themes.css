@@ -1,0 +1,552 @@
+/* ═══════════════════════════════════════════════════════════════
+   EXALTED SCENES - COLOR THEME PRESETS
+   Customizable color schemes for different aesthetics
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: ROSE (Default)
+   Theatrical, dramatic - like stage curtains
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-rose,
+.es-theme-rose .exalted-scenes {
+  /* Default theme - uses base variables from theme.css */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: ROYAL PURPLE
+   Mystical, exalted - perfect for supernatural campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-purple,
+.es-theme-purple .exalted-scenes {
+  --es-accent-base: #8b5cf6;
+  --es-accent-hover: #a78bfa;
+  --es-accent-dim: #7c3aed;
+  --es-accent-subtle: rgba(139, 92, 246, 0.15);
+  --es-accent-glow: rgba(139, 92, 246, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: OCEAN TEAL
+   Calm, elegant - great for nautical or serene settings
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-teal,
+.es-theme-teal .exalted-scenes {
+  --es-accent-base: #14b8a6;
+  --es-accent-hover: #2dd4bf;
+  --es-accent-dim: #0d9488;
+  --es-accent-subtle: rgba(20, 184, 166, 0.15);
+  --es-accent-glow: rgba(20, 184, 166, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: SUNSET AMBER
+   Warm, adventurous - perfect for desert or exploration themes
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-amber,
+.es-theme-amber .exalted-scenes {
+  --es-accent-base: #f59e0b;
+  --es-accent-hover: #fbbf24;
+  --es-accent-dim: #d97706;
+  --es-accent-subtle: rgba(245, 158, 11, 0.15);
+  --es-accent-glow: rgba(245, 158, 11, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: STEEL BLUE
+   Neutral, professional - works with any campaign
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-steel,
+.es-theme-steel .exalted-scenes {
+  --es-accent-base: #6366f1;
+  --es-accent-hover: #818cf8;
+  --es-accent-dim: #4f46e5;
+  --es-accent-subtle: rgba(99, 102, 241, 0.15);
+  --es-accent-glow: rgba(99, 102, 241, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: FOREST EMERALD
+   Natural, organic - ideal for woodland or druid campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-emerald,
+.es-theme-emerald .exalted-scenes {
+  --es-accent-base: #10b981;
+  --es-accent-hover: #34d399;
+  --es-accent-dim: #059669;
+  --es-accent-subtle: rgba(16, 185, 129, 0.15);
+  --es-accent-glow: rgba(16, 185, 129, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: PARCHMENT (Light Theme)
+   Medieval, classic - warm pastel tones on light background
+   Perfect for classic fantasy RPGs
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-parchment,
+.es-theme-parchment .exalted-scenes {
+  /* Surface hierarchy - warm parchment tones */
+  --es-bg-app: #f5f0e6;
+  --es-bg-panel: #faf7f0;
+  --es-bg-surface: #faf7f0;
+  --es-bg-interactive: #f0ebe0;
+  --es-bg-hover: #e8e2d5;
+  --es-bg-elevated: #e0d9c8;
+  --es-bg-active: #d8d0be;
+
+  /* Borders - warm browns */
+  --es-border-subtle: rgba(139, 119, 89, 0.15);
+  --es-border-default: rgba(139, 119, 89, 0.25);
+  --es-border-hover: rgba(139, 119, 89, 0.4);
+
+  /* Accent - rich burgundy/wine */
+  --es-accent-base: #8b4049;
+  --es-accent-hover: #a34d58;
+  --es-accent-dim: #733540;
+  --es-accent-subtle: rgba(139, 64, 73, 0.15);
+  --es-accent-glow: rgba(139, 64, 73, 0.3);
+
+  /* Glass effects - warm tint */
+  --es-glass-bg: rgba(250, 247, 240, 0.9);
+  --es-glass-bg-solid: rgba(250, 247, 240, 0.98);
+
+  /* Text colors - dark warm browns */
+  --es-text-primary: #2d2520;
+  --es-text-body: #3d352d;
+  --es-text-secondary: #6b5d50;
+  --es-text-muted: #8b7d6d;
+  --es-text-disabled: #a89d8d;
+
+  /* Text on colored backgrounds */
+  --es-text-on-accent: #ffffff;
+
+  /* Shadows - warmer */
+  --es-shadow-xs: 0 1px 2px rgba(100, 80, 60, 0.1);
+  --es-shadow-sm: 0 2px 4px rgba(100, 80, 60, 0.12);
+  --es-shadow-md: 0 4px 12px rgba(100, 80, 60, 0.15);
+  --es-shadow-lg: 0 8px 24px rgba(100, 80, 60, 0.18);
+  --es-shadow-xl: 0 12px 32px rgba(100, 80, 60, 0.22);
+
+  /* Overlay - lighter */
+  --es-overlay-bg: rgba(45, 37, 32, 0.5);
+}
+
+/* Parchment theme - scrollbar adjustments */
+.exalted-scenes.es-theme-parchment ::-webkit-scrollbar-thumb,
+.es-theme-parchment .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(139, 119, 89, 0.25);
+}
+
+.exalted-scenes.es-theme-parchment ::-webkit-scrollbar-thumb:hover,
+.es-theme-parchment .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 119, 89, 0.4);
+}
+
+/* Parchment theme - Firefox scrollbar */
+.exalted-scenes.es-theme-parchment,
+.es-theme-parchment .exalted-scenes {
+  scrollbar-color: rgba(139, 119, 89, 0.25) transparent;
+}
+
+/* Parchment theme - text selection */
+.exalted-scenes.es-theme-parchment ::selection,
+.es-theme-parchment .exalted-scenes ::selection {
+  background: rgba(139, 64, 73, 0.3);
+  color: var(--es-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: BLOOD MOON
+   Dark and intense - for horror or dark fantasy campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-blood,
+.es-theme-blood .exalted-scenes {
+  /* Darker backgrounds with red undertone */
+  --es-bg-app: #0d0a0b;
+  --es-bg-panel: #151112;
+  --es-bg-surface: #151112;
+  --es-bg-interactive: #201a1c;
+  --es-bg-hover: #2a2224;
+  --es-bg-elevated: #352b2e;
+  --es-bg-active: #402f32;
+
+  /* Deep blood red accent */
+  --es-accent-base: #dc2626;
+  --es-accent-hover: #ef4444;
+  --es-accent-dim: #b91c1c;
+  --es-accent-subtle: rgba(220, 38, 38, 0.2);
+  --es-accent-glow: rgba(220, 38, 38, 0.5);
+
+  /* Glass with dark red tint */
+  --es-glass-bg: rgba(21, 17, 18, 0.85);
+  --es-glass-bg-solid: rgba(21, 17, 18, 0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: CYBERPUNK
+   Neon-lit dark theme - high contrast, electric colors
+   Perfect for sci-fi, shadowrun, or modern settings
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-cyberpunk,
+.es-theme-cyberpunk .exalted-scenes {
+  /* Deep black with blue undertone */
+  --es-bg-app: #0a0a0f;
+  --es-bg-panel: #0f0f18;
+  --es-bg-surface: #0f0f18;
+  --es-bg-interactive: #161625;
+  --es-bg-hover: #1a1a2e;
+  --es-bg-elevated: #252538;
+  --es-bg-active: #2d2d45;
+
+  /* Borders - electric blue glow */
+  --es-border-subtle: rgba(0, 255, 255, 0.1);
+  --es-border-default: rgba(0, 255, 255, 0.2);
+  --es-border-hover: rgba(0, 255, 255, 0.4);
+
+  /* Accent - hot magenta/pink neon */
+  --es-accent-base: #ff00ff;
+  --es-accent-hover: #ff66ff;
+  --es-accent-dim: #cc00cc;
+  --es-accent-subtle: rgba(255, 0, 255, 0.2);
+  --es-accent-glow: rgba(255, 0, 255, 0.6);
+
+  /* Glass - dark with neon tint */
+  --es-glass-bg: rgba(15, 15, 24, 0.9);
+  --es-glass-bg-solid: rgba(15, 15, 24, 0.98);
+
+  /* Text - high contrast */
+  --es-text-primary: #ffffff;
+  --es-text-body: #e0e0ff;
+  --es-text-secondary: #a0a0cc;
+  --es-text-muted: #6666aa;
+  --es-text-disabled: #444466;
+
+  /* Shadows with neon glow */
+  --es-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 4px rgba(255, 0, 255, 0.1);
+  --es-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 8px rgba(255, 0, 255, 0.1);
+  --es-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 16px rgba(255, 0, 255, 0.15);
+  --es-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 24px rgba(255, 0, 255, 0.2);
+  --es-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 32px rgba(255, 0, 255, 0.25);
+}
+
+/* Cyberpunk scrollbar */
+.exalted-scenes.es-theme-cyberpunk ::-webkit-scrollbar-thumb,
+.es-theme-cyberpunk .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(255, 0, 255, 0.3);
+}
+
+.exalted-scenes.es-theme-cyberpunk ::-webkit-scrollbar-thumb:hover,
+.es-theme-cyberpunk .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 0, 255, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: SOLAR GOLD
+   Radiant light theme - warm whites with golden accents
+   Perfect for celestial, divine, or epic heroic campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-solar,
+.es-theme-solar .exalted-scenes {
+  /* Warm white/cream backgrounds */
+  --es-bg-app: #fefcf8;
+  --es-bg-panel: #fffdf9;
+  --es-bg-surface: #fffdf9;
+  --es-bg-interactive: #fff8ed;
+  --es-bg-hover: #fff3e0;
+  --es-bg-elevated: #ffedd5;
+  --es-bg-active: #fde68a;
+
+  /* Borders - warm gold */
+  --es-border-subtle: rgba(180, 140, 60, 0.15);
+  --es-border-default: rgba(180, 140, 60, 0.25);
+  --es-border-hover: rgba(180, 140, 60, 0.45);
+
+  /* Accent - radiant gold */
+  --es-accent-base: #d97706;
+  --es-accent-hover: #f59e0b;
+  --es-accent-dim: #b45309;
+  --es-accent-subtle: rgba(217, 119, 6, 0.15);
+  --es-accent-glow: rgba(217, 119, 6, 0.4);
+
+  /* Glass effects */
+  --es-glass-bg: rgba(255, 253, 249, 0.92);
+  --es-glass-bg-solid: rgba(255, 253, 249, 0.98);
+
+  /* Text - warm dark browns */
+  --es-text-primary: #1c1410;
+  --es-text-body: #292018;
+  --es-text-secondary: #78572f;
+  --es-text-muted: #a68a5b;
+  --es-text-disabled: #c4a87a;
+
+  --es-text-on-accent: #ffffff;
+
+  /* Shadows - golden */
+  --es-shadow-xs: 0 1px 2px rgba(140, 100, 40, 0.08);
+  --es-shadow-sm: 0 2px 4px rgba(140, 100, 40, 0.1);
+  --es-shadow-md: 0 4px 12px rgba(140, 100, 40, 0.12);
+  --es-shadow-lg: 0 8px 24px rgba(140, 100, 40, 0.15);
+  --es-shadow-xl: 0 12px 32px rgba(140, 100, 40, 0.18);
+
+  --es-overlay-bg: rgba(28, 20, 16, 0.5);
+}
+
+/* Solar scrollbar */
+.exalted-scenes.es-theme-solar ::-webkit-scrollbar-thumb,
+.es-theme-solar .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(180, 140, 60, 0.3);
+}
+
+.exalted-scenes.es-theme-solar ::-webkit-scrollbar-thumb:hover,
+.es-theme-solar .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 140, 60, 0.5);
+}
+
+.exalted-scenes.es-theme-solar ::selection,
+.es-theme-solar .exalted-scenes ::selection {
+  background: rgba(217, 119, 6, 0.3);
+  color: var(--es-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: VOID
+   Ultra-dark cosmic theme - deep space blacks with ethereal accents
+   Perfect for cosmic horror, space, or eldritch campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-void,
+.es-theme-void .exalted-scenes {
+  /* Almost pure black with slight purple */
+  --es-bg-app: #030304;
+  --es-bg-panel: #08080c;
+  --es-bg-surface: #08080c;
+  --es-bg-interactive: #0e0e14;
+  --es-bg-hover: #14141e;
+  --es-bg-elevated: #1a1a28;
+  --es-bg-active: #222232;
+
+  /* Borders - ethereal purple */
+  --es-border-subtle: rgba(138, 100, 200, 0.08);
+  --es-border-default: rgba(138, 100, 200, 0.15);
+  --es-border-hover: rgba(138, 100, 200, 0.3);
+
+  /* Accent - ethereal purple/white */
+  --es-accent-base: #a78bfa;
+  --es-accent-hover: #c4b5fd;
+  --es-accent-dim: #8b5cf6;
+  --es-accent-subtle: rgba(167, 139, 250, 0.15);
+  --es-accent-glow: rgba(167, 139, 250, 0.5);
+
+  /* Glass - nearly opaque black */
+  --es-glass-bg: rgba(8, 8, 12, 0.95);
+  --es-glass-bg-solid: rgba(8, 8, 12, 0.99);
+
+  /* Text - ghostly whites */
+  --es-text-primary: #f0f0f8;
+  --es-text-body: #c8c8d8;
+  --es-text-secondary: #8888a8;
+  --es-text-muted: #555570;
+  --es-text-disabled: #333345;
+
+  /* Deep shadows */
+  --es-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --es-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.8);
+  --es-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
+  --es-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.95);
+  --es-shadow-xl: 0 12px 32px rgba(0, 0, 0, 1);
+
+  --es-overlay-bg: rgba(0, 0, 0, 0.85);
+}
+
+/* Void scrollbar */
+.exalted-scenes.es-theme-void ::-webkit-scrollbar-thumb,
+.es-theme-void .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(138, 100, 200, 0.2);
+}
+
+.exalted-scenes.es-theme-void ::-webkit-scrollbar-thumb:hover,
+.es-theme-void .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 100, 200, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: JADE KINGDOM
+   Asian-inspired theme - jade greens on dark lacquer
+   Perfect for wuxia, eastern fantasy, or mythological campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-jade,
+.es-theme-jade .exalted-scenes {
+  /* Dark lacquer backgrounds */
+  --es-bg-app: #0c0f0e;
+  --es-bg-panel: #121816;
+  --es-bg-surface: #121816;
+  --es-bg-interactive: #1a2320;
+  --es-bg-hover: #232e2a;
+  --es-bg-elevated: #2c3935;
+  --es-bg-active: #354440;
+
+  /* Borders - jade tinted */
+  --es-border-subtle: rgba(80, 200, 160, 0.1);
+  --es-border-default: rgba(80, 200, 160, 0.18);
+  --es-border-hover: rgba(80, 200, 160, 0.35);
+
+  /* Accent - imperial jade */
+  --es-accent-base: #00c896;
+  --es-accent-hover: #20e8b6;
+  --es-accent-dim: #00a87a;
+  --es-accent-subtle: rgba(0, 200, 150, 0.15);
+  --es-accent-glow: rgba(0, 200, 150, 0.45);
+
+  /* Glass - dark jade tint */
+  --es-glass-bg: rgba(18, 24, 22, 0.9);
+  --es-glass-bg-solid: rgba(18, 24, 22, 0.97);
+
+  /* Text - soft whites with slight warmth */
+  --es-text-primary: #f5f5f0;
+  --es-text-body: #d8d8d0;
+  --es-text-secondary: #a0a098;
+  --es-text-muted: #686860;
+  --es-text-disabled: #484840;
+
+  /* Shadows */
+  --es-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --es-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.45);
+  --es-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --es-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --es-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.7);
+}
+
+/* Jade scrollbar */
+.exalted-scenes.es-theme-jade ::-webkit-scrollbar-thumb,
+.es-theme-jade .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(0, 200, 150, 0.25);
+}
+
+.exalted-scenes.es-theme-jade ::-webkit-scrollbar-thumb:hover,
+.es-theme-jade .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 200, 150, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: NORTHERN ICE
+   Cool light theme - icy blues and crisp whites
+   Perfect for nordic, winter, or frost-themed campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-ice,
+.es-theme-ice .exalted-scenes {
+  /* Cool white/blue backgrounds */
+  --es-bg-app: #f0f5f9;
+  --es-bg-panel: #f7fafc;
+  --es-bg-surface: #f7fafc;
+  --es-bg-interactive: #e8f0f5;
+  --es-bg-hover: #dbe8f0;
+  --es-bg-elevated: #c8dce8;
+  --es-bg-active: #b0d0e0;
+
+  /* Borders - icy blue */
+  --es-border-subtle: rgba(60, 130, 180, 0.12);
+  --es-border-default: rgba(60, 130, 180, 0.22);
+  --es-border-hover: rgba(60, 130, 180, 0.4);
+
+  /* Accent - deep arctic blue */
+  --es-accent-base: #0284c7;
+  --es-accent-hover: #0ea5e9;
+  --es-accent-dim: #0369a1;
+  --es-accent-subtle: rgba(2, 132, 199, 0.12);
+  --es-accent-glow: rgba(2, 132, 199, 0.35);
+
+  /* Glass effects */
+  --es-glass-bg: rgba(247, 250, 252, 0.92);
+  --es-glass-bg-solid: rgba(247, 250, 252, 0.98);
+
+  /* Text - cool slate/blue grays */
+  --es-text-primary: #0f172a;
+  --es-text-body: #1e293b;
+  --es-text-secondary: #475569;
+  --es-text-muted: #94a3b8;
+  --es-text-disabled: #cbd5e1;
+
+  --es-text-on-accent: #ffffff;
+
+  /* Shadows - cool blue tint */
+  --es-shadow-xs: 0 1px 2px rgba(30, 60, 90, 0.08);
+  --es-shadow-sm: 0 2px 4px rgba(30, 60, 90, 0.1);
+  --es-shadow-md: 0 4px 12px rgba(30, 60, 90, 0.12);
+  --es-shadow-lg: 0 8px 24px rgba(30, 60, 90, 0.15);
+  --es-shadow-xl: 0 12px 32px rgba(30, 60, 90, 0.18);
+
+  --es-overlay-bg: rgba(15, 23, 42, 0.5);
+}
+
+/* Ice scrollbar */
+.exalted-scenes.es-theme-ice ::-webkit-scrollbar-thumb,
+.es-theme-ice .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(60, 130, 180, 0.25);
+}
+
+.exalted-scenes.es-theme-ice ::-webkit-scrollbar-thumb:hover,
+.es-theme-ice .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 130, 180, 0.4);
+}
+
+.exalted-scenes.es-theme-ice ::selection,
+.es-theme-ice .exalted-scenes ::selection {
+  background: rgba(2, 132, 199, 0.25);
+  color: var(--es-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: INFERNO
+   Intense dark theme - burning oranges on charcoal
+   Perfect for hellish, volcanic, or fire-themed campaigns
+   ═══════════════════════════════════════════════════════════════ */
+.exalted-scenes.es-theme-inferno,
+.es-theme-inferno .exalted-scenes {
+  /* Charcoal/ash backgrounds */
+  --es-bg-app: #0f0c0a;
+  --es-bg-panel: #181410;
+  --es-bg-surface: #181410;
+  --es-bg-interactive: #241c16;
+  --es-bg-hover: #30261e;
+  --es-bg-elevated: #3c3028;
+  --es-bg-active: #483a30;
+
+  /* Borders - ember glow */
+  --es-border-subtle: rgba(255, 120, 50, 0.1);
+  --es-border-default: rgba(255, 120, 50, 0.2);
+  --es-border-hover: rgba(255, 120, 50, 0.4);
+
+  /* Accent - burning orange/flame */
+  --es-accent-base: #f97316;
+  --es-accent-hover: #fb923c;
+  --es-accent-dim: #ea580c;
+  --es-accent-subtle: rgba(249, 115, 22, 0.2);
+  --es-accent-glow: rgba(249, 115, 22, 0.55);
+
+  /* Glass - smoky */
+  --es-glass-bg: rgba(24, 20, 16, 0.9);
+  --es-glass-bg-solid: rgba(24, 20, 16, 0.97);
+
+  /* Text - warm whites */
+  --es-text-primary: #fff5f0;
+  --es-text-body: #f0e0d8;
+  --es-text-secondary: #b8a090;
+  --es-text-muted: #786858;
+  --es-text-disabled: #504038;
+
+  /* Shadows with warm glow */
+  --es-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 4px rgba(249, 115, 22, 0.05);
+  --es-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 8px rgba(249, 115, 22, 0.08);
+  --es-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 16px rgba(249, 115, 22, 0.1);
+  --es-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 24px rgba(249, 115, 22, 0.12);
+  --es-shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 32px rgba(249, 115, 22, 0.15);
+}
+
+/* Inferno scrollbar */
+.exalted-scenes.es-theme-inferno ::-webkit-scrollbar-thumb,
+.es-theme-inferno .exalted-scenes ::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.3);
+}
+
+.exalted-scenes.es-theme-inferno ::-webkit-scrollbar-thumb:hover,
+.es-theme-inferno .exalted-scenes ::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.5);
+}

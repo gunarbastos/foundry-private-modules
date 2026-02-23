@@ -1,0 +1,203 @@
+<div class="es-slideshow-editor">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER - Title
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="es-slideshow-editor__header">
+    <input
+      type="text"
+      name="name"
+      value="{{data.name}}"
+      placeholder="{{localize "EXALTED-SCENES.SlideshowEditor.SlideshowName"}}"
+      class="es-slideshow-editor__title"
+      aria-label="{{localize "EXALTED-SCENES.SlideshowEditor.SlideshowName"}}"
+      required
+    >
+    <div class="es-slideshow-editor__header-meta">
+      <span class="es-slideshow-editor__badge">
+        <i class="fas fa-film"></i>
+        {{sceneCount}} scenes
+      </span>
+      <span class="es-slideshow-editor__badge">
+        <i class="fas fa-clock"></i>
+        {{totalDuration}}
+      </span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENT - Scrollable area
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="es-slideshow-editor__content">
+
+    <!-- ─── Scenes Section ─── -->
+    <section class="es-slideshow-editor__section">
+      <div class="es-slideshow-editor__section-header">
+        <i class="fas fa-layer-group"></i>
+        <span>{{localize "EXALTED-SCENES.SlideshowEditor.SceneSequence"}}</span>
+      </div>
+      <p class="es-slideshow-editor__section-desc">{{localize "EXALTED-SCENES.SlideshowEditor.SceneSequenceDesc"}}</p>
+
+      <div class="es-slideshow-editor__scenes {{#unless scenes.length}}es-slideshow-editor__scenes--empty{{/unless}}">
+        {{#if scenes.length}}
+          {{#each scenes}}
+            <div class="es-slideshow-editor__scene" data-index="{{index}}" draggable="true">
+              <div class="es-slideshow-editor__scene-drag">
+                <i class="fas fa-grip-vertical"></i>
+              </div>
+              <div class="es-slideshow-editor__scene-thumb">
+                <img src="{{thumbnail}}" alt="{{name}}">
+              </div>
+              <div class="es-slideshow-editor__scene-info">
+                <span class="es-slideshow-editor__scene-name">{{name}}</span>
+                <div class="es-slideshow-editor__scene-duration">
+                  <input
+                    type="number"
+                    name="sceneDuration"
+                    data-index="{{index}}"
+                    value="{{durationSeconds}}"
+                    min="1"
+                    max="300"
+                    step="0.5"
+                  >
+                  <span>{{localize "EXALTED-SCENES.SlideshowEditor.Sec"}}</span>
+                </div>
+              </div>
+              <div class="es-slideshow-editor__scene-actions">
+                <button type="button" data-action="move-scene-up" data-index="{{index}}" title="{{localize "EXALTED-SCENES.SlideshowEditor.MoveUp"}}" {{#if (eq index 0)}}disabled{{/if}}>
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+                <button type="button" data-action="move-scene-down" data-index="{{index}}" title="{{localize "EXALTED-SCENES.SlideshowEditor.MoveDown"}}" {{#if (eq index (subtract ../sceneCount 1))}}disabled{{/if}}>
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+                <button type="button" class="es-slideshow-editor__scene-remove" data-action="remove-scene" data-index="{{index}}" title="{{localize "EXALTED-SCENES.Common.Remove"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          {{/each}}
+        {{else}}
+          <div class="es-slideshow-editor__empty">
+            <i class="fas fa-images"></i>
+            <p>{{localize "EXALTED-SCENES.SlideshowEditor.NoScenesYet"}}</p>
+            <span>{{localize "EXALTED-SCENES.SlideshowEditor.AddScenesHint"}}</span>
+          </div>
+        {{/if}}
+      </div>
+    </section>
+
+    <!-- ─── Available Scenes Section ─── -->
+    {{#if availableScenes.length}}
+    <section class="es-slideshow-editor__section es-slideshow-editor__section--compact">
+      <div class="es-slideshow-editor__section-header">
+        <i class="fas fa-plus-circle"></i>
+        <span>{{localize "EXALTED-SCENES.SlideshowEditor.AddScenes"}}</span>
+        <span class="es-slideshow-editor__section-count">{{availableScenes.length}}</span>
+      </div>
+
+      <div class="es-slideshow-editor__available">
+        {{#each availableScenes}}
+          <div class="es-slideshow-editor__available-scene" data-scene-id="{{id}}" data-action="add-scene" title="{{localize "EXALTED-SCENES.SlideshowEditor.ClickToAdd"}}">
+            <img src="{{thumbnail}}" alt="{{name}}">
+            <span>{{name}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </section>
+    {{/if}}
+
+    <!-- ─── Settings Section ─── -->
+    <section class="es-slideshow-editor__section">
+      <div class="es-slideshow-editor__section-header">
+        <i class="fas fa-sliders-h"></i>
+        <span>{{localize "EXALTED-SCENES.SlideshowEditor.Settings"}}</span>
+      </div>
+
+      <div class="es-slideshow-editor__grid">
+        <div class="es-slideshow-editor__field">
+          <label class="es-slideshow-editor__label">{{localize "EXALTED-SCENES.SlideshowEditor.DefaultDuration"}}</label>
+          <div class="es-slideshow-editor__input-unit">
+            <input type="number" name="defaultDuration" value="{{divide data.defaultDuration 1000}}" min="1" max="300" step="0.5">
+            <span>{{localize "EXALTED-SCENES.SlideshowEditor.Sec"}}</span>
+          </div>
+        </div>
+
+        <div class="es-slideshow-editor__field">
+          <label class="es-slideshow-editor__label">{{localize "EXALTED-SCENES.SlideshowEditor.BackgroundMotion"}}</label>
+          <select name="backgroundMotion" class="es-slideshow-editor__select">
+            {{#each motionPresets}}
+              <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="es-slideshow-editor__field">
+          <label class="es-slideshow-editor__label">{{localize "EXALTED-SCENES.SlideshowEditor.TransitionType"}}</label>
+          <select name="transitionType" class="es-slideshow-editor__select">
+            {{#each transitions}}
+              <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="es-slideshow-editor__field">
+          <label class="es-slideshow-editor__label">{{localize "EXALTED-SCENES.SlideshowEditor.TransitionDuration"}}</label>
+          <div class="es-slideshow-editor__input-unit">
+            <input type="number" name="transitionDuration" value="{{data.transitionDuration}}" min="0" max="3000" step="100">
+            <span>{{localize "EXALTED-SCENES.SlideshowEditor.Ms"}}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Options Section ─── -->
+    <section class="es-slideshow-editor__section es-slideshow-editor__section--compact">
+      <div class="es-slideshow-editor__section-header">
+        <i class="fas fa-toggle-on"></i>
+        <span>{{localize "EXALTED-SCENES.SlideshowEditor.Options"}}</span>
+      </div>
+
+      <div class="es-slideshow-editor__options">
+        <label class="es-slideshow-editor__checkbox">
+          <input type="checkbox" name="loop" {{#if data.loop}}checked{{/if}}>
+          <span class="es-slideshow-editor__checkbox-mark"></span>
+          <span>{{localize "EXALTED-SCENES.SlideshowEditor.LoopSlideshow"}}</span>
+        </label>
+        <label class="es-slideshow-editor__checkbox">
+          <input type="checkbox" name="shuffle" {{#if data.shuffle}}checked{{/if}}>
+          <span class="es-slideshow-editor__checkbox-mark"></span>
+          <span>{{localize "EXALTED-SCENES.SlideshowEditor.ShuffleOrder"}}</span>
+        </label>
+        <label class="es-slideshow-editor__checkbox">
+          <input type="checkbox" name="cinematicMode" {{#if data.cinematicMode}}checked{{/if}}>
+          <span class="es-slideshow-editor__checkbox-mark"></span>
+          <span>{{localize "EXALTED-SCENES.SlideshowEditor.CinematicBars"}}</span>
+        </label>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER - Action buttons
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="es-slideshow-editor__footer">
+    <div class="es-slideshow-editor__footer-left">
+      {{#unless isNew}}
+        <button type="button" class="es-slideshow-editor__btn es-slideshow-editor__btn--ghost" data-action="play-preview">
+          <i class="fas fa-play"></i>
+          {{localize "EXALTED-SCENES.Common.Preview"}}
+        </button>
+      {{/unless}}
+    </div>
+    <div class="es-slideshow-editor__footer-right">
+      <button type="button" class="es-slideshow-editor__btn es-slideshow-editor__btn--ghost" data-action="cancel">
+        {{localize "EXALTED-SCENES.Common.Cancel"}}
+      </button>
+      <button type="button" class="es-slideshow-editor__btn es-slideshow-editor__btn--primary" data-action="save">
+        <i class="fas fa-check"></i>
+        {{#if isNew}}{{localize "EXALTED-SCENES.Common.Create"}}{{else}}{{localize "EXALTED-SCENES.Common.Save"}}{{/if}}
+      </button>
+    </div>
+  </footer>
+</div>

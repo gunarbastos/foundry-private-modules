@@ -1,0 +1,439 @@
+/* =============================================================================
+   ADVANCED TAGGING SYSTEM
+   Linear-style tag pills, filters, and list view
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   CARD TAGS (Minimal Pills)
+   ----------------------------------------------------------------------------- */
+
+.es-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--es-space-xs);
+  margin-top: var(--es-space-xs);
+}
+
+.es-tag-badge {
+  background: var(--es-bg-interactive);
+  border-radius: 100px;
+  padding: 2px 8px;
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-secondary);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.es-tag-badge:hover {
+  background: var(--es-bg-elevated);
+  color: var(--es-text-body);
+  border-color: var(--es-border-subtle);
+}
+
+.es-tag-badge:focus-visible {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+/* Tag variants */
+.es-tag-badge--accent {
+  background: var(--es-accent-subtle);
+  color: var(--es-accent-hover);
+}
+
+.es-tag-badge--accent:hover {
+  background: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+/* -----------------------------------------------------------------------------
+   FILTER BAR
+   ----------------------------------------------------------------------------- */
+
+.es-filter-bar {
+  padding: var(--es-space-sm) var(--es-space-lg);
+  background: var(--es-bg-panel);
+  border-bottom: 1px solid var(--es-border-subtle);
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.es-filter-label {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-right: var(--es-space-xs);
+}
+
+.es-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--es-space-xs) var(--es-space-md);
+  border-radius: 100px;
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  border: 1px solid transparent;
+}
+
+.es-filter-chip i {
+  font-size: 0.65rem;
+}
+
+.es-filter-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+/* Include Chip (Success/Green) */
+.es-filter-chip--include {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--es-success);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.es-filter-chip--include:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+/* Exclude Chip (Error/Red) */
+.es-filter-chip--exclude {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--es-error);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.es-filter-chip--exclude:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Neutral Chip */
+.es-filter-chip--neutral {
+  background: var(--es-bg-interactive);
+  color: var(--es-text-secondary);
+  border-color: var(--es-border-subtle);
+}
+
+.es-filter-chip--neutral:hover {
+  background: var(--es-bg-elevated);
+  color: var(--es-text-body);
+  border-color: var(--es-border-hover);
+}
+
+/* Remove button on chips */
+.es-filter-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  margin-left: 2px;
+  padding: 0;
+}
+
+.es-filter-chip-remove:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* -----------------------------------------------------------------------------
+   PLAYER VIEW INTERACTION (Tag-related)
+   ----------------------------------------------------------------------------- */
+
+.es-pv-character {
+  cursor: pointer;
+}
+
+.es-pv-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity var(--es-duration-normal) ease;
+  color: var(--es-text-primary);
+  font-size: 2rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.es-pv-character:hover .es-pv-hint {
+  opacity: 0.6;
+}
+
+.es-pv-character:hover .es-pv-portrait {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 20px var(--es-accent-glow);
+}
+
+/* -----------------------------------------------------------------------------
+   SCENE PREVIEW (Editor)
+   ----------------------------------------------------------------------------- */
+
+.es-scene-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--es-bg-app);
+  border-radius: var(--es-radius-md);
+  overflow: hidden;
+  margin-bottom: var(--es-space-lg);
+  border: 1px solid var(--es-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.es-scene-preview img,
+.es-scene-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.es-scene-preview--empty {
+  color: var(--es-text-muted);
+  font-size: var(--es-font-size-sm);
+}
+
+.es-scene-preview--empty i {
+  font-size: 2rem;
+  margin-bottom: var(--es-space-sm);
+  opacity: 0.5;
+}
+
+/* -----------------------------------------------------------------------------
+   LIST VIEW MODE
+   ----------------------------------------------------------------------------- */
+
+.es-grid--list-view {
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: var(--es-space-sm);
+}
+
+.es-grid--list-view .es-card {
+  display: flex;
+  flex-direction: row;
+  height: 48px;
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--es-radius-md);
+  padding: var(--es-space-xs);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-grid--list-view .es-card:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-subtle);
+  transform: none;
+}
+
+.es-grid--list-view .es-card:focus-within {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-grid--list-view .es-card--selected {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+}
+
+.es-grid--list-view .es-card-thumbnail {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--es-radius-sm);
+  margin-right: var(--es-space-md);
+  aspect-ratio: auto;
+  border: 1px solid var(--es-border-subtle);
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+/* Character thumbnails in list view - larger and circular for better recognition */
+.es-grid--list-view .es-card[data-type="character"] .es-card-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+/* Ensure image covers the circular area, favor face/head */
+.es-grid--list-view .es-card[data-type="character"] .es-card-thumbnail img {
+  object-fit: cover;
+  object-position: center top;
+}
+
+.es-grid--list-view .es-card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  min-width: 0;
+}
+
+.es-grid--list-view .es-card-title {
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  color: var(--es-text-body);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.es-grid--list-view .es-card:hover .es-card-title {
+  color: var(--es-text-primary);
+}
+
+.es-grid--list-view .es-card-folder {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  margin-right: var(--es-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-xs);
+  flex-shrink: 0;
+}
+
+.es-grid--list-view .es-card-tags {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.es-grid--list-view .es-card-overlay {
+  background: transparent;
+  position: static;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) ease-out;
+}
+
+.es-grid--list-view .es-card:hover .es-card-overlay {
+  opacity: 1;
+}
+
+.es-grid--list-view .es-action-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+}
+
+/* List view metadata */
+.es-grid--list-view .es-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-md);
+  margin-right: var(--es-space-sm);
+  color: var(--es-text-muted);
+  font-size: var(--es-font-size-xs);
+}
+
+/* -----------------------------------------------------------------------------
+   TAG INPUT (Inline editing)
+   ----------------------------------------------------------------------------- */
+
+.es-tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--es-space-xs);
+  padding: var(--es-space-xs);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  min-height: 32px;
+  align-items: center;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-tag-input:focus-within {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-tag-input input {
+  flex: 1;
+  min-width: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--es-text-body);
+  font-size: var(--es-font-size-sm);
+  padding: 2px 4px;
+}
+
+.es-tag-input input::placeholder {
+  color: var(--es-text-muted);
+}
+
+.es-tag-input .es-tag-badge {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
+/* Tag with remove button */
+.es-tag-input .es-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.es-tag-input .es-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.6rem;
+}
+
+.es-tag-input .es-tag-remove:hover {
+  opacity: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   REDUCED MOTION
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-tag-badge,
+  .es-filter-chip,
+  .es-pv-hint,
+  .es-pv-character .es-pv-portrait,
+  .es-grid--list-view .es-card,
+  .es-tag-input {
+    transition: none;
+  }
+}

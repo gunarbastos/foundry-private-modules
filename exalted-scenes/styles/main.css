@@ -1,0 +1,42 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXALTED SCENES V4.0 - MAIN STYLES
+   Modular CSS - imports organized by category
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Base ─── */
+@import 'base/reset.css';
+@import 'base/layout.css';
+
+/* ─── Utilities ─── */
+@import 'utilities/animations.css';
+@import 'utilities/drag-drop.css';
+@import 'utilities/ui-helpers.css';
+@import 'utilities/borders-presets.css';
+
+/* ─── Components ─── */
+@import 'components/sidebar-nav.css';
+@import 'components/cards.css';
+@import 'components/buttons.css';
+@import 'components/inspector.css';
+@import 'components/cast-strip.css';
+@import 'components/emotion-picker.css';
+
+/* ─── Features ─── */
+@import 'features/player-view.css';
+@import 'features/smart-creator.css';
+@import 'features/character-editor.css';
+@import 'features/permission-editor.css';
+@import 'features/slideshow.css';
+@import 'features/slideshow-editor.css';
+@import 'features/sequence-panel.css';
+@import 'features/cast-only-mode.css';
+@import 'features/tagging-system.css';
+@import 'features/folder-browser.css';
+@import 'features/player-panel.css';
+@import 'features/favorites.css';
+@import 'features/floating-cast.css';
+@import 'features/scene-editor.css';
+@import 'features/music-request.css';
+
+/* ─── Theme Presets ─── */
+@import 'themes.css';

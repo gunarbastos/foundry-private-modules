@@ -1,0 +1,461 @@
+/* ═══════════════════════════════════════════════════════════════
+   INSPECTOR
+   Scene/character preview panel - Linear Style
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────
+   Panel Container
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector {
+  background: var(--es-bg-panel);
+  border-left: 1px solid var(--es-border-subtle);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  min-width: 280px;
+  max-width: 360px;
+}
+
+/* Collapsible state */
+.es-inspector.is-collapsed {
+  min-width: 0;
+  width: 0;
+  border-left: none;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Header
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-header {
+  padding: var(--es-space-md) var(--es-space-lg);
+  border-bottom: 1px solid var(--es-border-subtle);
+  background: var(--es-bg-panel);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.es-inspector-title {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  color: var(--es-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  margin: 0;
+}
+
+.es-inspector-title i,
+.es-inspector-title svg {
+  color: var(--es-text-secondary);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.es-inspector-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-xs);
+}
+
+.es-inspector-actions button {
+  background: transparent;
+  border: none;
+  color: var(--es-text-muted);
+  padding: var(--es-space-xs);
+  border-radius: var(--es-radius-sm);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.es-inspector-actions button:hover {
+  color: var(--es-text-primary);
+  background: var(--es-bg-interactive);
+}
+
+.es-inspector-actions button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--es-accent-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Preview Area
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-preview {
+  flex: 1;
+  background: var(--es-bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  min-height: 200px;
+}
+
+/* Checkerboard pattern for transparent images */
+.es-inspector-preview.show-transparency {
+  background-image:
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+    linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-color: #252525;
+}
+
+.es-inspector-preview img,
+.es-inspector-preview video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity var(--es-duration-fast) ease;
+}
+
+/* Preview overlay info */
+.es-inspector-preview-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--es-space-md);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) ease;
+}
+
+.es-inspector-preview:hover .es-inspector-preview-overlay {
+  opacity: 1;
+}
+
+.es-inspector-preview-name {
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  color: var(--es-text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.es-inspector-preview-dimensions {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  font-family: var(--es-font-sans);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Content / Property List
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--es-space-md);
+}
+
+/* Custom scrollbar */
+.es-inspector-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.es-inspector-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-inspector-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.es-inspector-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Section */
+.es-inspector-section {
+  margin-bottom: var(--es-space-lg);
+}
+
+.es-inspector-section:last-child {
+  margin-bottom: 0;
+}
+
+.es-inspector-section-title {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  color: var(--es-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--es-space-sm);
+  padding-bottom: var(--es-space-xs);
+  border-bottom: 1px solid var(--es-border-subtle);
+}
+
+/* Property rows */
+.es-inspector-properties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-sm);
+}
+
+.es-inspector-property {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--es-space-md);
+  padding: var(--es-space-xs) 0;
+}
+
+.es-inspector-property-label {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-secondary);
+  flex-shrink: 0;
+}
+
+.es-inspector-property-value {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-body);
+  text-align: right;
+  word-break: break-word;
+}
+
+/* Clickable property value */
+.es-inspector-property-value.is-link {
+  color: var(--es-accent-base);
+  cursor: pointer;
+  transition: color var(--es-duration-fast) ease;
+}
+
+.es-inspector-property-value.is-link:hover {
+  color: var(--es-accent-hover);
+  text-decoration: underline;
+}
+
+/* Property with badge */
+.es-inspector-property-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-xs);
+  padding: 2px var(--es-space-sm);
+  background: var(--es-bg-interactive);
+  border-radius: var(--es-radius-sm);
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-body);
+}
+
+.es-inspector-property-badge.is-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--es-success);
+}
+
+.es-inspector-property-badge.is-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--es-warning);
+}
+
+.es-inspector-property-badge.is-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--es-error);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Tags List
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--es-space-xs);
+  margin-top: var(--es-space-xs);
+}
+
+.es-inspector-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--es-space-sm);
+  background: var(--es-accent-subtle);
+  border-radius: var(--es-radius-sm);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-xs);
+  color: var(--es-accent-base);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Controls / Footer
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-controls {
+  padding: var(--es-space-md);
+  background: var(--es-bg-panel);
+  border-top: 1px solid var(--es-border-subtle);
+  display: flex;
+  justify-content: center;
+  gap: var(--es-space-sm);
+  flex-shrink: 0;
+}
+
+/* Full width button in controls */
+.es-inspector-controls .es-btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Controls with multiple rows */
+.es-inspector-controls.is-stacked {
+  flex-direction: column;
+}
+
+.es-inspector-controls.is-stacked .es-btn {
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Empty State
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--es-space-xl);
+  text-align: center;
+}
+
+.es-inspector-empty-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--es-text-disabled);
+  margin-bottom: var(--es-space-md);
+  opacity: 0.5;
+}
+
+.es-inspector-empty-text {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+  max-width: 200px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Loading State (Skeleton)
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector.is-loading .es-inspector-preview {
+  background: var(--es-bg-interactive);
+}
+
+.es-inspector-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-sm);
+  padding: var(--es-space-md);
+}
+
+.es-inspector-skeleton-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--es-space-md);
+}
+
+.es-inspector-skeleton-label,
+.es-inspector-skeleton-value {
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: es-shimmer 1.5s infinite;
+  border-radius: var(--es-radius-sm);
+}
+
+.es-inspector-skeleton-label {
+  width: 80px;
+}
+
+.es-inspector-skeleton-value {
+  width: 100px;
+}
+
+.es-inspector-skeleton-preview {
+  height: 160px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: es-shimmer 1.5s infinite;
+  border-radius: var(--es-radius-md);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Resizable Handle
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background var(--es-duration-fast) ease;
+}
+
+.es-inspector-resize-handle:hover,
+.es-inspector-resize-handle.is-dragging {
+  background: var(--es-accent-base);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Compact Variant
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector.is-compact .es-inspector-header {
+  padding: var(--es-space-sm) var(--es-space-md);
+}
+
+.es-inspector.is-compact .es-inspector-content {
+  padding: var(--es-space-sm);
+}
+
+.es-inspector.is-compact .es-inspector-controls {
+  padding: var(--es-space-sm);
+}
+
+.es-inspector.is-compact .es-inspector-property {
+  padding: 2px 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Transitions
+   ───────────────────────────────────────────────────────────────── */
+
+.es-inspector {
+  transition:
+    width var(--es-duration-normal) var(--es-ease-out),
+    min-width var(--es-duration-normal) var(--es-ease-out),
+    border-color var(--es-duration-fast) ease;
+}

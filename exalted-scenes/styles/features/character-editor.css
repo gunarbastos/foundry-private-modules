@@ -1,0 +1,878 @@
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER EDITOR - Complete Redesign
+   Clean, spacious, modern editor following Scene Editor philosophy
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────
+   Main Container
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--es-bg-app);
+  border-radius: var(--es-radius-lg);
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Header - Avatar + Name
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__header {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-5);
+  padding: var(--es-space-5);
+  background: var(--es-bg-panel);
+  border-bottom: 1px solid var(--es-border-subtle);
+}
+
+/* Avatar */
+.es-char-editor__avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.es-char-editor__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--es-border-default);
+  background: var(--es-bg-interactive);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__avatar-wrapper:hover .es-char-editor__avatar {
+  border-color: var(--es-accent-base);
+}
+
+.es-char-editor__avatar-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__avatar-wrapper:hover .es-char-editor__avatar-overlay {
+  opacity: 1;
+}
+
+.es-char-editor__avatar-overlay i {
+  color: var(--es-text-primary);
+  font-size: 20px;
+}
+
+/* Name Input */
+.es-char-editor__name {
+  flex: 1;
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-xl);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--es-space-2) 0;
+  transition: border-color var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__name::placeholder {
+  color: var(--es-text-muted);
+}
+
+.es-char-editor__name:hover {
+  border-bottom-color: var(--es-border-default);
+}
+
+.es-char-editor__name:focus {
+  outline: none;
+  border-bottom-color: var(--es-accent-base);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Tabs
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__tabs {
+  display: flex;
+  background: var(--es-bg-panel);
+  border-bottom: 1px solid var(--es-border-subtle);
+  padding: 0 var(--es-space-4);
+}
+
+.es-char-editor__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  padding: var(--es-space-4) var(--es-space-5);
+  background: transparent;
+  border: none;
+  color: var(--es-text-secondary);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: var(--es-space-4);
+  right: var(--es-space-4);
+  height: 2px;
+  background: transparent;
+  border-radius: 1px;
+  transition: background var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__tab:hover {
+  color: var(--es-text-body);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.es-char-editor__tab--active {
+  color: var(--es-text-primary);
+}
+
+.es-char-editor__tab--active::after {
+  background: var(--es-accent-base);
+}
+
+.es-char-editor__tab i {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Content Area
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--es-space-5);
+}
+
+.es-char-editor__content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.es-char-editor__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-char-editor__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.es-char-editor__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Tab Panels */
+.es-char-editor__panel {
+  display: none;
+  flex-direction: column;
+  gap: var(--es-space-5);
+  animation: es-char-fade-in var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__panel--active {
+  display: flex;
+}
+
+@keyframes es-char-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Sections
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__section {
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-xl);
+  padding: var(--es-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-4);
+}
+
+.es-char-editor__section--danger {
+  border-color: var(--es-error-subtle);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.es-char-editor__section--add {
+  background: var(--es-bg-interactive);
+}
+
+/* Section Header */
+.es-char-editor__section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-3);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-md);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-primary);
+}
+
+.es-char-editor__section-header i {
+  color: var(--es-accent-base);
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.es-char-editor__section--danger .es-char-editor__section-header i {
+  color: var(--es-error);
+}
+
+.es-char-editor__section-count {
+  margin-left: auto;
+  font-size: var(--es-font-size-xs);
+  font-weight: var(--es-font-regular);
+  color: var(--es-text-muted);
+  background: var(--es-bg-interactive);
+  padding: 2px 8px;
+  border-radius: var(--es-radius-full);
+}
+
+.es-char-editor__section-desc {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+  margin: 0;
+  margin-top: calc(var(--es-space-2) * -1);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Tags
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-3);
+}
+
+.es-char-editor__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--es-space-2);
+  min-height: 32px;
+}
+
+.es-char-editor__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  padding: var(--es-space-1) var(--es-space-3);
+  background: var(--es-accent-subtle);
+  border: 1px solid var(--es-accent-dim);
+  border-radius: var(--es-radius-full);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-accent-hover);
+}
+
+.es-char-editor__tag button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--es-accent-dim);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__tag button:hover {
+  background: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+.es-char-editor__tag-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__tag-input:focus {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: var(--es-shadow-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Form Controls
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__select {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  padding-right: 36px;
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__select:hover {
+  border-color: var(--es-border-hover);
+}
+
+.es-char-editor__select:focus {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: var(--es-shadow-glow);
+}
+
+.es-char-editor__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__input:focus {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: var(--es-shadow-glow);
+}
+
+.es-char-editor__label {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-secondary);
+  margin-bottom: var(--es-space-2);
+}
+
+.es-char-editor__label i {
+  color: var(--es-text-muted);
+  font-size: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Linked Actor
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__linked-actor {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-3);
+  padding: var(--es-space-3) var(--es-space-4);
+  background: var(--es-accent-subtle);
+  border: 1px solid var(--es-accent-base);
+  border-radius: var(--es-radius-md);
+}
+
+.es-char-editor__linked-actor img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--es-radius-md);
+  object-fit: cover;
+  border: 1px solid var(--es-border-default);
+  background: var(--es-bg-panel);
+}
+
+.es-char-editor__linked-actor-name {
+  flex: 1;
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.es-char-editor__linked-actor-remove {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--es-text-secondary);
+  cursor: pointer;
+  border-radius: var(--es-radius-sm);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__linked-actor-remove:hover {
+  background: var(--es-error-subtle);
+  color: var(--es-error);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Lock Button
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__lock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-secondary);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__lock-btn:hover {
+  background: var(--es-bg-elevated);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-body);
+}
+
+.es-char-editor__lock-btn--active {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-base);
+}
+
+.es-char-editor__lock-btn--active:hover {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-hover);
+}
+
+.es-char-editor__lock-btn i {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Permissions Button
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__permissions-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-secondary);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__permissions-btn:hover {
+  background: var(--es-bg-elevated);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-body);
+}
+
+.es-char-editor__permissions-btn i {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Delete Button
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: transparent;
+  border: 1px solid var(--es-error);
+  border-radius: var(--es-radius-md);
+  color: var(--es-error);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__delete-btn:hover {
+  background: var(--es-error);
+  color: var(--es-text-on-error);
+}
+
+.es-char-editor__delete-btn i {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Emotions List
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__emotions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-3);
+}
+
+.es-char-editor__emotion {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-4);
+  padding: var(--es-space-3) var(--es-space-4);
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-lg);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__emotion:hover {
+  border-color: var(--es-border-hover);
+  background: var(--es-bg-elevated);
+}
+
+.es-char-editor__emotion-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--es-radius-md);
+  object-fit: cover;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-subtle);
+  flex-shrink: 0;
+}
+
+.es-char-editor__emotion-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-1);
+  min-width: 0;
+}
+
+.es-char-editor__emotion-name {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--es-text-primary);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  font-weight: var(--es-font-medium);
+  padding: var(--es-space-1) 0;
+  width: 100%;
+  transition: border-color var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__emotion-name:hover {
+  border-bottom-color: var(--es-border-subtle);
+}
+
+.es-char-editor__emotion-name:focus {
+  border-bottom-color: var(--es-accent-base);
+  outline: none;
+}
+
+.es-char-editor__emotion-path {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.es-char-editor__emotion-delete {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-muted);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  flex-shrink: 0;
+}
+
+.es-char-editor__emotion-delete:hover {
+  background: var(--es-error-subtle);
+  border-color: var(--es-error);
+  color: var(--es-error);
+}
+
+/* Emotions Empty State */
+.es-char-editor__emotions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--es-space-3);
+  padding: var(--es-space-8);
+  text-align: center;
+}
+
+.es-char-editor__emotions-empty i {
+  font-size: 40px;
+  color: var(--es-text-muted);
+  opacity: 0.5;
+}
+
+.es-char-editor__emotions-empty p {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-secondary);
+  margin: 0;
+}
+
+.es-char-editor__emotions-empty span {
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Add Emotion Form
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__add-emotion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-4);
+}
+
+.es-char-editor__add-emotion-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.es-char-editor__add-emotion-field--flex {
+  flex: 1;
+}
+
+.es-char-editor__add-emotion-row {
+  display: flex;
+  gap: var(--es-space-3);
+  align-items: flex-end;
+}
+
+/* File Input */
+.es-char-editor__file-input {
+  display: flex;
+  gap: var(--es-space-2);
+}
+
+.es-char-editor__file-input input {
+  flex: 1;
+  height: 40px;
+  padding: 0 var(--es-space-4);
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__file-input input:focus {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: var(--es-shadow-glow);
+}
+
+.es-char-editor__file-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-secondary);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  flex-shrink: 0;
+}
+
+.es-char-editor__file-btn:hover {
+  background: var(--es-accent-base);
+  border-color: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+/* Add Button */
+.es-char-editor__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--es-space-2);
+  height: 40px;
+  padding: 0 var(--es-space-5);
+  background: var(--es-accent-base);
+  border: 1px solid var(--es-accent-base);
+  border-radius: var(--es-radius-md);
+  color: var(--es-text-on-accent);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__add-btn:hover {
+  background: var(--es-accent-hover);
+  border-color: var(--es-accent-hover);
+}
+
+.es-char-editor__add-btn i {
+  font-size: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Footer
+   ───────────────────────────────────────────────────────────────── */
+
+.es-char-editor__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--es-space-3);
+  padding: var(--es-space-4) var(--es-space-5);
+  background: var(--es-bg-panel);
+  border-top: 1px solid var(--es-border-subtle);
+}
+
+.es-char-editor__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--es-space-2);
+  height: 40px;
+  padding: 0 var(--es-space-5);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  border-radius: var(--es-radius-md);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-char-editor__btn--ghost {
+  background: transparent;
+  border: 1px solid var(--es-border-default);
+  color: var(--es-text-secondary);
+}
+
+.es-char-editor__btn--ghost:hover {
+  background: var(--es-bg-interactive);
+  color: var(--es-text-body);
+}
+
+.es-char-editor__btn--primary {
+  background: var(--es-accent-base);
+  border: 1px solid var(--es-accent-base);
+  color: var(--es-text-on-accent);
+}
+
+.es-char-editor__btn--primary:hover {
+  background: var(--es-accent-hover);
+  border-color: var(--es-accent-hover);
+}
+
+.es-char-editor__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--es-shadow-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Legacy Support - Keep old classes working
+   ───────────────────────────────────────────────────────────────── */
+
+/* These ensure the old CharacterEditor.js event bindings still work */
+.es-char-editor .es-tag-input {
+  /* Alias for tag input */
+}
+
+.es-char-editor .es-tag-chip {
+  /* Tag chips in old format - redirect to new */
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Reduced Motion
+   ───────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-char-editor__panel,
+  .es-char-editor__avatar,
+  .es-char-editor__avatar-overlay,
+  .es-char-editor__emotion,
+  .es-char-editor__tab,
+  .es-char-editor__btn {
+    transition: none;
+  }
+
+  @keyframes es-char-fade-in {
+    from, to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

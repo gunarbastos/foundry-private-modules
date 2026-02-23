@@ -1,0 +1,387 @@
+/* =============================================================================
+   CAST-ONLY MODE
+   Linear-style cast display without scene background
+   For battlemap/dungeon exploration
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   PLAYER VIEW - CAST-ONLY MODE
+   ----------------------------------------------------------------------------- */
+
+.es-player-view--cast-only {
+  background: transparent !important;
+  pointer-events: none;
+}
+
+.es-player-view--cast-only .es-pv-cast,
+.es-player-view--cast-only .es-emotion-picker,
+.es-player-view--cast-only .es-border-picker,
+.es-player-view--cast-only .es-picker-preview {
+  pointer-events: auto;
+}
+
+/* -----------------------------------------------------------------------------
+   GM PANEL - CAST-ONLY CONTROLS
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-controls-panel {
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-lg);
+  padding: var(--es-space-md);
+  margin-bottom: var(--es-space-md);
+}
+
+.es-cast-only-status {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  color: var(--es-text-secondary);
+  font-size: var(--es-font-size-sm);
+  margin-bottom: var(--es-space-md);
+}
+
+.es-cast-only-status i {
+  color: var(--es-accent-base);
+}
+
+.es-cast-only-status--active {
+  color: var(--es-success);
+}
+
+.es-cast-only-status--active i {
+  color: var(--es-success);
+}
+
+/* -----------------------------------------------------------------------------
+   CHARACTER SELECTOR
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-sm);
+}
+
+.es-cast-only-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: var(--es-space-sm);
+  background: var(--es-bg-app);
+  border-radius: var(--es-radius-md);
+  border: 1px solid var(--es-border-subtle);
+}
+
+/* Custom scrollbar */
+.es-cast-only-chars::-webkit-scrollbar {
+  width: 6px;
+}
+
+.es-cast-only-chars::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-cast-only-chars::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.es-cast-only-chars::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Character item */
+.es-cast-only-char {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--es-radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all var(--es-duration-fast) ease-out;
+  opacity: 0.6;
+}
+
+.es-cast-only-char:hover {
+  opacity: 1;
+  border-color: var(--es-border-hover);
+  transform: scale(1.05);
+}
+
+.es-cast-only-char:focus-visible {
+  outline: none;
+  opacity: 1;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-cast-only-char--selected {
+  opacity: 1;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 8px var(--es-accent-glow);
+}
+
+.es-cast-only-char img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Selection check overlay */
+.es-cast-only-check {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--es-accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) ease-out;
+}
+
+.es-cast-only-char--selected .es-cast-only-check {
+  opacity: 1;
+}
+
+.es-cast-only-check i {
+  color: var(--es-text-primary);
+  font-size: 0.9rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Empty state */
+.es-cast-only-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--es-space-lg);
+  color: var(--es-text-muted);
+  font-size: var(--es-font-size-sm);
+  font-style: italic;
+}
+
+/* Start button */
+.es-cast-only-start {
+  width: 100%;
+}
+
+.es-cast-only-start--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------------------------
+   LIVE BADGE (Small variant)
+   ----------------------------------------------------------------------------- */
+
+.es-live-badge--small {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  margin-left: var(--es-space-xs);
+  background: var(--es-error);
+  color: var(--es-text-primary);
+  border-radius: var(--es-radius-sm);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* -----------------------------------------------------------------------------
+   LAYOUT CONTROLS
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-xs);
+  margin-top: var(--es-space-md);
+  padding-top: var(--es-space-md);
+  border-top: 1px solid var(--es-border-subtle);
+}
+
+.es-cast-only-layout-label {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-bottom: var(--es-space-xs);
+}
+
+.es-cast-only-layout-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.es-cast-only-layout-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--es-bg-app);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-sm);
+  color: var(--es-text-muted);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  font-size: var(--es-font-size-xs);
+}
+
+.es-cast-only-layout-btn:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-body);
+}
+
+.es-cast-only-layout-btn:focus-visible {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-cast-only-layout-btn--active {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-hover);
+}
+
+.es-cast-only-layout-btn i {
+  font-size: 0.75rem;
+}
+
+/* Layout button tooltips */
+.es-cast-only-layout-btn[title] {
+  position: relative;
+}
+
+/* -----------------------------------------------------------------------------
+   POSITION CONTROLS
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-position {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-xs);
+  margin-top: var(--es-space-sm);
+}
+
+.es-cast-only-position-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100px;
+}
+
+.es-cast-only-position-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--es-bg-app);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-sm);
+  color: var(--es-text-muted);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+  font-size: 0.65rem;
+}
+
+.es-cast-only-position-btn:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-body);
+}
+
+.es-cast-only-position-btn:focus-visible {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-cast-only-position-btn--active {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-hover);
+}
+
+/* -----------------------------------------------------------------------------
+   SIZE SLIDER
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-size {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-xs);
+  margin-top: var(--es-space-sm);
+}
+
+.es-cast-only-size-row {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+}
+
+.es-cast-only-size input[type="range"] {
+  flex: 1;
+  height: 4px;
+  background: var(--es-bg-elevated);
+  border-radius: 2px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.es-cast-only-size input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--es-accent-base);
+  border: none;
+  cursor: pointer;
+  transition: transform var(--es-duration-fast) ease-out;
+}
+
+.es-cast-only-size input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.es-cast-only-size input[type="range"]:focus-visible {
+  outline: none;
+}
+
+.es-cast-only-size input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-cast-only-size-value {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* -----------------------------------------------------------------------------
+   REDUCED MOTION
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-cast-only-char,
+  .es-cast-only-check,
+  .es-cast-only-layout-btn,
+  .es-cast-only-position-btn,
+  .es-cast-only-size input[type="range"]::-webkit-slider-thumb {
+    transition: none;
+  }
+}

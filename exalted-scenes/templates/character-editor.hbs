@@ -1,0 +1,306 @@
+<div class="es-char-editor">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER - Avatar + Name
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="es-char-editor__header">
+    <div class="es-char-editor__avatar-wrapper" data-action="change-avatar" title="{{localize "EXALTED-SCENES.CharEditor.ClickToChangeAvatar"}}">
+      <img src="{{character.image}}" class="es-char-editor__avatar" alt="Character avatar">
+      <div class="es-char-editor__avatar-overlay">
+        <i class="fas fa-camera"></i>
+      </div>
+    </div>
+    <input
+      type="text"
+      name="name"
+      value="{{character.name}}"
+      placeholder="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
+      class="es-char-editor__name"
+      aria-label="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
+    >
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TABS
+       ═══════════════════════════════════════════════════════════════ -->
+  <nav class="es-char-editor__tabs">
+    <button
+      type="button"
+      class="es-char-editor__tab {{#if (eq activeTab 'identity')}}es-char-editor__tab--active{{/if}}"
+      data-tab="identity"
+      data-action="tab-switch"
+    >
+      <i class="fas fa-id-card"></i>
+      <span>{{localize "EXALTED-SCENES.CharEditor.Identity"}}</span>
+    </button>
+    <button
+      type="button"
+      class="es-char-editor__tab {{#if (eq activeTab 'emotions')}}es-char-editor__tab--active{{/if}}"
+      data-tab="emotions"
+      data-action="tab-switch"
+    >
+      <i class="fas fa-theater-masks"></i>
+      <span>{{localize "EXALTED-SCENES.CharEditor.Emotions"}}</span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENT
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="es-char-editor__content">
+
+    <!-- ─────────────────────────────────────────────────────────────
+         IDENTITY TAB
+         ───────────────────────────────────────────────────────────── -->
+    <div class="es-char-editor__panel {{#if (eq activeTab 'identity')}}es-char-editor__panel--active{{/if}}" data-tab="identity">
+
+      <!-- Tags Section -->
+      <section class="es-char-editor__section">
+        <div class="es-char-editor__section-header">
+          <i class="fas fa-tags"></i>
+          <span>{{localize "EXALTED-SCENES.CharEditor.Tags"}}</span>
+        </div>
+        <div class="es-char-editor__tags">
+          <div class="es-char-editor__tag-list">
+            {{#each character.tags}}
+              <span class="es-char-editor__tag">
+                {{this}}
+                <button type="button" data-action="remove-tag" data-tag="{{this}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </span>
+            {{/each}}
+          </div>
+          <input
+            type="text"
+            class="es-char-editor__tag-input"
+            placeholder="{{localize "EXALTED-SCENES.CharEditor.TagPlaceholder"}}"
+            data-action="tag-input"
+          >
+        </div>
+      </section>
+
+      {{#if isGM}}
+        <!-- Actor Link Section -->
+        <section class="es-char-editor__section">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-link"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.LinkedActor"}}</span>
+          </div>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.LinkedActorDesc"}}</p>
+
+          {{#if linkedActor}}
+            <div class="es-char-editor__linked-actor">
+              <img src="{{linkedActor.img}}" alt="{{linkedActor.name}}">
+              <span class="es-char-editor__linked-actor-name">{{linkedActor.name}}</span>
+              <button type="button" class="es-char-editor__linked-actor-remove" data-action="clear-actor-link" title="{{localize "EXALTED-SCENES.CharEditor.RemoveLink"}}">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          {{else}}
+            <select name="actorId" class="es-char-editor__select">
+              <option value="">{{localize "EXALTED-SCENES.CharEditor.NoActorLinked"}}</option>
+              {{#each availableActors}}
+                <option value="{{id}}">{{name}}</option>
+              {{/each}}
+            </select>
+          {{/if}}
+        </section>
+
+        <!-- Emotion Lock Section -->
+        <section class="es-char-editor__section">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-lock"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.EmotionLock"}}</span>
+          </div>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.EmotionLockDesc"}}</p>
+
+          <button
+            type="button"
+            class="es-char-editor__lock-btn {{#if locked}}es-char-editor__lock-btn--active{{/if}}"
+            data-action="toggle-lock"
+          >
+            <i class="fas {{#if locked}}fa-lock{{else}}fa-lock-open{{/if}}"></i>
+            <span>{{#if locked}}{{localize "EXALTED-SCENES.CharEditor.Locked"}}{{else}}{{localize "EXALTED-SCENES.CharEditor.Unlocked"}}{{/if}}</span>
+          </button>
+        </section>
+
+        <!-- Permissions Section -->
+        <section class="es-char-editor__section">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-user-shield"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.PlayerPermissions"}}</span>
+          </div>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.PlayerPermissionsDesc"}}</p>
+
+          <button type="button" class="es-char-editor__permissions-btn" data-action="open-permissions">
+            <i class="fas fa-users-cog"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.ManagePermissions"}}</span>
+          </button>
+        </section>
+
+        <!-- Music Request Playlist Section -->
+        <section class="es-char-editor__section">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-music"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.MusicRequests"}}</span>
+          </div>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.MusicRequestsDesc"}}</p>
+
+          {{#if linkedPlaylist}}
+            <div class="es-char-editor__linked-playlist">
+              <div class="es-char-editor__linked-playlist-icon">
+                <i class="fas fa-compact-disc"></i>
+              </div>
+              <div class="es-char-editor__linked-playlist-info">
+                <span class="es-char-editor__linked-playlist-name">{{linkedPlaylist.name}}</span>
+                <span class="es-char-editor__linked-playlist-count">{{linkedPlaylist.trackCount}} tracks</span>
+              </div>
+              <button type="button" class="es-char-editor__linked-playlist-remove" data-action="clear-music-playlist" title="{{localize "EXALTED-SCENES.CharEditor.RemovePlaylist"}}">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          {{else}}
+            {{#if availablePlaylists.length}}
+              <select name="musicPlaylistId" class="es-char-editor__select">
+                <option value="">{{localize "EXALTED-SCENES.CharEditor.NoPlaylistAssigned"}}</option>
+                {{#each availablePlaylists}}
+                  <option value="{{id}}">{{name}} ({{trackCount}} tracks)</option>
+                {{/each}}
+              </select>
+            {{else}}
+              <div class="es-char-editor__no-playlists">
+                <i class="fas fa-info-circle"></i>
+                <span>{{localize "EXALTED-SCENES.CharEditor.NoPlaylistsAvailable"}}</span>
+              </div>
+            {{/if}}
+          {{/if}}
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="es-char-editor__section es-char-editor__section--danger">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.DangerZone"}}</span>
+          </div>
+          <button type="button" class="es-char-editor__delete-btn" data-action="delete-character">
+            <i class="fas fa-trash"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.DeleteCharacter"}}</span>
+          </button>
+        </section>
+      {{/if}}
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         EMOTIONS TAB
+         ───────────────────────────────────────────────────────────── -->
+    <div class="es-char-editor__panel {{#if (eq activeTab 'emotions')}}es-char-editor__panel--active{{/if}}" data-tab="emotions">
+
+      <!-- Emotions List -->
+      <section class="es-char-editor__section">
+        <div class="es-char-editor__section-header">
+          <i class="fas fa-images"></i>
+          <span>{{localize "EXALTED-SCENES.CharEditor.EmotionPortraits"}}</span>
+          <span class="es-char-editor__section-count">{{emotions.length}}</span>
+        </div>
+
+        {{#if emotions.length}}
+          <div class="es-char-editor__emotions-list">
+            {{#each emotions}}
+              <div class="es-char-editor__emotion">
+                <img src="{{path}}" class="es-char-editor__emotion-thumb" alt="{{key}}">
+                <div class="es-char-editor__emotion-info">
+                  <input
+                    type="text"
+                    value="{{key}}"
+                    class="es-char-editor__emotion-name"
+                    data-action="rename-emotion"
+                    data-original-key="{{key}}"
+                  >
+                  <span class="es-char-editor__emotion-path">{{path}}</span>
+                </div>
+                <button
+                  type="button"
+                  class="es-char-editor__emotion-delete"
+                  data-action="delete-emotion"
+                  data-key="{{key}}"
+                  title="{{localize "EXALTED-SCENES.CharEditor.DeleteEmotion"}}"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="es-char-editor__emotions-empty">
+            <i class="fas fa-theater-masks"></i>
+            <p>{{localize "EXALTED-SCENES.CharEditor.NoEmotionsYet"}}</p>
+            <span>{{localize "EXALTED-SCENES.CharEditor.NoEmotionsDesc"}}</span>
+          </div>
+        {{/if}}
+      </section>
+
+      <!-- Add New Emotion -->
+      <section class="es-char-editor__section es-char-editor__section--add">
+        <div class="es-char-editor__section-header">
+          <i class="fas fa-plus-circle"></i>
+          <span>{{localize "EXALTED-SCENES.CharEditor.AddNewEmotion"}}</span>
+        </div>
+
+        <div class="es-char-editor__add-emotion">
+          <div class="es-char-editor__add-emotion-field">
+            <label class="es-char-editor__label">
+              <i class="fas fa-image"></i>
+              {{localize "EXALTED-SCENES.CharEditor.Image"}}
+            </label>
+            <div class="es-char-editor__file-input">
+              <input
+                type="text"
+                name="newEmotionPath"
+                placeholder="{{#if canBrowseFiles}}{{localize "EXALTED-SCENES.CharEditor.BrowseOrPaste"}}{{else}}{{localize "EXALTED-SCENES.CharEditor.PasteURL"}}{{/if}}"
+              >
+              {{#if canBrowseFiles}}
+                <button type="button" class="es-char-editor__file-btn" data-type="image" data-target="newEmotionPath" title="{{localize "EXALTED-SCENES.Common.BrowseFiles"}}">
+                  <i class="fas fa-folder-open"></i>
+                </button>
+              {{/if}}
+            </div>
+          </div>
+
+          <div class="es-char-editor__add-emotion-row">
+            <div class="es-char-editor__add-emotion-field es-char-editor__add-emotion-field--flex">
+              <label class="es-char-editor__label">
+                <i class="fas fa-tag"></i>
+                {{localize "EXALTED-SCENES.CharEditor.Name"}}
+              </label>
+              <input
+                type="text"
+                name="newEmotionName"
+                placeholder="{{localize "EXALTED-SCENES.CharEditor.EmotionNamePlaceholder"}}"
+                class="es-char-editor__input"
+              >
+            </div>
+            <button type="button" class="es-char-editor__add-btn" data-action="add-emotion">
+              <i class="fas fa-plus"></i>
+              {{localize "EXALTED-SCENES.CharEditor.AddEmotion"}}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="es-char-editor__footer">
+    <button type="button" class="es-char-editor__btn es-char-editor__btn--ghost" data-action="close">
+      {{localize "EXALTED-SCENES.Common.Cancel"}}
+    </button>
+    <button type="button" class="es-char-editor__btn es-char-editor__btn--primary" data-action="save">
+      <i class="fas fa-check"></i>
+      {{localize "EXALTED-SCENES.Common.SaveChanges"}}
+    </button>
+  </footer>
+</div>

@@ -1,0 +1,213 @@
+/* =============================================================================
+   FAVORITES
+   Linear-style favorite buttons and indicators
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   FAVORITE BUTTON ON CARDS
+   ----------------------------------------------------------------------------- */
+
+.es-favorite-btn {
+  position: absolute;
+  top: var(--es-space-sm);
+  right: var(--es-space-sm);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: var(--es-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--es-font-size-sm);
+  z-index: 10;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all var(--es-duration-fast) ease-out;
+  backdrop-filter: blur(4px);
+}
+
+/* Show on hover or when active */
+.es-card:hover .es-favorite-btn,
+.es-favorite-btn--active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.es-favorite-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--es-warning);
+}
+
+.es-favorite-btn:focus-visible {
+  outline: none;
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+/* Active/Favorited state - uses warning color (amber) for star */
+.es-favorite-btn--active {
+  color: var(--es-warning);
+}
+
+.es-favorite-btn--active:hover {
+  color: #fbbf24; /* Slightly brighter amber on hover */
+}
+
+/* Pulse animation when toggling favorite */
+@keyframes es-favorite-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.es-favorite-btn--active i {
+  animation: es-favorite-pulse 0.3s ease-out;
+}
+
+/* -----------------------------------------------------------------------------
+   FAVORITE INDICATORS
+   ----------------------------------------------------------------------------- */
+
+/* Phase 1: Simplified favorite indicator
+   - Removed star prefix in title (double indication)
+   - Removed special border on favorited cards
+   - The favorite button itself is sufficient indication */
+
+/*
+.es-card--favorite .es-card-title::before {
+  content: '\f005';
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 0.6rem;
+  color: var(--es-warning);
+  margin-right: var(--es-space-xs);
+  vertical-align: middle;
+}
+*/
+
+/* Phase 1: No special border on favorited cards - content is the interface */
+.es-card--favorite .es-card-thumbnail {
+  border-color: transparent;
+}
+
+.es-card--favorite:hover .es-card-thumbnail {
+  border-color: var(--es-border-subtle);
+}
+
+/* -----------------------------------------------------------------------------
+   FAVORITE TOGGLE IN INSPECTOR
+   ----------------------------------------------------------------------------- */
+
+.es-favorite-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--es-radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--es-text-muted);
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease-out;
+}
+
+.es-favorite-toggle:hover {
+  background: var(--es-bg-interactive);
+  color: var(--es-warning);
+}
+
+.es-favorite-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-favorite-toggle--active {
+  color: var(--es-warning);
+}
+
+.es-favorite-toggle--active:hover {
+  color: #fbbf24;
+}
+
+/* -----------------------------------------------------------------------------
+   LIST VIEW FAVORITES
+   ----------------------------------------------------------------------------- */
+
+.es-grid--list-view .es-favorite-btn {
+  position: absolute;
+  top: 50%;
+  right: var(--es-space-sm);
+  left: auto;
+  transform: translateY(-50%);
+  opacity: 0;
+  background: transparent;
+  width: 24px;
+  height: 24px;
+}
+
+.es-grid--list-view .es-card:hover .es-favorite-btn,
+.es-grid--list-view .es-favorite-btn--active {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.es-grid--list-view .es-favorite-btn:hover {
+  transform: translateY(-50%);
+  background: var(--es-bg-interactive);
+}
+
+.es-grid--list-view .es-favorite-btn:focus-visible {
+  transform: translateY(-50%);
+}
+
+/* -----------------------------------------------------------------------------
+   FAVORITES SECTION HEADER
+   ----------------------------------------------------------------------------- */
+
+.es-favorites-header {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  padding: var(--es-space-sm) var(--es-space-md);
+  color: var(--es-text-secondary);
+  font-size: var(--es-font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.es-favorites-header i {
+  color: var(--es-warning);
+  font-size: 0.7rem;
+}
+
+.es-favorites-header .es-count {
+  color: var(--es-text-muted);
+  font-weight: 400;
+}
+
+/* -----------------------------------------------------------------------------
+   REDUCED MOTION
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-favorite-btn,
+  .es-favorite-toggle {
+    transition: none;
+  }
+
+  .es-favorite-btn--active i {
+    animation: none;
+  }
+}

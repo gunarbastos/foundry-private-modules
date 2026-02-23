@@ -1,0 +1,189 @@
+<div class="es-smart-creator">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER & STEPS
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="es-smart-creator__header">
+    <div class="es-smart-creator__title">
+      <i class="fas fa-magic"></i>
+      <span>{{localize "EXALTED-SCENES.SmartCreator.Title"}}</span>
+    </div>
+    <div class="es-smart-creator__steps">
+      <div class="es-smart-creator__step {{#if (eq step 1)}}es-smart-creator__step--active{{/if}} {{#if (gt step 1)}}es-smart-creator__step--completed{{/if}}">
+        <div class="es-smart-creator__step-number">1</div>
+        <div class="es-smart-creator__step-label">{{localize "EXALTED-SCENES.SmartCreator.StepIdentity"}}</div>
+      </div>
+      <div class="es-smart-creator__step-line {{#if (gt step 1)}}es-smart-creator__step-line--completed{{/if}}"></div>
+      <div class="es-smart-creator__step {{#if (eq step 2)}}es-smart-creator__step--active{{/if}} {{#if (gt step 2)}}es-smart-creator__step--completed{{/if}}">
+        <div class="es-smart-creator__step-number">2</div>
+        <div class="es-smart-creator__step-label">{{localize "EXALTED-SCENES.SmartCreator.StepAssets"}}</div>
+      </div>
+      <div class="es-smart-creator__step-line {{#if (gt step 2)}}es-smart-creator__step-line--completed{{/if}}"></div>
+      <div class="es-smart-creator__step {{#if (eq step 3)}}es-smart-creator__step--active{{/if}}">
+        <div class="es-smart-creator__step-number">3</div>
+        <div class="es-smart-creator__step-label">{{localize "EXALTED-SCENES.SmartCreator.StepReview"}}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENT AREA
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="es-smart-creator__content">
+
+    <!-- STEP 1: IDENTITY -->
+    {{#if (eq step 1)}}
+      <div class="es-smart-creator__panel" data-step="1">
+        <section class="es-smart-creator__section">
+          <div class="es-smart-creator__section-header">
+            <i class="fas fa-user"></i>
+            <span>{{localize "EXALTED-SCENES.SmartCreator.CharacterName"}}</span>
+            <span class="es-smart-creator__required">{{localize "EXALTED-SCENES.Common.Required"}}</span>
+          </div>
+          <input
+            type="text"
+            name="name"
+            value="{{data.name}}"
+            placeholder="{{localize "EXALTED-SCENES.SmartCreator.NamePlaceholder"}}"
+            class="es-smart-creator__input"
+            aria-label="{{localize "EXALTED-SCENES.SmartCreator.CharacterName"}}"
+            required
+            autofocus
+          >
+          <span class="es-smart-creator__hint">{{localize "EXALTED-SCENES.SmartCreator.NameHint"}}</span>
+        </section>
+
+        <section class="es-smart-creator__section">
+          <div class="es-smart-creator__section-header">
+            <i class="fas fa-tags"></i>
+            <span>{{localize "EXALTED-SCENES.SmartCreator.Tags"}}</span>
+            <span class="es-smart-creator__optional">{{localize "EXALTED-SCENES.Common.Optional"}}</span>
+          </div>
+          <div class="es-smart-creator__tags">
+            {{#each data.tags}}
+              <span class="es-smart-creator__tag">
+                {{this}}
+                <button type="button" data-action="remove-tag" data-tag="{{this}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </span>
+            {{/each}}
+            <input
+              type="text"
+              class="es-smart-creator__tag-input"
+              placeholder="{{localize "EXALTED-SCENES.SmartCreator.TagPlaceholder"}}"
+              aria-label="{{localize "EXALTED-SCENES.SmartCreator.AddNewTag"}}"
+            >
+          </div>
+          <span class="es-smart-creator__hint">{{localize "EXALTED-SCENES.SmartCreator.TagsHint"}}</span>
+        </section>
+      </div>
+    {{/if}}
+
+    <!-- STEP 2: ASSETS (DROP ZONE) -->
+    {{#if (eq step 2)}}
+      <div class="es-smart-creator__panel" data-step="2">
+        <section class="es-smart-creator__section es-smart-creator__section--centered">
+          <div class="es-smart-creator__intro">
+            <i class="fas fa-lightbulb"></i>
+            <p>{{localize "EXALTED-SCENES.SmartCreator.UploadIntro"}}</p>
+            <span class="es-smart-creator__example">{{{localize "EXALTED-SCENES.SmartCreator.UploadExample"}}}</span>
+          </div>
+
+          <div class="es-smart-creator__dropzone {{#if uploadProgress}}es-smart-creator__dropzone--uploading{{/if}}" data-action="trigger-upload">
+            <i class="fas {{#if uploadProgress}}fa-spinner fa-spin{{else}}fa-cloud-upload-alt{{/if}}"></i>
+            <h3>{{#if uploadProgress}}{{localize "EXALTED-SCENES.SmartCreator.Uploading"}}{{else}}{{localize "EXALTED-SCENES.SmartCreator.DragAndDrop"}}{{/if}}</h3>
+            <p>{{#if uploadProgress}}{{localize "EXALTED-SCENES.SmartCreator.PleaseWait"}}{{else}}{{localize "EXALTED-SCENES.SmartCreator.OrClickToBrowse"}}{{/if}}</p>
+            <input type="file" webkitdirectory directory multiple style="display:none" class="es-file-input">
+          </div>
+
+          {{#if uploadProgress}}
+            <div class="es-smart-creator__progress">
+              <div class="es-smart-creator__progress-bar" style="width: {{uploadProgress}}%"></div>
+              <span class="es-smart-creator__progress-text">{{uploadProgress}}%</span>
+            </div>
+          {{/if}}
+        </section>
+      </div>
+    {{/if}}
+
+    <!-- STEP 3: REVIEW -->
+    {{#if (eq step 3)}}
+      <div class="es-smart-creator__panel es-smart-creator__panel--wide" data-step="3">
+        <section class="es-smart-creator__section">
+          <div class="es-smart-creator__section-header">
+            <i class="fas fa-images"></i>
+            <span>{{localize "EXALTED-SCENES.SmartCreator.ReviewEmotions"}}</span>
+            <span class="es-smart-creator__section-count">{{emotionCount}}</span>
+          </div>
+          <p class="es-smart-creator__section-desc">{{localize "EXALTED-SCENES.SmartCreator.ReviewDesc"}}</p>
+
+          <div class="es-smart-creator__review-grid">
+            {{#each data.emotions}}
+              <div class="es-smart-creator__review-card {{#if excluded}}es-smart-creator__review-card--excluded{{/if}}">
+                <div class="es-smart-creator__review-thumb">
+                  <img src="{{path}}" alt="{{key}}">
+                  <div class="es-smart-creator__review-actions">
+                    <button
+                      type="button"
+                      class="es-smart-creator__icon-btn {{#if (eq ../data.defaultEmotion key)}}es-smart-creator__icon-btn--active{{/if}}"
+                      title="{{localize "EXALTED-SCENES.SmartCreator.SetAsDefault"}}"
+                      data-action="set-default"
+                      data-key="{{key}}"
+                    >
+                      <i class="fas fa-star"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="es-smart-creator__icon-btn es-smart-creator__icon-btn--delete"
+                      title="{{localize "EXALTED-SCENES.SmartCreator.Exclude"}}"
+                      data-action="toggle-exclude"
+                      data-key="{{key}}"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  class="es-smart-creator__emotion-name"
+                  value="{{key}}"
+                  data-action="rename-emotion"
+                  data-original-key="{{key}}"
+                >
+              </div>
+            {{/each}}
+          </div>
+        </section>
+      </div>
+    {{/if}}
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER & CONTROLS
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="es-smart-creator__footer">
+    {{#if (gt step 1)}}
+      <button type="button" class="es-smart-creator__btn es-smart-creator__btn--ghost" data-action="prev-step">
+        <i class="fas fa-arrow-left"></i>
+        {{localize "EXALTED-SCENES.Common.Back"}}
+      </button>
+    {{else}}
+      <div></div>
+    {{/if}}
+
+    {{#if (lt step 3)}}
+      <button type="button" class="es-smart-creator__btn es-smart-creator__btn--primary" data-action="next-step" {{#if (eq step 2)}}disabled{{/if}}>
+        {{localize "EXALTED-SCENES.Common.Next"}}
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    {{else}}
+      <button type="button" class="es-smart-creator__btn es-smart-creator__btn--primary" data-action="finish">
+        <i class="fas fa-check"></i>
+        {{localize "EXALTED-SCENES.SmartCreator.CreateCharacter"}}
+      </button>
+    {{/if}}
+  </footer>
+
+</div>

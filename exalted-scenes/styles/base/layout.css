@@ -1,0 +1,180 @@
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT GRID
+   Main grid system for app layout
+   Linear-Style: Clean structure with subtle separators
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────────
+   MAIN LAYOUT GRID
+   Sidebar | Main Content | Inspector (optional)
+   ─────────────────────────────────────────────────────────────── */
+
+.es-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--es-bg-app);
+  transition: grid-template-columns var(--es-duration-normal) var(--es-ease-out);
+}
+
+.es-layout.with-inspector {
+  grid-template-columns: 220px 1fr 320px;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MAIN CONTENT (LIBRARY)
+   ─────────────────────────────────────────────────────────────── */
+
+.es-library {
+  display: flex;
+  flex-direction: column;
+  background: var(--es-bg-app);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Library Header / Toolbar */
+.es-library-header {
+  padding: var(--es-space-2) var(--es-space-4);
+  background: var(--es-bg-panel);
+  border-bottom: 1px solid var(--es-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--es-space-3);
+  height: 48px;
+  flex-shrink: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SEARCH INPUT
+   Linear-style: subtle background, accent focus
+   ─────────────────────────────────────────────────────────────── */
+
+.es-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.es-search-wrapper .es-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--es-text-muted);
+  pointer-events: none;
+  font-size: 14px;
+}
+
+.es-search-input {
+  height: var(--es-input-height);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  padding: 0 var(--es-space-3);
+  padding-left: 32px;
+  color: var(--es-text-body);
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-base);
+  width: 240px;
+  transition: var(--es-transition-all);
+}
+
+.es-search-input::placeholder {
+  color: var(--es-text-muted);
+}
+
+.es-search-input:hover {
+  border-color: var(--es-border-hover);
+}
+
+.es-search-input:focus {
+  border-color: var(--es-accent-base);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: var(--es-shadow-glow);
+  outline: none;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CONTENT GRID
+   Auto-fill responsive grid for cards
+   ─────────────────────────────────────────────────────────────── */
+
+/* Phase 4: Increased minimum card width for premium feel */
+.es-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--es-space-4); /* Increased from space-3 for more breathing room */
+  padding: var(--es-space-4);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Empty state spans full grid */
+.es-grid .es-empty-state {
+  grid-column: 1 / -1;
+  width: 100%;
+  justify-self: center;
+}
+
+/* Phase 4: For very small panels, allow smaller cards */
+@media (max-width: 500px) {
+  .es-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--es-space-3);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SCROLL CONTAINER
+   Shared scrollable area styles
+   ─────────────────────────────────────────────────────────────── */
+
+.es-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PANEL SECTIONS
+   Reusable section styles
+   ─────────────────────────────────────────────────────────────── */
+
+.es-section {
+  padding: var(--es-space-4);
+}
+
+.es-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--es-space-3);
+}
+
+.es-section-title {
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  color: var(--es-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   DIVIDERS
+   Subtle horizontal separators
+   ─────────────────────────────────────────────────────────────── */
+
+.es-divider {
+  height: 1px;
+  background: var(--es-border-subtle);
+  margin: var(--es-space-3) 0;
+}
+
+.es-divider-vertical {
+  width: 1px;
+  background: var(--es-border-subtle);
+  margin: 0 var(--es-space-3);
+  align-self: stretch;
+}

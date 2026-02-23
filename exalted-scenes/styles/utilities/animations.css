@@ -1,0 +1,443 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS - Keyframes and animation utilities
+   Linear-Style: Fast, snappy, subtle. No excessive decoration.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TIMING REFERENCE (from design system)
+   - Hover states: 150ms ease-out
+   - Layout shifts: 250ms ease-out-quad
+   - Modal open: 200ms spring
+   - Fade in/out: 150ms ease
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SKELETON LOADING (Linear signature)
+   Shimmering placeholder while content loads
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: es-shimmer 1.5s infinite linear;
+  border-radius: var(--es-radius-md);
+}
+
+@keyframes es-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Skeleton variants */
+.es-skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+}
+
+.es-skeleton-text:last-child {
+  width: 60%;
+}
+
+.es-skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--es-radius-full);
+}
+
+.es-skeleton-card {
+  aspect-ratio: 3/4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FADE ANIMATIONS
+   Simple opacity transitions
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes es-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.es-fade-in {
+  animation: es-fade-in var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SLIDE ANIMATIONS
+   Directional entrance/exit
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes es-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes es-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Utility classes */
+.es-slide-up {
+  animation: es-slide-up var(--es-duration-normal) var(--es-ease-out);
+}
+
+.es-slide-down {
+  animation: es-slide-down var(--es-duration-normal) var(--es-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCALE ANIMATIONS
+   Pop/bounce effects (subtle)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes es-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.es-scale-in {
+  animation: es-scale-in var(--es-duration-normal) var(--es-ease-spring);
+}
+
+.es-pop-in {
+  animation: es-pop-in var(--es-duration-normal) var(--es-ease-spring);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MODAL/DIALOG ANIMATIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes es-modal-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+}
+
+@keyframes es-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DROPDOWN/POPOVER ANIMATIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes es-dropdown-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOAST/NOTIFICATION ANIMATIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes es-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* Inline feedback toast */
+.es-feedback-toast {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--es-bg-elevated);
+  color: var(--es-text-primary);
+  padding: 4px 10px;
+  border-radius: var(--es-radius-full);
+  font-size: var(--es-font-size-xs);
+  font-weight: var(--es-font-medium);
+  white-space: nowrap;
+  border: 1px solid var(--es-border-default);
+  box-shadow: var(--es-shadow-md);
+  animation: es-toast-lifecycle 2s var(--es-ease-out) forwards;
+  pointer-events: none;
+  z-index: var(--es-z-toast);
+}
+
+@keyframes es-toast-lifecycle {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PULSE ANIMATIONS
+   Subtle attention indicators
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes es-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.es-pulse {
+  animation: es-pulse 2s ease-in-out infinite;
+}
+
+/* Live indicator pulse */
+.es-live-indicator {
+  position: relative;
+}
+
+.es-live-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: es-pulse-ring 1.5s ease-out infinite;
+  background: var(--es-error);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SUCCESS/ADD ANIMATIONS
+   Subtle confirmation feedback
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-just-added {
+  animation: es-scale-in 0.25s var(--es-ease-spring);
+}
+
+@keyframes es-success-flash {
+  0% {
+    box-shadow: 0 0 0 0 var(--es-success-subtle);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--es-success-subtle);
+  }
+  100% {
+    box-shadow: 0 0 0 0 var(--es-success-subtle);
+  }
+}
+
+.es-success-flash {
+  animation: es-success-flash 0.4s var(--es-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FORM VALIDATION
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.es-shake {
+  animation: es-shake 0.4s var(--es-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LOADING STATES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-spin {
+  to { transform: rotate(360deg); }
+}
+
+.es-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--es-border-default);
+  border-top-color: var(--es-accent-base);
+  border-radius: var(--es-radius-full);
+  animation: es-spin 0.8s linear infinite;
+}
+
+.es-spinner-sm {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+}
+
+/* Button loading state */
+.es-btn-loading {
+  position: relative;
+  pointer-events: none;
+  color: transparent !important;
+}
+
+.es-btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: var(--es-radius-full);
+  animation: es-spin 0.8s linear infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DRAG & DROP INDICATOR
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes es-drop-pulse {
+  0%, 100% {
+    border-color: var(--es-accent-base);
+    background: var(--es-accent-subtle);
+  }
+  50% {
+    border-color: var(--es-accent-hover);
+    background: rgba(99, 102, 241, 0.2);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Disable all animations (for reduced motion preference) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Animation delay utilities */
+.es-delay-100 { animation-delay: 100ms; }
+.es-delay-200 { animation-delay: 200ms; }
+.es-delay-300 { animation-delay: 300ms; }
+
+/* Fill mode utilities */
+.es-fill-forwards { animation-fill-mode: forwards; }
+.es-fill-both { animation-fill-mode: both; }

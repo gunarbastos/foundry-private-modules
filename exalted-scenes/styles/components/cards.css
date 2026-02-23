@@ -1,0 +1,561 @@
+/* ═══════════════════════════════════════════════════════════════
+   CARDS - Linear Style
+   Scene and character card components
+   ═══════════════════════════════════════════════════════════════ */
+
+/* -------------------------------------------------------------
+   Base Card Container
+   ------------------------------------------------------------- */
+.es-card {
+  position: relative;
+  cursor: pointer;
+  transition: transform var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* -------------------------------------------------------------
+   Card Thumbnail
+   ------------------------------------------------------------- */
+.es-card-thumbnail {
+  aspect-ratio: 16/9;
+  background: var(--es-bg-interactive);
+  /* Phase 5: Slightly smaller radius without borders feels cleaner */
+  border-radius: var(--es-radius-md);
+  overflow: hidden;
+  position: relative;
+  /* Phase 1: Removed default shadow - content is the interface */
+  box-shadow: none;
+  /* Phase 1: Transparent border preserves layout for hover/selection states */
+  border: 2px solid transparent;
+  /* Phase 5: Optimized transitions */
+  transition:
+    transform var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* Square aspect for character cards - with enhanced styling */
+.es-card[data-type="character"] .es-card-thumbnail {
+  aspect-ratio: 1/1;
+  /* More rounded corners for character portraits - feels more personal */
+  border-radius: var(--es-radius-xl);
+  /* Subtle inner shadow for depth */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Card image */
+.es-card-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--es-ease-out);
+}
+
+/* -------------------------------------------------------------
+   Image Overlay Gradient
+   Protects text at bottom of card
+   ------------------------------------------------------------- */
+.es-card-thumbnail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.2) 30%,
+    transparent 60%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* Show gradient on hover for cards with overlay content */
+.es-card:hover .es-card-thumbnail::after,
+.es-card--has-overlay .es-card-thumbnail::after {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------
+   Hover Effects
+   ------------------------------------------------------------- */
+/* Phase 1: Simplified hover - subtle scale only, no lift or heavy shadow */
+.es-card:hover .es-card-thumbnail {
+  transform: scale(1.02);
+  border-color: var(--es-border-subtle);
+}
+
+/* Phase 1: Minimal image zoom on hover */
+.es-card:hover .es-card-thumbnail img {
+  transform: scale(1.01);
+}
+
+/* -------------------------------------------------------------
+   Selection State
+   ------------------------------------------------------------- */
+/* Phase 1: Clean selection - simple colored border, no glow ring */
+.es-card--selected .es-card-thumbnail {
+  border-color: var(--es-accent-base);
+  box-shadow: none;
+}
+
+.es-card--selected:hover .es-card-thumbnail {
+  border-color: var(--es-accent-hover);
+}
+
+/* -------------------------------------------------------------
+   Broadcasting State (Scene is LIVE)
+   ------------------------------------------------------------- */
+/* Phase 1: Clean broadcasting - static border, LIVE badge provides indication */
+.es-card--broadcasting .es-card-thumbnail {
+  border-color: var(--es-live-color);
+  box-shadow: none;
+  /* Removed: heavy pulsing glow animation */
+}
+
+.es-card--broadcasting:hover .es-card-thumbnail {
+  border-color: var(--es-live-color);
+}
+
+.es-card--broadcasting .es-card-title {
+  color: var(--es-live-color);
+}
+
+/* Live badge on broadcasting card thumbnail */
+.es-card--broadcasting .es-card-thumbnail::before {
+  content: 'LIVE';
+  position: absolute;
+  top: var(--es-space-2);
+  left: var(--es-space-2);
+  background: var(--es-live-color);
+  color: var(--es-text-on-error);
+  font-size: 9px;
+  font-weight: var(--es-font-semibold);
+  padding: 2px 6px;
+  border-radius: var(--es-radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 5;
+  animation: es-live-badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes es-card-live-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px var(--es-live-color),
+      0 0 0 4px var(--es-live-glow),
+      var(--es-shadow-md);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--es-live-color),
+      0 0 0 6px rgba(239, 68, 68, 0.3),
+      var(--es-shadow-md);
+  }
+}
+
+@keyframes es-live-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* -------------------------------------------------------------
+   Overlay Actions
+   ------------------------------------------------------------- */
+/* Phase 3: Simplified action overlay - cleaner, no blur */
+.es-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) var(--es-ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--es-space-sm);
+  /* Phase 5: Match thumbnail radius */
+  border-radius: var(--es-radius-md);
+}
+
+.es-card:hover .es-card-overlay {
+  opacity: 1;
+}
+
+/* Action buttons inside overlay */
+/* Phase 3: Simplified - no translate animation or stagger, just fade in */
+.es-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--es-radius-md);
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  color: var(--es-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--es-duration-fast) var(--es-ease-out),
+    background var(--es-duration-fast) var(--es-ease-out),
+    color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.es-card:hover .es-action-btn {
+  opacity: 1;
+}
+
+/* Action button hover states */
+.es-action-btn:hover {
+  background: var(--es-accent-base);
+  color: var(--es-text-primary);
+  border-color: var(--es-accent-base);
+}
+
+.es-action-btn--danger:hover {
+  background: var(--es-error);
+  color: var(--es-text-primary);
+  border-color: var(--es-error);
+}
+
+.es-action-btn--success:hover {
+  background: var(--es-success);
+  color: var(--es-text-primary);
+  border-color: var(--es-success);
+}
+
+/* Icon inside action button */
+.es-action-btn i,
+.es-action-btn svg {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+/* -------------------------------------------------------------
+   Card Body (Info below thumbnail)
+   Phase 2: Hidden in grid view, visible in list view
+   ------------------------------------------------------------- */
+.es-card-body {
+  padding: var(--es-space-sm) var(--es-space-xs);
+  /* Phase 2: Hide card body in grid view - title shown in overlay */
+  display: none;
+}
+
+/* Phase 2: In list view, card-body is visible (overridden in tagging-system.css) */
+/* Info overlay is hidden in list view since card-body shows title */
+.es-grid--list-view .es-card-info-overlay {
+  display: none;
+}
+
+.es-card-title {
+  font-family: var(--es-font-sans);
+  font-weight: 500;
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-card:hover .es-card-title {
+  color: var(--es-text-primary);
+}
+
+.es-card--selected .es-card-title {
+  color: var(--es-accent-hover);
+}
+
+/* Card subtitle/meta */
+.es-card-meta {
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  margin-top: 2px;
+}
+
+/* -------------------------------------------------------------
+   Phase 2: Info Overlay (Title inside thumbnail on hover)
+   ------------------------------------------------------------- */
+.es-card-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--es-space-3) var(--es-space-3);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) var(--es-ease-out);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.es-card:hover .es-card-info-overlay {
+  opacity: 1;
+}
+
+/* Title inside info overlay */
+.es-card-info-overlay .es-card-title {
+  color: var(--es-text-primary);
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* Show info overlay when card is selected or broadcasting */
+.es-card--selected .es-card-info-overlay,
+.es-card--broadcasting .es-card-info-overlay {
+  opacity: 1;
+}
+
+/* Ensure overlay title is visible for broadcasting */
+.es-card--broadcasting .es-card-info-overlay .es-card-title {
+  color: var(--es-live-color);
+}
+
+/* -------------------------------------------------------------
+   Card Variants
+   ------------------------------------------------------------- */
+
+/* Compact card (smaller padding, tighter spacing) */
+.es-card--compact .es-card-body {
+  padding: var(--es-space-xs) 0;
+}
+
+.es-card--compact .es-card-title {
+  font-size: var(--es-font-size-xs);
+}
+
+/* Card with text inside thumbnail (overlay text) */
+.es-card-inner-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--es-space-md) var(--es-space-sm);
+  color: var(--es-text-primary);
+  font-weight: 500;
+  font-size: var(--es-font-size-sm);
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* -------------------------------------------------------------
+   Card Grid Layout
+   ------------------------------------------------------------- */
+.es-card-grid {
+  display: grid;
+  gap: var(--es-space-lg);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+/* Scene cards (wider, 16:9) */
+.es-card-grid--scenes {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Character cards (square, more compact) */
+.es-card-grid--characters {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--es-space-md);
+}
+
+/* -------------------------------------------------------------
+   Empty State
+   ------------------------------------------------------------- */
+.es-card--empty .es-card-thumbnail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--es-bg-interactive);
+  border-style: dashed;
+}
+
+.es-card--empty .es-card-thumbnail i,
+.es-card--empty .es-card-thumbnail svg {
+  font-size: 24px;
+  color: var(--es-text-muted);
+}
+
+.es-card--empty:hover .es-card-thumbnail {
+  border-color: var(--es-accent-base);
+  background: var(--es-accent-subtle);
+}
+
+.es-card--empty:hover .es-card-thumbnail i,
+.es-card--empty:hover .es-card-thumbnail svg {
+  color: var(--es-accent-base);
+}
+
+/* -------------------------------------------------------------
+   Loading State (Skeleton)
+   ------------------------------------------------------------- */
+.es-card--loading .es-card-thumbnail {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: es-shimmer 1.5s infinite;
+}
+
+.es-card--loading .es-card-title {
+  height: 14px;
+  width: 70%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--es-radius-sm);
+}
+
+/* -------------------------------------------------------------
+   Dragging State
+   ------------------------------------------------------------- */
+.es-card--dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.es-card--drag-over .es-card-thumbnail {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 2px var(--es-accent-glow);
+}
+
+/* -------------------------------------------------------------
+   Disabled State
+   ------------------------------------------------------------- */
+.es-card--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.es-card--disabled .es-card-thumbnail {
+  filter: grayscale(50%);
+}
+
+/* -------------------------------------------------------------
+   Phase 5: Accessibility
+   ------------------------------------------------------------- */
+
+/* Focus state for keyboard navigation */
+.es-card:focus-within .es-card-thumbnail {
+  outline: 2px solid var(--es-accent-base);
+  outline-offset: 2px;
+}
+
+/* Show info overlay on focus for accessibility */
+.es-card:focus-within .es-card-info-overlay {
+  opacity: 1;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .es-card,
+  .es-card-thumbnail,
+  .es-card-thumbnail img,
+  .es-card-info-overlay,
+  .es-card-overlay,
+  .es-action-btn,
+  .es-emotion-badge {
+    transition: none;
+  }
+
+  .es-card:hover .es-card-thumbnail {
+    transform: none;
+  }
+
+  .es-card:hover .es-card-thumbnail img {
+    transform: none;
+  }
+
+  .es-card--loading .es-card-thumbnail {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EMOTION COUNT BADGE (Character Cards Only)
+   Shows number of available emotions on hover
+   ═══════════════════════════════════════════════════════════════ */
+
+.es-emotion-badge {
+  position: absolute;
+  /* Moved to top-right to not conflict with name overlay at bottom */
+  top: var(--es-space-2);
+  right: var(--es-space-2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--es-radius-full);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  color: var(--es-text-primary);
+  font-size: 10px;
+  font-weight: var(--es-font-medium);
+  z-index: 3;
+  /* Always visible - emotion count is useful info */
+  opacity: 1;
+  pointer-events: none;
+  /* Subtle border for better definition */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.es-emotion-badge i {
+  font-size: 10px;
+  color: var(--es-accent-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER CARD SPECIFIC STYLES
+   Enhanced styling for character portraits
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Character card overlay is ALWAYS visible (not just on hover) */
+.es-card[data-type="character"] .es-card-info-overlay {
+  opacity: 1;
+  /* Stronger gradient for better text readability */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.6) 40%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  /* More padding for the rounded corners */
+  padding: var(--es-space-4) var(--es-space-3);
+  border-radius: 0 0 var(--es-radius-xl) var(--es-radius-xl);
+}
+
+/* Character name styling */
+.es-card[data-type="character"] .es-card-info-overlay .es-card-title {
+  font-size: var(--es-font-size-sm);
+  font-weight: var(--es-font-medium);
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+/* Character card hover - subtle highlight effect */
+.es-card[data-type="character"]:hover .es-card-thumbnail {
+  border-color: var(--es-accent-base);
+}
+
+/* Character card selected - accent highlight */
+.es-card[data-type="character"].es-card--selected .es-card-thumbnail {
+  border-color: var(--es-accent-base);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 1px var(--es-accent-dim);
+}
+
+/* Character card overlay should also inherit rounded corners */
+.es-card[data-type="character"] .es-card-overlay {
+  border-radius: var(--es-radius-xl);
+}

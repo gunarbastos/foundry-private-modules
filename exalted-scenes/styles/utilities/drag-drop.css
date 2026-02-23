@@ -1,0 +1,444 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRAG & DROP - Linear-Style Reordering and Drop Zone Utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   GENERIC DRAGGABLE ITEMS
+   IMPORTANT: All selectors MUST be scoped to .exalted-scenes to avoid
+   interfering with Foundry VTT's native drag & drop functionality!
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Base draggable element - SCOPED to Exalted Scenes only */
+.exalted-scenes [draggable="true"] {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.exalted-scenes [draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Prevent child elements from interfering with drag - SCOPED */
+.exalted-scenes [draggable="true"] img,
+.exalted-scenes [draggable="true"] > * {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Re-enable pointer events for interactive children - SCOPED */
+.exalted-scenes [draggable="true"] button,
+.exalted-scenes [draggable="true"] a,
+.exalted-scenes [draggable="true"] input,
+.exalted-scenes [draggable="true"] [data-interactive] {
+  pointer-events: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DRAGGING STATE
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Generic dragging state - can be applied to any element */
+.es-dragging,
+.es-card--dragging,
+.es-cast-member--dragging {
+  opacity: 0.4;
+  transform: scale(0.96);
+  cursor: grabbing !important;
+  transition:
+    opacity var(--es-duration-fast) var(--es-ease-out),
+    transform var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* Subtle shadow for the dragging item */
+.es-dragging {
+  box-shadow: var(--es-shadow-lg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   GHOST / PREVIEW ELEMENT
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Custom drag ghost/preview - applied via JS */
+.es-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0.9;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: var(--es-shadow-lg);
+  border: 1px solid var(--es-accent-base);
+  border-radius: var(--es-radius-md);
+  background: var(--es-bg-panel);
+}
+
+/* Ghost with accent glow */
+.es-drag-ghost--glow {
+  box-shadow:
+    var(--es-shadow-lg),
+    0 0 20px var(--es-accent-glow);
+}
+
+/* Minimal ghost variant */
+.es-drag-ghost--minimal {
+  opacity: 0.7;
+  transform: none;
+  border: none;
+  box-shadow: var(--es-shadow-md);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DROP ZONES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Base drop zone */
+.es-drop-zone {
+  position: relative;
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out),
+    box-shadow var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* Drop zone active/drag-over state */
+.es-drop-zone--active,
+.es-drop-zone--drag-over,
+.es-cast-strip--drag-over {
+  background-color: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+  box-shadow: inset 0 0 20px var(--es-accent-glow);
+}
+
+/* Empty drop zone indicator */
+.es-drop-zone--empty {
+  border: 2px dashed var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--es-text-muted);
+  font-size: var(--es-font-size-sm);
+}
+
+.es-drop-zone--empty.es-drop-zone--active {
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-base);
+  background-color: var(--es-accent-subtle);
+}
+
+/* Drop zone hint text */
+.es-drop-zone__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--es-space-sm);
+  color: var(--es-text-muted);
+  font-size: var(--es-font-size-sm);
+}
+
+.es-drop-zone__hint-icon {
+  width: 24px;
+  height: 24px;
+  opacity: 0.5;
+}
+
+.es-drop-zone--active .es-drop-zone__hint {
+  color: var(--es-accent-base);
+}
+
+.es-drop-zone--active .es-drop-zone__hint-icon {
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DROP INDICATORS (Before/After positioning)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Base for drop position indicators */
+.es-drop-before,
+.es-drop-after,
+.es-card--drag-over-left,
+.es-card--drag-over-right,
+.es-cast-member--drag-target {
+  position: relative;
+}
+
+/* Vertical drop indicator line */
+.es-drop-before::before,
+.es-drop-after::after,
+.es-card--drag-over-left::before,
+.es-card--drag-over-right::before,
+.es-cast-member--drag-target::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--es-accent-base);
+  border-radius: 1px;
+  z-index: 10;
+  box-shadow: 0 0 8px var(--es-accent-glow);
+  animation: es-drop-indicator-pulse 1s ease-in-out infinite;
+}
+
+/* Position: before (left side) */
+.es-drop-before::before,
+.es-card--drag-over-left::before,
+.es-cast-member--drag-target::before {
+  left: -4px;
+}
+
+/* Position: after (right side) */
+.es-drop-after::after,
+.es-card--drag-over-right::before {
+  right: -4px;
+  left: auto;
+}
+
+/* Horizontal drop indicator (for vertical lists) */
+.es-drop-before-h::before,
+.es-drop-after-h::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  width: auto;
+  background: var(--es-accent-base);
+  border-radius: 1px;
+  z-index: 10;
+  box-shadow: 0 0 8px var(--es-accent-glow);
+  animation: es-drop-indicator-pulse 1s ease-in-out infinite;
+}
+
+.es-drop-before-h::before {
+  top: -4px;
+}
+
+.es-drop-after-h::after {
+  bottom: -4px;
+}
+
+/* Box shadow variant for cards */
+.es-card--drag-over-left {
+  box-shadow: -3px 0 0 0 var(--es-accent-base), var(--es-shadow-md);
+}
+
+.es-card--drag-over-right {
+  box-shadow: 3px 0 0 0 var(--es-accent-base), var(--es-shadow-md);
+}
+
+/* Drop indicator pulse animation */
+@keyframes es-drop-indicator-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px var(--es-accent-glow);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 12px var(--es-accent-glow);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CAST STRIP DRAG & DROP
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-cast-strip {
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out);
+}
+
+/* Cast member draggable */
+.es-cast-member[draggable="true"] img,
+.es-cast-member[draggable="true"] .es-cast-name {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.es-cast-member--dragging {
+  opacity: 0.4;
+  transform: scale(0.9);
+  cursor: grabbing !important;
+}
+
+/* Cast row drop active indicator */
+.es-cast-row {
+  position: relative;
+}
+
+.es-cast-row--drag-active::after {
+  content: 'Drop here';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--es-accent-subtle);
+  border: 2px dashed var(--es-accent-base);
+  border-radius: var(--es-radius-md);
+  color: var(--es-accent-base);
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-cast-strip--drag-over .es-cast-row--drag-active::after {
+  opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FLOATING CAST DRAG
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-floating-cast .es-cast-strip--drag-over {
+  background: var(--es-accent-subtle);
+  box-shadow: inset 0 0 30px var(--es-accent-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   REORDER TARGET STATE
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-card--reorder-target,
+.es-reorder-target {
+  cursor: grab;
+}
+
+.es-card--reorder-target:active,
+.es-reorder-target:active {
+  cursor: grabbing;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DRAG HANDLE
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: grab;
+  color: var(--es-text-muted);
+  border-radius: var(--es-radius-sm);
+  transition:
+    color var(--es-duration-fast) var(--es-ease-out),
+    background-color var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-drag-handle:hover {
+  color: var(--es-text-secondary);
+  background-color: var(--es-bg-interactive);
+}
+
+.es-drag-handle:active {
+  cursor: grabbing;
+  color: var(--es-accent-base);
+}
+
+.es-drag-handle svg,
+.es-drag-handle i {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SORTABLE LIST
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.es-sortable-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-xs);
+}
+
+.es-sortable-item {
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+  padding: var(--es-space-sm) var(--es-space-md);
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-md);
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out),
+    transform var(--es-duration-fast) var(--es-ease-out),
+    box-shadow var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-sortable-item:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-hover);
+}
+
+.es-sortable-item.es-dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+}
+
+.es-sortable-item.es-drop-before::before,
+.es-sortable-item.es-drop-after::after {
+  left: var(--es-space-md);
+  right: var(--es-space-md);
+  width: auto;
+  height: 2px;
+}
+
+.es-sortable-item.es-drop-before::before {
+  top: -3px;
+  bottom: auto;
+}
+
+.es-sortable-item.es-drop-after::after {
+  bottom: -3px;
+  top: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY & REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-dragging,
+  .es-card--dragging,
+  .es-cast-member--dragging,
+  .es-drag-ghost,
+  .es-drop-zone,
+  .es-cast-strip,
+  .es-sortable-item,
+  .es-drag-handle {
+    transition: none;
+  }
+
+  .es-drop-before::before,
+  .es-drop-after::after,
+  .es-card--drag-over-left::before,
+  .es-card--drag-over-right::before,
+  .es-cast-member--drag-target::before,
+  .es-drop-before-h::before,
+  .es-drop-after-h::after {
+    animation: none;
+  }
+
+  .es-drag-ghost {
+    transform: none;
+  }
+}
+
+/* Focus visible for keyboard drag & drop - SCOPED */
+.exalted-scenes [draggable="true"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--es-accent-glow);
+  border-radius: var(--es-radius-md);
+}

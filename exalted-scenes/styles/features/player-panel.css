@@ -1,0 +1,324 @@
+/* ═══════════════════════════════════════════════════════════════
+   PLAYER PANEL - Modern BEM Redesign
+   Simplified panel for players to manage their characters
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ---------------------------------------------------------------
+   Base Structure
+   --------------------------------------------------------------- */
+
+.es-player-panel {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+  background: var(--es-bg-panel);
+  font-family: var(--es-font-sans);
+}
+
+/* ---------------------------------------------------------------
+   Header
+   --------------------------------------------------------------- */
+
+.es-player-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--es-border-subtle);
+  flex-shrink: 0;
+}
+
+.es-player-panel__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--es-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.es-player-panel__title i {
+  color: var(--es-accent-base);
+}
+
+.es-player-panel__badge {
+  padding: 6px 12px;
+  border-radius: var(--es-radius-full);
+  font-size: var(--es-font-size-xs);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.es-player-panel__badge--live {
+  background: var(--es-success);
+  color: white;
+}
+
+.es-player-panel__badge--live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: es-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes es-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.8); }
+}
+
+/* ---------------------------------------------------------------
+   Content
+   --------------------------------------------------------------- */
+
+.es-player-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.es-player-panel__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.es-player-panel__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.es-player-panel__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.es-player-panel__hint {
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------
+   Character Grid
+   --------------------------------------------------------------- */
+
+.es-player-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+/* ---------------------------------------------------------------
+   Character Card
+   --------------------------------------------------------------- */
+
+.es-player-panel__character {
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all var(--es-duration-fast) ease;
+  position: relative;
+}
+
+.es-player-panel__character:hover {
+  border-color: var(--es-border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--es-shadow-md);
+}
+
+.es-player-panel__character:focus-visible {
+  outline: none;
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-player-panel__character--locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.es-player-panel__character--locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--es-border-subtle);
+}
+
+/* ---------------------------------------------------------------
+   Portrait
+   --------------------------------------------------------------- */
+
+.es-player-panel__portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--es-border-default);
+  box-shadow: var(--es-shadow-sm);
+  flex-shrink: 0;
+  transition: border-color var(--es-duration-fast) ease;
+}
+
+.es-player-panel__character:hover .es-player-panel__portrait {
+  border-color: var(--es-accent-base);
+}
+
+.es-player-panel__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------------------------------------------------------------
+   Character Info
+   --------------------------------------------------------------- */
+
+.es-player-panel__info {
+  text-align: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.es-player-panel__name {
+  display: block;
+  font-weight: 600;
+  color: var(--es-text-primary);
+  font-size: var(--es-font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.es-player-panel__state {
+  display: block;
+  font-size: var(--es-font-size-xs);
+  color: var(--es-text-muted);
+  text-transform: capitalize;
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------
+   Character Actions
+   --------------------------------------------------------------- */
+
+.es-player-panel__edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--es-duration-fast) ease;
+  color: var(--es-text-secondary);
+  font-size: 12px;
+}
+
+.es-player-panel__character:hover .es-player-panel__edit-btn {
+  opacity: 1;
+}
+
+.es-player-panel__edit-btn:hover {
+  background: var(--es-accent-base);
+  border-color: var(--es-accent-base);
+  color: white;
+}
+
+.es-player-panel__lock {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border-radius: var(--es-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--es-text-muted);
+  font-size: 10px;
+}
+
+/* ---------------------------------------------------------------
+   Empty State
+   --------------------------------------------------------------- */
+
+.es-player-panel__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.es-player-panel__empty-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--es-bg-interactive);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.es-player-panel__empty-icon i {
+  font-size: 2rem;
+  color: var(--es-text-muted);
+  opacity: 0.5;
+}
+
+.es-player-panel__empty-title {
+  font-size: var(--es-font-size-base);
+  font-weight: 600;
+  color: var(--es-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.es-player-panel__empty-desc {
+  font-size: var(--es-font-size-sm);
+  color: var(--es-text-muted);
+  max-width: 280px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------
+   Reduced Motion
+   --------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .es-player-panel__character,
+  .es-player-panel__edit-btn,
+  .es-player-panel__portrait {
+    transition: none;
+  }
+
+  .es-player-panel__character:hover {
+    transform: none;
+  }
+
+  .es-player-panel__badge--live::before {
+    animation: none;
+  }
+}

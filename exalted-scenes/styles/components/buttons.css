@@ -1,0 +1,455 @@
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS - Linear Style
+   Clean, minimal button system with consistent sizing and states
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────────
+   BASE BUTTON
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn {
+  /* Reset */
+  border: none;
+  background: none;
+  outline: none;
+
+  /* Layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--es-space-sm);
+
+  /* Sizing - Default */
+  height: 32px;
+  padding: 0 var(--es-space-md);
+
+  /* Typography */
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  /* Appearance */
+  border-radius: var(--es-radius-md);
+  cursor: pointer;
+
+  /* Transitions */
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out),
+    color var(--es-duration-fast) var(--es-ease-out),
+    box-shadow var(--es-duration-fast) var(--es-ease-out),
+    transform var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Icon inside button */
+.es-btn i,
+.es-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PRIMARY BUTTON
+   Accent color, for main actions
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-primary {
+  background: var(--es-accent-base);
+  color: var(--es-text-primary);
+}
+
+.es-btn-primary:hover {
+  background: var(--es-accent-hover);
+}
+
+.es-btn-primary:focus-visible {
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SECONDARY BUTTON
+   Outline style, for secondary actions
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-secondary {
+  background: transparent;
+  color: var(--es-text-body);
+  border: 1px solid var(--es-border-default);
+}
+
+.es-btn-secondary:hover {
+  background: var(--es-bg-interactive);
+  border-color: var(--es-border-hover);
+  color: var(--es-text-primary);
+}
+
+.es-btn-secondary:focus-visible {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-btn-secondary:active {
+  background: var(--es-bg-elevated);
+  transform: scale(0.98);
+}
+
+/* Secondary button active state (toggled on) */
+.es-btn-secondary.es-btn--active {
+  background: var(--es-accent-subtle);
+  border-color: var(--es-accent-base);
+  color: var(--es-accent-hover);
+}
+
+.es-btn-secondary.es-btn--active:hover {
+  background: var(--es-accent-glow);
+  color: var(--es-text-primary);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   GHOST BUTTON
+   Text only, minimal visual weight
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-ghost {
+  background: transparent;
+  color: var(--es-text-secondary);
+}
+
+.es-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--es-text-primary);
+}
+
+.es-btn-ghost:focus-visible {
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-btn-ghost:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.98);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   DANGER BUTTON
+   For destructive actions
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-danger {
+  background: var(--es-error);
+  color: var(--es-text-primary);
+}
+
+.es-btn-danger:hover {
+  background: #dc2626; /* Slightly darker red */
+}
+
+.es-btn-danger:focus-visible {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+}
+
+.es-btn-danger:active {
+  transform: scale(0.98);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   BUTTON SIZES
+   ─────────────────────────────────────────────────────────────── */
+
+/* Small */
+.es-btn-sm {
+  height: 28px;
+  padding: 0 var(--es-space-sm);
+  font-size: var(--es-font-size-xs);
+  gap: var(--es-space-xs);
+}
+
+.es-btn-sm i,
+.es-btn-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Large */
+.es-btn-lg {
+  height: 40px;
+  padding: 0 var(--es-space-lg);
+  font-size: var(--es-font-size-base);
+  border-radius: var(--es-radius-lg);
+}
+
+.es-btn-lg i,
+.es-btn-lg svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   ICON BUTTON
+   Square button for icon-only actions
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-icon {
+  /* Reset */
+  border: none;
+  background: transparent;
+  outline: none;
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Sizing */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+
+  /* Appearance */
+  color: var(--es-text-secondary);
+  border-radius: var(--es-radius-md);
+  cursor: pointer;
+
+  /* Transitions */
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    color var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--es-text-primary);
+}
+
+.es-btn-icon:focus-visible {
+  box-shadow: 0 0 0 3px var(--es-accent-glow);
+}
+
+.es-btn-icon:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.es-btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Icon button sizes */
+.es-btn-icon.es-btn-sm {
+  width: 28px;
+  height: 28px;
+}
+
+.es-btn-icon.es-btn-lg {
+  width: 40px;
+  height: 40px;
+}
+
+/* Icon button with accent color on hover */
+.es-btn-icon--accent:hover {
+  background: var(--es-accent-subtle);
+  color: var(--es-accent-hover);
+}
+
+/* Icon button danger variant */
+.es-btn-icon--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--es-error);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   FLOATING ACTION BUTTON (FAB)
+   Primary action button with prominent styling
+   ─────────────────────────────────────────────────────────────── */
+
+.es-fab {
+  /* Positioning */
+  position: absolute;
+  bottom: var(--es-space-xl);
+  right: var(--es-space-xl);
+  z-index: 100;
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  gap: var(--es-space-sm);
+
+  /* Sizing */
+  height: 44px;
+  padding: 0 var(--es-space-lg) 0 var(--es-space-md);
+
+  /* Reset */
+  border: none;
+  outline: none;
+
+  /* Appearance */
+  background: var(--es-accent-base);
+  color: var(--es-text-primary);
+  border-radius: 50px;
+  cursor: pointer;
+
+  /* Typography */
+  font-family: var(--es-font-sans);
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+
+  /* Shadow */
+  box-shadow: var(--es-shadow-lg);
+
+  /* Transitions */
+  transition:
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    transform var(--es-duration-fast) var(--es-ease-out),
+    box-shadow var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-fab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  transition:
+    transform var(--es-duration-normal) var(--es-ease-spring),
+    background-color var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-fab-icon i,
+.es-fab-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.es-fab-label {
+  padding-right: var(--es-space-xs);
+}
+
+/* FAB Hover */
+.es-fab:hover {
+  background: var(--es-accent-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 40px rgba(99, 102, 241, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.es-fab:hover .es-fab-icon {
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* FAB Focus */
+.es-fab:focus-visible {
+  box-shadow:
+    0 0 0 3px var(--es-accent-glow),
+    var(--es-shadow-lg);
+}
+
+/* FAB Active */
+.es-fab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* FAB Responsive - icon only on small screens */
+@media (max-width: 600px) {
+  .es-fab {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .es-fab-label {
+    display: none;
+  }
+
+  .es-fab-icon {
+    width: 24px;
+    height: 24px;
+    background: transparent;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   BUTTON GROUP
+   Group related buttons together
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn-group {
+  display: inline-flex;
+  gap: 1px;
+  background: var(--es-border-default);
+  border-radius: var(--es-radius-md);
+  overflow: hidden;
+}
+
+.es-btn-group .es-btn,
+.es-btn-group .es-btn-icon {
+  border-radius: 0;
+}
+
+.es-btn-group .es-btn:first-child,
+.es-btn-group .es-btn-icon:first-child {
+  border-radius: var(--es-radius-md) 0 0 var(--es-radius-md);
+}
+
+.es-btn-group .es-btn:last-child,
+.es-btn-group .es-btn-icon:last-child {
+  border-radius: 0 var(--es-radius-md) var(--es-radius-md) 0;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   BUTTON WITH LOADING STATE
+   ─────────────────────────────────────────────────────────────── */
+
+.es-btn--loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.es-btn--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: es-spin 0.6s linear infinite;
+}
+
+.es-btn-primary.es-btn--loading::after {
+  border-top-color: var(--es-text-primary);
+}
+
+.es-btn-secondary.es-btn--loading::after,
+.es-btn-ghost.es-btn--loading::after {
+  border-top-color: var(--es-text-secondary);
+}
+
+.es-btn-danger.es-btn--loading::after {
+  border-top-color: var(--es-text-primary);
+}
+
+/* Full-width button modifier */
+.es-btn--full {
+  width: 100%;
+}

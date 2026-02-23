@@ -1,0 +1,264 @@
+<div class="es-scene-editor">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER - Clean, minimal with just the name
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="es-scene-editor__header">
+    <input
+      type="text"
+      name="name"
+      value="{{scene.name}}"
+      placeholder="{{localize "EXALTED-SCENES.SceneEditor.UntitledScene"}}"
+      class="es-scene-editor__title"
+      aria-label="{{localize "EXALTED-SCENES.SceneEditor.SceneName"}}"
+      required
+    >
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENT - Scrollable area with sections
+       ═══════════════════════════════════════════════════════════════ -->
+  <main class="es-scene-editor__content">
+
+    <!-- ─── Media Section ─── -->
+    <section class="es-scene-editor__section">
+      <div class="es-scene-editor__section-header">
+        <i class="fas fa-image"></i>
+        <span>{{localize "EXALTED-SCENES.SceneEditor.BackgroundMedia"}}</span>
+      </div>
+
+      <div class="es-scene-editor__media-block">
+        {{#if scene.background}}
+          <div class="es-scene-editor__preview">
+            {{#if isVideo}}
+              <video src="{{scene.background}}" muted loop autoplay></video>
+            {{else}}
+              <img src="{{scene.background}}" alt="{{localize "EXALTED-SCENES.SceneEditor.ScenePreview"}}">
+            {{/if}}
+            <div class="es-scene-editor__preview-overlay">
+              <button type="button" class="es-scene-editor__preview-btn" data-action="change-media">
+                <i class="fas fa-exchange-alt"></i>
+                <span>{{localize "EXALTED-SCENES.Common.Change"}}</span>
+              </button>
+            </div>
+          </div>
+        {{else}}
+          <div class="es-scene-editor__upload" data-action="select-media">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <span>{{localize "EXALTED-SCENES.SceneEditor.ClickToSelectMedia"}}</span>
+            <small>{{localize "EXALTED-SCENES.SceneEditor.SupportedFormats"}}</small>
+          </div>
+        {{/if}}
+
+        <!-- Hidden file input for manual path entry -->
+        <div class="es-scene-editor__media-path">
+          <input type="text" name="background" value="{{scene.background}}" placeholder="{{localize "EXALTED-SCENES.SceneEditor.EnterPathManually"}}">
+          <button type="button" class="es-scene-editor__browse-btn" data-type="imagevideo" data-target="background">
+            <i class="fas fa-folder-open"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Background Fit -->
+      <div class="es-scene-editor__field">
+        <label class="es-scene-editor__label">
+          <i class="fas fa-expand-arrows-alt"></i>
+          {{localize "EXALTED-SCENES.SceneEditor.BackgroundFit"}}
+        </label>
+        <select name="backgroundFit" class="es-scene-editor__select">
+          {{#each backgroundFitPresets}}
+            <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        <span class="es-scene-editor__hint">{{localize "EXALTED-SCENES.SceneEditor.BackgroundFitHint"}}</span>
+      </div>
+    </section>
+
+    <!-- ─── Tags Section ─── -->
+    <section class="es-scene-editor__section es-scene-editor__section--compact">
+      <div class="es-scene-editor__section-header">
+        <i class="fas fa-tags"></i>
+        <span>{{localize "EXALTED-SCENES.SceneEditor.Tags"}}</span>
+      </div>
+
+      <div class="es-scene-editor__tags">
+        <div class="es-scene-editor__tag-list">
+          {{#each scene.tags}}
+            <span class="es-scene-editor__tag">
+              {{this}}
+              <button type="button" data-action="remove-tag" data-tag="{{this}}">
+                <i class="fas fa-times"></i>
+              </button>
+            </span>
+          {{/each}}
+        </div>
+        <input
+          type="text"
+          class="es-scene-editor__tag-input"
+          placeholder="{{localize "EXALTED-SCENES.SceneEditor.TagPlaceholder"}}"
+          data-action="tag-input"
+        >
+      </div>
+    </section>
+
+    <!-- ─── Cast Layout Section ─── -->
+    <section class="es-scene-editor__section">
+      <div class="es-scene-editor__section-header">
+        <i class="fas fa-users"></i>
+        <span>{{localize "EXALTED-SCENES.SceneEditor.CastLayout"}}</span>
+      </div>
+      <p class="es-scene-editor__section-desc">{{localize "EXALTED-SCENES.SceneEditor.CastLayoutDesc"}}</p>
+
+      <div class="es-scene-editor__grid">
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Position"}}</label>
+          <select name="layoutPreset" class="es-scene-editor__select">
+            {{#each layoutPresets}}
+              <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.PortraitSize"}}</label>
+          <select name="layoutSize" class="es-scene-editor__select">
+            {{#each sizePresets}}
+              <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="es-scene-editor__grid es-scene-editor__grid--three">
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Spacing"}}</label>
+          <div class="es-scene-editor__input-unit">
+            <input type="number" name="layoutSpacing" value="{{layoutSettings.spacing}}" min="0" max="100">
+            <span>px</span>
+          </div>
+        </div>
+
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.HorizontalOffset"}}</label>
+          <div class="es-scene-editor__input-unit">
+            <input type="number" name="layoutOffsetX" value="{{layoutSettings.offsetX}}" min="0" max="50">
+            <span>%</span>
+          </div>
+        </div>
+
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.VerticalOffset"}}</label>
+          <div class="es-scene-editor__input-unit">
+            <input type="number" name="layoutOffsetY" value="{{layoutSettings.offsetY}}" min="0" max="50">
+            <span>%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Audio Integration Section ─── -->
+    {{#if njAvailable}}
+    <section class="es-scene-editor__section">
+      <div class="es-scene-editor__section-header">
+        <i class="fas fa-music"></i>
+        <span>{{localize "EXALTED-SCENES.SceneEditor.Audio"}}</span>
+        <span class="es-scene-editor__section-badge">{{localize "EXALTED-SCENES.SceneEditor.NarratorJukebox"}}</span>
+      </div>
+      <p class="es-scene-editor__section-desc">{{localize "EXALTED-SCENES.SceneEditor.AudioDesc"}}</p>
+
+      <div class="es-scene-editor__audio-grid">
+        <!-- Playlist -->
+        <div class="es-scene-editor__audio-item">
+          <div class="es-scene-editor__audio-icon">
+            <i class="fas fa-compact-disc"></i>
+          </div>
+          <div class="es-scene-editor__audio-content">
+            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Playlist"}}</label>
+            <div class="es-scene-editor__audio-row">
+              <select name="audioPlaylist" class="es-scene-editor__select">
+                {{#each playlists}}
+                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="es-scene-editor__audio-btn" data-action="preview-playlist" title="{{localize "EXALTED-SCENES.Common.Preview"}}">
+                <i class="fas fa-play"></i>
+              </button>
+            </div>
+            <label class="es-scene-editor__checkbox">
+              <input type="checkbox" name="autoPlayMusic" {{#if audio.autoPlayMusic}}checked{{/if}}>
+              <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Ambience -->
+        <div class="es-scene-editor__audio-item">
+          <div class="es-scene-editor__audio-icon">
+            <i class="fas fa-wind"></i>
+          </div>
+          <div class="es-scene-editor__audio-content">
+            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.AmbiencePreset"}}</label>
+            <div class="es-scene-editor__audio-row">
+              <select name="audioAmbience" class="es-scene-editor__select">
+                {{#each ambiencePresets}}
+                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="es-scene-editor__audio-btn" data-action="preview-ambience" title="{{localize "EXALTED-SCENES.Common.Preview"}}">
+                <i class="fas fa-play"></i>
+              </button>
+            </div>
+            <label class="es-scene-editor__checkbox">
+              <input type="checkbox" name="autoPlayAmbience" {{#if audio.autoPlayAmbience}}checked{{/if}}>
+              <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="es-scene-editor__audio-footer">
+        <label class="es-scene-editor__checkbox">
+          <input type="checkbox" name="stopOnEnd" {{#if audio.stopOnEnd}}checked{{/if}}>
+          <span>{{localize "EXALTED-SCENES.SceneEditor.StopAudioWhenSceneEnds"}}</span>
+        </label>
+        <button type="button" class="es-scene-editor__stop-btn" data-action="stop-audio">
+          <i class="fas fa-stop"></i>
+          {{localize "EXALTED-SCENES.SceneEditor.StopAll"}}
+        </button>
+      </div>
+    </section>
+    {{else}}
+    <section class="es-scene-editor__section es-scene-editor__section--disabled">
+      <div class="es-scene-editor__section-header">
+        <i class="fas fa-music"></i>
+        <span>{{localize "EXALTED-SCENES.SceneEditor.Audio"}}</span>
+      </div>
+      <div class="es-scene-editor__notice">
+        <i class="fas fa-info-circle"></i>
+        <p>{{{localize "EXALTED-SCENES.SceneEditor.InstallNarratorJukebox"}}}</p>
+      </div>
+    </section>
+    {{/if}}
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER - Action buttons
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="es-scene-editor__footer">
+    <button type="button" class="es-scene-editor__btn es-scene-editor__btn--ghost" data-action="close">
+      {{localize "EXALTED-SCENES.Common.Cancel"}}
+    </button>
+    {{#if isCreateMode}}
+      <button type="button" class="es-scene-editor__btn es-scene-editor__btn--primary" data-action="save">
+        <i class="fas fa-plus"></i>
+        {{localize "EXALTED-SCENES.GMPanel.CreateScene"}}
+      </button>
+    {{else}}
+      <button type="button" class="es-scene-editor__btn es-scene-editor__btn--primary" data-action="save">
+        <i class="fas fa-check"></i>
+        {{localize "EXALTED-SCENES.Common.SaveChanges"}}
+      </button>
+    {{/if}}
+  </footer>
+</div>
