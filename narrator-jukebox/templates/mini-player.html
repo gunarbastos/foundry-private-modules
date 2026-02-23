@@ -1,0 +1,329 @@
+<div class="narrator-jukebox-mini-container spotify-theme">
+
+  <!-- Mini Header with Tabs (also serves as drag handle) -->
+  <header class="mini-header">
+    <div class="mini-tabs">
+      <button class="mini-tab {{#if (eq miniActiveTab 'music')}}active{{/if}}" data-tab="music" data-tooltip="Music Library" data-tooltip-position="bottom">
+        <i class="fas fa-music"></i>
+        <span>Music</span>
+      </button>
+      <button class="mini-tab {{#if (eq miniActiveTab 'ambience')}}active{{/if}}" data-tab="ambience" data-tooltip="Ambience Layer Mixer" data-tooltip-position="bottom">
+        <i class="fas fa-layer-group"></i>
+        <span>Ambience</span>
+        {{#if ambienceLayerCount}}<span class="mini-badge">{{ambienceLayerCount}}</span>{{/if}}
+      </button>
+      <button class="mini-tab {{#if (eq miniActiveTab 'soundboard')}}active{{/if}}" data-tab="soundboard" data-tooltip="Soundboard" data-tooltip-position="bottom">
+        <i class="fas fa-th"></i>
+        <span>Sounds</span>
+        {{#if activeSoundboardCount}}<span class="mini-badge">{{activeSoundboardCount}}</span>{{/if}}
+      </button>
+    </div>
+    <div class="mini-header-controls">
+      <!-- Preview/Broadcast Toggle (isPreviewMode=true means Preview, false means Broadcast) -->
+      <div class="mini-broadcast-toggle {{#if isPreviewMode}}preview{{else}}broadcast{{/if}}" id="mini-broadcast-toggle" data-tooltip="{{#if isPreviewMode}}Preview mode (only you hear){{else}}Broadcasting to players{{/if}}" data-tooltip-position="bottom">
+        <i class="fas {{#if isPreviewMode}}fa-headphones{{else}}fa-broadcast-tower{{/if}}"></i>
+      </div>
+      <button class="mini-control-btn mini-collapse-btn" data-tooltip="Collapse to Micro" data-tooltip-position="bottom">
+        <i class="fas fa-compress-alt"></i>
+      </button>
+      <button class="mini-control-btn mini-expand-btn" data-tooltip="Expand to Full Window" data-tooltip-position="bottom">
+        <i class="fas fa-expand-alt"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <div class="mini-search">
+    <i class="fas fa-search"></i>
+    <input type="text" class="mini-search-input" placeholder="Search..." value="{{miniSearchQuery}}">
+    <button class="mini-search-clear {{#unless miniSearchQuery}}hidden{{/unless}}" data-tooltip="Clear search" data-tooltip-position="left">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Content Area (Tab Panels) -->
+  <div class="mini-content">
+
+    <!-- Music Tab -->
+    <div class="mini-tab-panel {{#if (ne miniActiveTab 'music')}}hidden{{/if}}" data-panel="music">
+      <!-- Sub-tabs: Library / Queue -->
+      <div class="mini-music-subtabs">
+        <button class="mini-subtab {{#if (eq miniMusicView 'library')}}active{{/if}}" data-subtab="library">
+          <i class="fas fa-music"></i> Library
+        </button>
+        <button class="mini-subtab {{#if (eq miniMusicView 'queue')}}active{{/if}} {{#unless hasQueue}}disabled{{/unless}}" data-subtab="queue" {{#unless hasQueue}}disabled{{/unless}}>
+          <i class="fas fa-list-ol"></i> Queue
+          {{#if hasQueue}}<span class="mini-queue-badge">{{miniQueueTracks.length}}</span>{{/if}}
+        </button>
+      </div>
+
+      <!-- Library View -->
+      <div class="mini-music-view {{#if (ne miniMusicView 'library')}}hidden{{/if}}" data-view="library">
+        {{#if miniFilteredMusic.length}}
+        <div class="mini-track-list">
+        {{#each miniFilteredMusic}}
+        <div class="mini-track-row {{#if isActive}}active{{/if}} {{#if isPlaying}}playing{{/if}}" data-music-id="{{id}}">
+          <div class="mini-track-art">
+            {{#if thumbnail}}
+            <img src="{{thumbnail}}" alt="{{name}}">
+            {{else}}
+            <div class="mini-art-placeholder"><i class="fas fa-music"></i></div>
+            {{/if}}
+            <div class="mini-track-play-overlay">
+              <i class="fas {{#if isPlaying}}fa-pause{{else}}fa-play{{/if}}"></i>
+            </div>
+          </div>
+          <div class="mini-track-info">
+            <div class="mini-track-name" title="{{name}}">{{name}}</div>
+            <div class="mini-track-tags">{{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</div>
+          </div>
+          <div class="mini-track-duration">{{#if duration}}{{duration}}{{else}}--:--{{/if}}</div>
+        </div>
+        {{/each}}
+      </div>
+        {{else}}
+        <div class="mini-empty-state">
+          {{#if ../miniSearchQuery}}
+          <i class="fas fa-search"></i>
+          <p>No tracks found</p>
+          <span>Try a different search term</span>
+          {{else}}
+          <i class="fas fa-music"></i>
+          <p>No music yet</p>
+          <span>Add music in the full window</span>
+          {{/if}}
+        </div>
+        {{/if}}
+      </div>
+
+      <!-- Queue View -->
+      <div class="mini-music-view {{#if (ne miniMusicView 'queue')}}hidden{{/if}}" data-view="queue">
+        {{#if miniQueueTracks.length}}
+        <div class="mini-track-list queue-list">
+          {{#each miniQueueTracks}}
+          <div class="mini-track-row queue-row {{#if isActive}}active{{/if}} {{#if isPlaying}}playing{{/if}} {{#if isPlayed}}played{{/if}}" data-music-id="{{id}}">
+            <div class="mini-queue-position {{#if isActive}}current{{/if}}">
+              {{#if isActive}}<i class="fas fa-play"></i>{{else}}{{queuePosition}}{{/if}}
+            </div>
+            <div class="mini-track-art">
+              {{#if thumbnail}}
+              <img src="{{thumbnail}}" alt="{{name}}">
+              {{else}}
+              <div class="mini-art-placeholder"><i class="fas fa-music"></i></div>
+              {{/if}}
+            </div>
+            <div class="mini-track-info">
+              <div class="mini-track-name" title="{{name}}">{{name}}</div>
+              <div class="mini-track-tags">{{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</div>
+            </div>
+            <div class="mini-track-duration">{{#if duration}}{{duration}}{{else}}--:--{{/if}}</div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="mini-empty-state queue">
+          {{#if hasQueue}}
+          <i class="fas fa-search"></i>
+          <p>No matching tracks</p>
+          <span>Try a different search term</span>
+          {{else}}
+          <i class="fas fa-list-ol"></i>
+          <p>No playlist playing</p>
+          <span>Start a playlist to see the queue</span>
+          {{/if}}
+        </div>
+        {{/if}}
+      </div>
+    </div>
+
+    <!-- Ambience Tab (Layer Mixer) -->
+    <div class="mini-tab-panel {{#if (ne miniActiveTab 'ambience')}}hidden{{/if}}" data-panel="ambience">
+      {{#if miniFilteredAmbience.length}}
+      <div class="mini-track-list ambience-layers">
+        {{#each miniFilteredAmbience}}
+        <div class="mini-track-row ambience-row {{#if isLayerActive}}layer-active{{/if}}" data-ambience-id="{{id}}">
+          <div class="mini-track-art">
+            {{#if thumbnail}}
+            <img src="{{thumbnail}}" alt="{{name}}">
+            {{else}}
+            <div class="mini-art-placeholder ambience"><i class="fas fa-layer-group"></i></div>
+            {{/if}}
+            <div class="mini-track-play-overlay ambience">
+              <i class="fas {{#if isLayerActive}}fa-stop{{else}}fa-play{{/if}}"></i>
+            </div>
+          </div>
+          <div class="mini-track-info">
+            <div class="mini-track-name" title="{{name}}">{{name}}</div>
+            <div class="mini-track-tags">{{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</div>
+          </div>
+          <div class="mini-layer-controls">
+            {{#if isLayerActive}}
+            <input type="range" class="mini-layer-volume" data-layer-id="{{id}}" min="0" max="100" value="{{layerVolume}}" title="Layer volume">
+            <div class="mini-layer-indicator active">
+              <i class="fas fa-wave-square"></i>
+            </div>
+            {{else}}
+            <div class="mini-layer-indicator">
+              <i class="fas fa-plus"></i>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      {{else}}
+      <div class="mini-empty-state ambience">
+        {{#if ../miniSearchQuery}}
+        <i class="fas fa-search"></i>
+        <p>No ambience found</p>
+        <span>Try a different search term</span>
+        {{else}}
+        <i class="fas fa-layer-group"></i>
+        <p>No ambience yet</p>
+        <span>Add ambience in the full window</span>
+        {{/if}}
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Soundboard Tab -->
+    <div class="mini-tab-panel {{#if (ne miniActiveTab 'soundboard')}}hidden{{/if}}" data-panel="soundboard">
+      {{#if miniFilteredSoundboard.length}}
+      <div class="mini-soundboard-grid">
+        {{#each miniFilteredSoundboard}}
+        <div class="mini-sound-card {{#if isPlaying}}playing{{/if}}"
+             data-sound-id="{{id}}"
+             style="--card-color: {{#if color}}{{color}}{{else}}#ff6b35{{/if}}">
+          <div class="mini-sound-icon">
+            <i class="{{#if icon}}{{icon}}{{else}}fas fa-volume-up{{/if}}"></i>
+          </div>
+          <div class="mini-sound-name" title="{{name}}">{{name}}</div>
+          {{#if isPlaying}}
+          <div class="mini-sound-playing">
+            <span></span><span></span><span></span>
+          </div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{else}}
+      <div class="mini-empty-state soundboard">
+        {{#if ../miniSearchQuery}}
+        <i class="fas fa-search"></i>
+        <p>No sounds found</p>
+        <span>Try a different search term</span>
+        {{else}}
+        <i class="fas fa-th"></i>
+        <p>No sounds yet</p>
+        <span>Add sounds in the full window</span>
+        {{/if}}
+      </div>
+      {{/if}}
+    </div>
+  </div>
+
+  <!-- Player Bar - Changes based on active tab -->
+  <footer class="mini-player-bar">
+
+    <!-- Music Player (shown when Music tab is active) -->
+    <div class="mini-player-section music-player {{#if (ne miniActiveTab 'music')}}hidden{{/if}}">
+      <div class="mini-now-playing">
+        <div class="mini-np-art">
+          {{#if currentTrack.thumbnail}}
+          <img src="{{currentTrack.thumbnail}}" alt="{{currentTrack.name}}">
+          {{else}}
+          <div class="mini-np-placeholder"><i class="fas fa-music"></i></div>
+          {{/if}}
+        </div>
+        <div class="mini-np-info">
+          <div class="mini-np-title" title="{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}">
+            {{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}
+          </div>
+        </div>
+      </div>
+      <div class="mini-controls">
+        <button class="mini-ctrl-btn" id="mini-prev" data-tooltip="Previous" data-tooltip-position="top">
+          <i class="fas fa-step-backward"></i>
+        </button>
+        <button class="mini-ctrl-btn main" id="mini-play-pause" data-tooltip="{{#if isPlaying}}Pause{{else}}Play{{/if}}" data-tooltip-position="top">
+          <i class="fas {{#if isPlaying}}fa-pause{{else}}fa-play{{/if}}"></i>
+        </button>
+        <button class="mini-ctrl-btn" id="mini-next" data-tooltip="Next" data-tooltip-position="top">
+          <i class="fas fa-step-forward"></i>
+        </button>
+      </div>
+      <div class="mini-volume">
+        <button class="mini-vol-btn" id="mini-mute" data-tooltip="{{#if isMuted}}Unmute{{else}}Mute{{/if}}" data-tooltip-position="top">
+          <i class="fas {{#if isMuted}}fa-volume-mute{{else}}fa-volume-up{{/if}}"></i>
+        </button>
+        <input type="range" class="mini-vol-slider" id="mini-volume-slider" min="0" max="100" value="{{volume}}">
+      </div>
+    </div>
+
+    <!-- Ambience Layer Mixer Player (shown when Ambience tab is active) -->
+    <div class="mini-player-section ambience-player {{#if (ne miniActiveTab 'ambience')}}hidden{{/if}}">
+      <div class="mini-layer-mixer-bar">
+        <!-- Active layers indicator -->
+        <div class="mini-layers-status">
+          {{#if ambienceLayerCount}}
+          <div class="mini-active-layers">
+            {{#each miniActiveAmbienceLayers}}
+            <div class="mini-layer-thumb" data-layer-id="{{trackId}}" title="{{name}}">
+              {{#if thumbnail}}
+              <img src="{{thumbnail}}" alt="{{name}}">
+              {{else}}
+              <i class="fas fa-layer-group"></i>
+              {{/if}}
+            </div>
+            {{/each}}
+          </div>
+          <span class="mini-layer-count">{{ambienceLayerCount}}/{{maxAmbienceLayers}}</span>
+          {{else}}
+          <div class="mini-no-layers">
+            <i class="fas fa-layer-group"></i>
+            <span>No layers active</span>
+          </div>
+          {{/if}}
+        </div>
+        <!-- Controls -->
+        <div class="mini-controls">
+          {{#if ambienceLayerCount}}
+          <button class="mini-ctrl-btn stop-all" id="mini-stop-all-layers" data-tooltip="Stop All Layers" data-tooltip-position="top">
+            <i class="fas fa-stop"></i>
+          </button>
+          {{/if}}
+        </div>
+        <!-- Master Volume -->
+        <div class="mini-volume">
+          <button class="mini-vol-btn" id="mini-ambience-master-mute" data-tooltip="{{#if isAmbienceMasterMuted}}Unmute All{{else}}Mute All{{/if}}" data-tooltip-position="top">
+            <i class="fas {{#if isAmbienceMasterMuted}}fa-volume-mute{{else}}fa-volume-up{{/if}}"></i>
+          </button>
+          <input type="range" class="mini-vol-slider" id="mini-ambience-master-volume" min="0" max="100" value="{{ambienceMasterVolume}}" data-tooltip="Master Volume" data-tooltip-position="top">
+        </div>
+      </div>
+    </div>
+
+    <!-- Soundboard Player (shown when Soundboard tab is active) -->
+    <div class="mini-player-section soundboard-player {{#if (ne miniActiveTab 'soundboard')}}hidden{{/if}}">
+      <div class="mini-soundboard-status">
+        <div class="mini-broadcast-indicator {{#if isPreviewMode}}preview{{else}}broadcast{{/if}}">
+          <i class="fas {{#if isPreviewMode}}fa-headphones{{else}}fa-broadcast-tower{{/if}}"></i>
+          <span>{{#if isPreviewMode}}Preview Mode{{else}}Broadcasting{{/if}}</span>
+        </div>
+        {{#if activeSoundboardCount}}
+        <div class="mini-active-sounds">
+          <span class="mini-sound-count">{{activeSoundboardCount}}</span>
+          <span>sound{{#if (gt activeSoundboardCount 1)}}s{{/if}} playing</span>
+        </div>
+        {{/if}}
+      </div>
+      <div class="mini-controls">
+        <button class="mini-ctrl-btn stop-all" id="mini-stop-all-sounds" data-tooltip="Stop All Sounds" data-tooltip-position="top">
+          <i class="fas fa-stop"></i>
+          <span>Stop All</span>
+        </button>
+      </div>
+    </div>
+
+  </footer>
+</div>

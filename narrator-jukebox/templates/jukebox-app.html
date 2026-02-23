@@ -1,0 +1,880 @@
+<div class="narrator-jukebox-container narrator-jukebox-app spotify-theme {{#if selectionMode}}selection-mode{{/if}}">
+
+  <!-- Content Wrapper - Contains Sidebar + Main (scrollable area) -->
+  <div class="jb-content-wrapper">
+
+  <!-- Sidebar -->
+  <nav class="jb-sidebar">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <img src="modules/narrator-jukebox/icon_narrator_jukebox2.webp" class="jukebox-logo" alt="Narrator's Jukebox">
+      </div>
+    </div>
+
+    <!-- Scrollable Navigation Area -->
+    <div class="sidebar-scrollable">
+      <!-- Home (Independent) -->
+      <ul class="sidebar-nav">
+        <li class="nav-item {{#if (eq view 'home')}}active{{/if}}" data-view="home" data-tooltip="Home - Mood boards and recent tracks" data-tooltip-position="right">
+          <i class="fas fa-home"></i> <span>Home</span>
+        </li>
+      </ul>
+
+      <!-- Music Section -->
+      <div class="sidebar-section-header music-section">MUSIC</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item {{#if (eq view 'library')}}active{{/if}}" data-view="library" data-tooltip="Music Library - All your music tracks" data-tooltip-position="right">
+          <i class="fas fa-music"></i> <span>Music Library</span>
+        </li>
+        <li class="nav-item {{#if (eq view 'playlists')}}active{{/if}}" data-view="playlists" data-tooltip="Playlists - Organized collections" data-tooltip-position="right">
+          <i class="fas fa-list"></i> <span>Playlists</span>
+        </li>
+      </ul>
+
+      <!-- Ambience Section -->
+      <div class="sidebar-section-header ambience-section">AMBIENCE</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item {{#if (eq view 'ambience')}}active{{/if}}" data-view="ambience" data-tooltip="Ambience Mixer - Layer multiple sounds" data-tooltip-position="right">
+          <i class="fas fa-layer-group"></i> <span>Ambience Mixer</span>
+          {{#if ambienceLayerCount}}<span class="badge ambience-badge">{{ambienceLayerCount}}</span>{{/if}}
+        </li>
+      </ul>
+
+      <!-- Soundboard Section -->
+      <div class="sidebar-section-header soundboard-section">SOUNDBOARD</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item {{#if (eq view 'soundboard')}}active{{/if}}" data-view="soundboard" data-tooltip="Soundboard Library - Quick sound effects" data-tooltip-position="right">
+          <i class="fas fa-th"></i> <span>Soundboard Library</span>
+          {{#if activeSoundboardCount}}<span class="badge soundboard-badge">{{activeSoundboardCount}}</span>{{/if}}
+        </li>
+      </ul>
+
+      {{#if isGM}}
+      <!-- GM Section -->
+      <div class="sidebar-section-header gm-section">GM TOOLS</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item {{#if (eq view 'suggestions')}}active{{/if}}" data-view="suggestions" data-tooltip="Player Suggestions - Review track requests" data-tooltip-position="right">
+          <i class="fas fa-lightbulb"></i> <span>Suggestions</span>
+          {{#if suggestions.length}}<span class="badge">{{suggestions.length}}</span>{{/if}}
+        </li>
+      </ul>
+      {{/if}}
+
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="jb-main">
+
+    <!-- Header -->
+    <header class="main-header">
+      <div class="search-bar {{#if searchQuery}}has-query{{/if}}">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" placeholder="What do you want to listen to?" value="{{searchQuery}}">
+        <button class="search-clear {{#unless searchQuery}}hidden{{/unless}}" data-tooltip="Clear search" data-tooltip-position="bottom">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="search-divider"></div>
+        <select class="tag-filter" data-tooltip="Filter tracks by tag" data-tooltip-position="bottom">
+            <option value="">All Tags</option>
+            {{#each allTags}}
+            <option value="{{this}}" {{#if (eq ../tagFilter this)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+        </select>
+      </div>
+
+      <!-- Mode Toggle Switch -->
+      <div class="mode-toggle {{#if isPreviewMode}}preview{{else}}broadcast{{/if}}" data-tooltip="{{#if isPreviewMode}}Preview Mode - Only you hear{{else}}Broadcast Mode - Everyone hears{{/if}}" data-tooltip-position="bottom">
+        <span class="mode-label preview-label"><i class="fas fa-headphones"></i> Preview</span>
+        <button class="toggle-switch" data-mode="{{#if isPreviewMode}}broadcast{{else}}preview{{/if}}">
+          <span class="toggle-slider"></span>
+        </button>
+        <span class="mode-label broadcast-label"><i class="fas fa-broadcast-tower"></i> Broadcast</span>
+      </div>
+    </header>
+
+    <!-- Views -->
+    <div class="content-area">
+        
+        <!-- Home View -->
+        <div id="view-home" class="view-section {{#if (ne view 'home')}}hidden{{/if}}">
+            <section class="hero-section">
+                <h1>Welcome, Storyteller</h1>
+                <p>Set the atmosphere for your chronicle.</p>
+            </section>
+            
+            <section class="mood-section">
+                <div class="section-header">
+                    <h2>Mood Boards</h2>
+                    <button class="edit-moods-btn" data-tooltip="Customize mood boards and tags" data-tooltip-position="left"><i class="fas fa-edit"></i> Edit</button>
+                </div>
+                <div class="mood-grid">
+                    {{#each moods}}
+                    <div class="mood-card" data-tag="{{tag}}" style="background: {{color}}" data-tooltip="Filter by {{label}} mood" data-tooltip-position="top">
+                        <i class="{{icon}}"></i>
+                        <span>{{label}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </section>
+
+            <section class="recent-section">
+                <div class="section-header">
+                    <h2>Recently Added</h2>
+                </div>
+                <div class="track-grid">
+                    {{#each recentMusic}}
+                    <div class="track-card play-music-btn" data-music-id="{{id}}" data-tooltip="{{name}}" data-tooltip-position="top">
+                        <div class="track-img">
+                            {{#if thumbnail}}
+                            <img src="{{thumbnail}}">
+                            {{else}}
+                            <div class="placeholder"><i class="fas fa-music"></i></div>
+                            {{/if}}
+                            <div class="play-overlay">
+                                <button class="card-play-btn" data-tooltip="Play {{name}}" data-tooltip-position="top"><i class="fas fa-play"></i></button>
+                            </div>
+                        </div>
+                        <div class="track-info">
+                            <div class="track-name" title="{{name}}">{{name}}</div>
+                            <div class="track-tags" title="{{#each tags}}{{this}} {{/each}}">{{#each tags}}{{this}} {{/each}}</div>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </section>
+        </div>
+
+        <!-- Library View -->
+        <div id="view-library" class="view-section {{#if (ne view 'library')}}hidden{{/if}}">
+            <div class="section-header">
+                <h2>Your Library</h2>
+                {{#if hasActiveFilter}}
+                <span class="filter-active-badge">
+                    <i class="fas fa-filter"></i> Showing {{totalMusicCount}} of {{totalMusicCountUnfiltered}}
+                </span>
+                {{/if}}
+                <div class="section-header-actions">
+                    {{#if isGM}}
+                    {{#if hasActiveFilter}}
+                    <button class="btn-add-all-visible" data-tooltip="Add all {{totalMusicCount}} visible tracks to a playlist" data-tooltip-position="bottom">
+                        <i class="fas fa-plus"></i> Add All Visible
+                    </button>
+                    {{/if}}
+                    <button class="selection-mode-btn {{#if selectionMode}}active{{/if}}" data-tooltip="{{#if selectionMode}}Exit selection mode{{else}}Select multiple tracks{{/if}}" data-tooltip-position="bottom">
+                        <i class="fas {{#if selectionMode}}fa-times{{else}}fa-check-square{{/if}}"></i>
+                        {{#if selectionMode}}Cancel{{else}}Select{{/if}}
+                    </button>
+                    <button class="add-music-btn bulk-import-btn" data-type="music" data-tooltip="Import multiple files from a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-open"></i> Bulk Import
+                    </button>
+                    {{/if}}
+                    <button class="add-music-btn">{{#if isGM}}Add Music{{else}}Suggest Music{{/if}}</button>
+                </div>
+            </div>
+            <div class="track-list-header">
+                <div class="select-all-col"><input type="checkbox" class="select-all-checkbox" data-tooltip="Select all visible" data-tooltip-position="top"></div>
+                <div class="col-play">#</div>
+                <div class="col-thumb"></div>
+                <div class="col-title">Title</div>
+                <div class="col-tags">Tags</div>
+                <div class="col-source">Source</div>
+                <div class="col-duration"><i class="far fa-clock"></i></div>
+                {{#if isGM}}<div class="col-actions"></div>{{/if}}
+            </div>
+            <div class="track-list">
+                {{#each music}}
+                <div class="track-row play-music-btn {{#if (eq ../currentMusic.id id)}}active{{#if ../isPlaying}} playing{{else}} paused{{/if}}{{/if}} {{#if (eq ../nextMusic.id id)}}up-next{{/if}} {{#if playlists.length}}in-playlist{{/if}} {{#if (njb-includes ../selectedMusicIds id)}}selected{{/if}}" data-music-id="{{id}}">
+                    <div class="track-select-col">
+                        <input type="checkbox" class="track-select-checkbox" {{#if (njb-includes ../selectedMusicIds id)}}checked{{/if}}>
+                    </div>
+                    <div class="col-play">
+                        <span class="track-num">{{njb-add @index 1}}</span>
+                        <i class="fas fa-play play-icon"></i>
+                        <i class="fas fa-pause pause-icon"></i>
+                        <i class="fas fa-volume-up playing-icon"></i>
+                        <i class="fas fa-pause paused-icon"></i>
+                    </div>
+                    <div class="col-thumb">
+                        {{#if thumbnail}}
+                        <img src="{{thumbnail}}" class="list-thumb">
+                        {{else}}
+                        <img src="icons/svg/sound.svg" class="list-thumb" style="filter: invert(1);">
+                        {{/if}}
+                    </div>
+                    <div class="col-title">
+                        <div class="t-name">
+                            <span class="t-name-text">{{name}}</span>{{#if (eq ../nextMusic.id id)}}<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>{{/if}}
+                        </div>
+                        <div class="t-sub">
+                            {{#if (eq source 'youtube')}}YouTube{{else}}Local{{/if}}
+                            {{#if playlists.length}}
+                            <span class="playlist-indicator" data-tooltip="In {{playlists.length}} playlist{{#if (gt playlists.length 1)}}s{{/if}}: {{#each playlists}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}" data-tooltip-position="top">
+                                <i class="fas fa-list"></i> {{playlists.length}}
+                            </span>
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="col-tags">
+                        {{#each tags}}<span class="tag-pill">{{this}}</span>{{/each}}
+                    </div>
+                    <div class="col-source">
+                        {{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}
+                    </div>
+                    <div class="col-duration" data-music-id="{{id}}">
+                        {{#if duration}}{{duration}}{{else}}--:--{{/if}}
+                    </div>
+                    {{#if ../isGM}}
+                    <div class="col-actions">
+                        <button class="action-btn add-to-playlist-btn" data-music-id="{{id}}" data-tooltip="Add to playlist" data-tooltip-position="left"><i class="fas fa-plus-square"></i></button>
+                        <button class="action-btn edit-track-btn" data-music-id="{{id}}" data-tooltip="Edit track details" data-tooltip-position="left"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-track-btn" data-music-id="{{id}}" data-tooltip="Delete track" data-tooltip-position="left"><i class="fas fa-trash"></i></button>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{#if hasMoreMusic}}
+            <div class="load-more-container">
+                <span class="load-more-info">Showing {{musicDisplayLimit}} of {{totalMusicCount}} tracks</span>
+                <button class="load-more-btn" data-type="music">
+                    <i class="fas fa-plus-circle"></i> Load More
+                </button>
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Playlists View - Two Panel Layout -->
+        <div id="view-playlists" class="view-section {{#if (ne view 'playlists')}}hidden{{/if}}">
+            <div class="playlists-container">
+                <!-- Left Panel: Playlist Browser -->
+                <div class="playlists-browser">
+                    <div class="playlists-browser-header">
+                        <h3>Your Playlists</h3>
+                        {{#if isGM}}
+                        <button class="add-playlist-btn" data-tooltip="Create new playlist" data-tooltip-position="right">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        {{/if}}
+                    </div>
+                    <div class="playlists-browser-list">
+                        {{#each playlists}}
+                        <div class="playlist-browser-item {{#if (eq ../selectedPlaylist.id id)}}selected{{/if}} {{#if (eq ../currentPlaylist.id id)}}{{#if ../isPlaying}}playing{{else}}paused{{/if}}{{/if}}" data-playlist-id="{{id}}">
+                            <div class="playlist-browser-cover">
+                                {{#with (lookup ../playlistCovers id)}}
+                                    {{#each this}}
+                                    <div class="cover-cell-mini">
+                                        {{#if this}}
+                                        <img src="{{this}}" alt="">
+                                        {{else}}
+                                        <div class="cover-placeholder-mini"><i class="fas fa-music"></i></div>
+                                        {{/if}}
+                                    </div>
+                                    {{/each}}
+                                {{else}}
+                                    <div class="cover-cell-mini empty-cover"><i class="fas fa-music"></i></div>
+                                {{/with}}
+                            </div>
+                            <div class="playlist-browser-info">
+                                <span class="playlist-browser-name">{{name}}</span>
+                                <span class="playlist-browser-count">{{musicIds.length}} {{#if (eq musicIds.length 1)}}track{{else}}tracks{{/if}}</span>
+                            </div>
+                            {{#if (eq ../currentPlaylist.id id)}}
+                            <div class="playlist-browser-playing">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            {{/if}}
+                            <button class="playlist-browser-play" data-playlist-id="{{id}}" data-tooltip="{{#if (eq ../currentPlaylist.id id)}}{{#if ../isPlaying}}Pause{{else}}Resume{{/if}}{{else}}Play{{/if}}" data-tooltip-position="top">
+                                {{#if (eq ../currentPlaylist.id id)}}
+                                    {{#if ../isPlaying}}
+                                    <i class="fas fa-pause"></i>
+                                    {{else}}
+                                    <i class="fas fa-play"></i>
+                                    {{/if}}
+                                {{else}}
+                                <i class="fas fa-play"></i>
+                                {{/if}}
+                            </button>
+                        </div>
+                        {{else}}
+                        <div class="playlists-empty-hint">
+                            <i class="fas fa-list"></i>
+                            <p>No playlists yet</p>
+                            {{#if isGM}}
+                            <span>Click + to create one</span>
+                            {{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+
+                <!-- Right Panel: Playlist Details -->
+                <div class="playlist-detail-panel">
+                    {{#if selectedPlaylist}}
+                    <div class="playlist-details-v2">
+                        <!-- Playlist Header - Spotify style -->
+                        <div class="playlist-header">
+                            <div class="playlist-cover">
+                                {{#if selectedPlaylist.tracks.length}}
+                                <div class="playlist-cover-grid">
+                                    {{#each (njb-take selectedPlaylist.tracks 4)}}
+                                    <div class="cover-cell">
+                                        {{#if thumbnail}}
+                                        <img src="{{thumbnail}}" alt="">
+                                        {{else}}
+                                        <div class="cover-placeholder"><i class="fas fa-music"></i></div>
+                                        {{/if}}
+                                    </div>
+                                    {{/each}}
+                                </div>
+                                {{else}}
+                                <div class="playlist-cover-empty">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                {{/if}}
+                            </div>
+                            <div class="playlist-info">
+                                <span class="playlist-type">PLAYLIST</span>
+                                <h1 class="playlist-title">{{selectedPlaylist.name}}</h1>
+                                <div class="playlist-meta">
+                                    <span class="playlist-track-count">{{selectedPlaylist.tracks.length}} {{#if (eq selectedPlaylist.tracks.length 1)}}track{{else}}tracks{{/if}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Playlist Actions -->
+                        <div class="playlist-actions">
+                            <button class="playlist-play-btn play-playlist-btn {{#if selectedPlaylist.isPlaying}}playing{{/if}}" data-playlist-id="{{selectedPlaylist.id}}" data-tooltip="{{#if selectedPlaylist.isPlaying}}Now Playing{{else}}Play Playlist{{/if}}">
+                                {{#if selectedPlaylist.isPlaying}}
+                                <i class="fas fa-pause"></i>
+                                {{else}}
+                                <i class="fas fa-play"></i>
+                                {{/if}}
+                            </button>
+                            <button class="playlist-shuffle-btn" data-playlist-id="{{selectedPlaylist.id}}" data-tooltip="Shuffle Play">
+                                <i class="fas fa-random"></i>
+                            </button>
+                            {{#if isGM}}
+                            <button class="playlist-delete-btn" data-playlist-id="{{selectedPlaylist.id}}" data-tooltip="Delete Playlist">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {{/if}}
+                        </div>
+
+                        <!-- Track List -->
+                        {{#if selectedPlaylist.tracks.length}}
+                        <div class="playlist-track-list">
+                            <div class="track-list-header">
+                                <div class="col-num">#</div>
+                                <div class="col-title">TITLE</div>
+                                <div class="col-source">SOURCE</div>
+                                <div class="col-duration"><i class="far fa-clock"></i></div>
+                                {{#if isGM}}<div class="col-actions"></div>{{/if}}
+                            </div>
+                            <div class="track-list">
+                                {{#each selectedPlaylist.tracks}}
+                                <div class="track-row play-music-btn {{#if (eq ../currentMusic.id id)}}active{{#if ../isPlaying}} playing{{else}} paused{{/if}}{{/if}} {{#if (eq ../nextMusic.id id)}}up-next{{/if}}" data-music-id="{{id}}">
+                                    <div class="col-play">
+                                        <span class="track-num">{{njb-add @index 1}}</span>
+                                        <i class="fas fa-play play-icon"></i>
+                                        <i class="fas fa-pause pause-icon"></i>
+                                        <i class="fas fa-volume-up playing-icon"></i>
+                                        <i class="fas fa-pause paused-icon"></i>
+                                    </div>
+                                    <div class="col-thumb">
+                                        {{#if thumbnail}}
+                                        <img src="{{thumbnail}}" class="list-thumb">
+                                        {{else}}
+                                        <img src="icons/svg/sound.svg" class="list-thumb" style="filter: invert(1);">
+                                        {{/if}}
+                                    </div>
+                                    <div class="col-title">
+                                        <div class="t-name">
+                                            <span class="t-name-text">{{name}}</span>{{#if (eq ../nextMusic.id id)}}<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>{{/if}}
+                                        </div>
+                                        <div class="t-sub">{{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</div>
+                                    </div>
+                                    <div class="col-source">{{#if (eq source 'youtube')}}YouTube{{else}}Local{{/if}}</div>
+                                    <div class="col-duration" data-music-id="{{id}}">
+                                        {{#if duration}}{{duration}}{{else}}--:--{{/if}}
+                                    </div>
+                                    {{#if ../isGM}}
+                                    <div class="col-actions">
+                                        <button class="action-btn remove-from-playlist-btn" data-music-id="{{id}}" data-playlist-id="{{../selectedPlaylist.id}}" data-tooltip="Remove from playlist" data-tooltip-position="left">
+                                            <i class="fas fa-minus-circle"></i>
+                                        </button>
+                                    </div>
+                                    {{/if}}
+                                </div>
+                                {{/each}}
+                            </div>
+                        </div>
+                        {{else}}
+                        <div class="playlist-empty">
+                            <i class="fas fa-music"></i>
+                            <p>This playlist is empty</p>
+                            <span>Add tracks from the Library using the <i class="fas fa-plus-square"></i> button</span>
+                        </div>
+                        {{/if}}
+                    </div>
+                    {{else}}
+                    <div class="playlist-detail-empty">
+                        <i class="fas fa-list"></i>
+                        <h3>Select a playlist</h3>
+                        <p>Choose a playlist from the left to view its tracks</p>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggestions View (GM Only) -->
+        {{#if isGM}}
+        <div id="view-suggestions" class="view-section {{#if (ne view 'suggestions')}}hidden{{/if}}">
+            <div class="section-header">
+                <h2>Player Suggestions</h2>
+            </div>
+            {{#if suggestions.length}}
+            <div class="track-list">
+                {{#each suggestions}}
+                <div class="track-row">
+                    <div class="col-play"><i class="fas fa-lightbulb"></i></div>
+                    <div class="col-thumb">
+                         {{#if thumbnail}}<img src="{{thumbnail}}">{{/if}}
+                    </div>
+                    <div class="col-title">
+                        <div class="t-name">{{name}}</div>
+                        <div class="t-sub">Suggested by {{user}}</div>
+                    </div>
+                    <div class="col-source">{{source}}</div>
+                    <div class="col-actions">
+                        <button class="approve-suggestion" data-index="{{@index}}" data-tooltip="Approve and add to library" data-tooltip-position="left"><i class="fas fa-check"></i></button>
+                        <button class="reject-suggestion" data-index="{{@index}}" data-tooltip="Reject suggestion" data-tooltip-position="left"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{else}}
+            <p style="color: #666; text-align: center; margin-top: 40px;">No pending suggestions.</p>
+            {{/if}}
+        </div>
+        {{/if}}
+
+        <!-- Ambience Library View - Layer Mixer -->
+        <div id="view-ambience" class="view-section ambience-view {{#if (ne view 'ambience')}}hidden{{/if}}" role="region" aria-label="Ambience Layer Mixer">
+            <div class="section-header ambience-header">
+                <h2>
+                    <i class="fas fa-layer-group" aria-hidden="true"></i>
+                    <span class="header-text">Ambience Mixer</span>
+                    {{#if ambienceLayerCount}}
+                    <span class="ambience-layer-badge {{#if (eq ambienceLayerCount maxAmbienceLayers)}}at-limit{{/if}}"
+                          data-tooltip="{{ambienceLayerCount}} of {{maxAmbienceLayers}} layers active"
+                          data-tooltip-position="right"
+                          role="status"
+                          aria-live="polite"
+                          aria-label="{{ambienceLayerCount}} of {{maxAmbienceLayers}} layers active">
+                        {{ambienceLayerCount}}/{{maxAmbienceLayers}}
+                    </span>
+                    {{/if}}
+                </h2>
+                <div class="section-header-actions">
+                    {{#if ambienceLayerCount}}
+                    <button class="stop-all-ambience-btn" data-tooltip="Stop all ambience layers">
+                        <i class="fas fa-stop"></i> Stop All ({{ambienceLayerCount}})
+                    </button>
+                    {{/if}}
+                    {{#if isGM}}
+                    <button class="add-music-btn bulk-import-btn" data-type="ambience" data-tooltip="Import multiple ambience files from a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-open"></i> Bulk Import
+                    </button>
+                    <button class="add-ambience-btn ambience-accent">Add Ambience</button>
+                    {{/if}}
+                </div>
+            </div>
+
+            <!-- Ambience Mixer Toolbar -->
+            <div class="ambience-mixer-toolbar">
+                <!-- Presets Section -->
+                <div class="ambience-presets-section">
+                    <div class="presets-dropdown-wrapper">
+                        <select class="ambience-preset-select" data-tooltip="Load a saved preset" data-tooltip-position="bottom">
+                            <option value="">-- Presets --</option>
+                            {{#each ambiencePresets}}
+                            <option value="{{id}}" {{#if (eq id ../selectedPresetId)}}selected{{/if}}>{{name}}</option>
+                            {{/each}}
+                        </select>
+                        {{#if isGM}}
+                        <button class="preset-save-btn" data-tooltip="Save current layers as preset" data-tooltip-position="bottom" {{#unless ambienceLayerCount}}disabled{{/unless}}>
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button class="preset-delete-btn" data-tooltip="Delete selected preset" data-tooltip-position="bottom" {{#unless selectedPresetId}}disabled{{/unless}}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <!-- Tag Filter -->
+                <div class="ambience-filter-section">
+                    <select class="ambience-tag-filter" data-tooltip="Filter by tag" data-tooltip-position="bottom">
+                        <option value="">All Sounds</option>
+                        {{#each allAmbienceTags}}
+                        <option value="{{this}}" {{#if (eq ../ambienceTagFilter this)}}selected{{/if}}>{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <!-- Master Volume Section -->
+                <div class="ambience-master-section" data-tooltip="Master volume: {{ambienceMasterVolume}}%">
+                    <span class="master-label">Master</span>
+                    <button class="ambience-master-mute-btn"
+                            data-tooltip="{{#if isAmbienceMasterMuted}}Unmute all layers{{else}}Mute all layers{{/if}}"
+                            aria-label="{{#if isAmbienceMasterMuted}}Unmute all layers{{else}}Mute all layers{{/if}}"
+                            aria-pressed="{{#if isAmbienceMasterMuted}}true{{else}}false{{/if}}">
+                        <i class="fas {{#if isAmbienceMasterMuted}}fa-volume-mute{{else}}fa-volume-up{{/if}}" aria-hidden="true"></i>
+                    </button>
+                    <input type="range"
+                           class="ambience-master-volume"
+                           min="0" max="100"
+                           value="{{ambienceMasterVolume}}"
+                           aria-label="Master volume for all ambience layers"
+                           aria-valuemin="0"
+                           aria-valuemax="100"
+                           aria-valuenow="{{ambienceMasterVolume}}">
+                    <span class="master-volume-value" aria-live="polite">{{ambienceMasterVolume}}%</span>
+                </div>
+
+                <!-- Active Layers Indicator -->
+                <div class="ambience-layers-indicator {{#if (eq ambienceLayerCount maxAmbienceLayers)}}at-limit{{/if}}"
+                     role="status"
+                     aria-label="{{ambienceLayerCount}} of {{maxAmbienceLayers}} layers active">
+                    <div class="layers-dots" aria-hidden="true">
+                        {{#njb-times maxAmbienceLayers as |index|}}
+                        <span class="layer-dot {{#if (lt index ../ambienceLayerCount)}}active{{/if}}"></span>
+                        {{/njb-times}}
+                    </div>
+                </div>
+            </div>
+
+            {{#if ambience.length}}
+            <!-- Ambience Layer Grid -->
+            <div class="ambience-layer-grid" role="list" aria-label="Ambience sounds">
+                {{#each ambience}}
+                <div class="ambience-card {{#if isLayerActive}}active playing{{/if}}"
+                     data-ambience-id="{{id}}"
+                     data-tooltip="{{name}}{{#if isLayerActive}} (playing){{/if}}" data-tooltip-position="top"
+                     role="listitem"
+                     tabindex="0"
+                     aria-pressed="{{#if isLayerActive}}true{{else}}false{{/if}}"
+                     aria-label="{{name}}{{#if isLayerActive}}, currently playing{{else}}, click to play{{/if}}">
+
+                    <!-- Card Background/Thumbnail -->
+                    <div class="amb-card-bg" aria-hidden="true">
+                        {{#if thumbnail}}
+                        <img src="{{thumbnail}}" alt="">
+                        {{/if}}
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="amb-card-content">
+                        <!-- Toggle Button (main action) -->
+                        <button class="amb-toggle-btn {{#if isLayerActive}}active{{/if}}"
+                                data-tooltip="{{#if isLayerActive}}Stop{{else}}Play{{/if}} layer"
+                                aria-label="{{#if isLayerActive}}Stop{{else}}Play{{/if}} {{name}}"
+                                aria-pressed="{{#if isLayerActive}}true{{else}}false{{/if}}">
+                            <i class="fas {{#if isLayerActive}}fa-stop{{else}}fa-play{{/if}}" aria-hidden="true"></i>
+                        </button>
+
+                        <!-- Name -->
+                        <div class="amb-name" title="{{name}}">{{name}}</div>
+
+                        <!-- Tags (compact) -->
+                        {{#if tags.length}}
+                        <div class="amb-tags" aria-label="Tags: {{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+                            {{#each tags}}<span class="amb-tag">{{this}}</span>{{/each}}
+                        </div>
+                        {{/if}}
+
+                        <!-- Source indicator -->
+                        <div class="amb-source" aria-label="Source: {{#if (eq source 'youtube')}}YouTube{{else}}Local file{{/if}}">
+                            {{#if (eq source 'youtube')}}<i class="fab fa-youtube" aria-hidden="true"></i>{{else}}<i class="fas fa-file-audio" aria-hidden="true"></i>{{/if}}
+                        </div>
+                    </div>
+
+                    <!-- Volume Slider (visible when active) -->
+                    <div class="amb-volume-control {{#unless isLayerActive}}hidden{{/unless}}" aria-hidden="{{#unless isLayerActive}}true{{/unless}}">
+                        <i class="fas fa-volume-down" aria-hidden="true"></i>
+                        <input type="range"
+                               class="amb-layer-volume"
+                               min="0" max="100"
+                               value="{{layerVolume}}"
+                               data-ambience-id="{{id}}"
+                               aria-label="Volume for {{name}}"
+                               aria-valuemin="0"
+                               aria-valuemax="100"
+                               aria-valuenow="{{layerVolume}}">
+                        <i class="fas fa-volume-up" aria-hidden="true"></i>
+                    </div>
+
+                    <!-- Card Controls (GM only) -->
+                    {{#if ../isGM}}
+                    <div class="amb-card-controls">
+                        <button class="amb-edit-btn" data-tooltip="Edit ambience" data-ambience-id="{{id}}" aria-label="Edit {{name}}">
+                            <i class="fas fa-edit" aria-hidden="true"></i>
+                        </button>
+                        <button class="amb-delete-btn" data-tooltip="Delete ambience" data-ambience-id="{{id}}" aria-label="Delete {{name}}">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    {{/if}}
+
+                    <!-- Playing indicator animation -->
+                    {{#if isLayerActive}}
+                    <div class="amb-playing-indicator" aria-hidden="true">
+                        <div class="amb-wave">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+
+            {{#if hasMoreAmbience}}
+            <div class="load-more-container">
+                <span class="load-more-info">Showing {{ambienceDisplayLimit}} of {{totalAmbienceCount}} sounds</span>
+                <button class="load-more-btn" data-type="ambience">
+                    <i class="fas fa-plus-circle"></i> Load More
+                </button>
+            </div>
+            {{/if}}
+            {{else}}
+            <div class="empty-state ambience-empty">
+                <i class="fas fa-layer-group"></i>
+                <h3>Build Your Soundscape</h3>
+                <p>Add ambience sounds to create immersive atmospheres by layering multiple sounds together.</p>
+                {{#if isGM}}
+                <button class="add-ambience-btn ambience-accent">
+                    <i class="fas fa-plus"></i> Add Your First Ambience
+                </button>
+                {{/if}}
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- Soundboard View -->
+        <div id="view-soundboard" class="view-section soundboard-view {{#if (ne view 'soundboard')}}hidden{{/if}}">
+            <div class="section-header soundboard-header">
+                <h2>
+                    <i class="fas fa-th"></i>
+                    <span class="header-text">Soundboard</span>
+                </h2>
+                <div class="soundboard-header-actions">
+                    <!-- Global Broadcast Toggle -->
+                    {{#if isGM}}
+                    <div class="broadcast-mode-toggle {{#if soundboardBroadcastMode}}active{{/if}}" data-tooltip="{{#if soundboardBroadcastMode}}Broadcast Mode: Players hear all sounds{{else}}Preview Mode: Only you hear sounds{{/if}}">
+                        <button class="broadcast-toggle-btn">
+                            <i class="fas {{#if soundboardBroadcastMode}}fa-broadcast-tower{{else}}fa-headphones{{/if}}"></i>
+                            <span>{{#if soundboardBroadcastMode}}Broadcast{{else}}Preview{{/if}}</span>
+                        </button>
+                    </div>
+                    {{/if}}
+
+                    {{#if activeSoundboardCount}}
+                    <button class="stop-all-sounds-btn" data-tooltip="Stop all playing sounds">
+                        <i class="fas fa-stop"></i> Stop All ({{activeSoundboardCount}})
+                    </button>
+                    {{/if}}
+                    {{#if isGM}}
+                    <button class="add-music-btn bulk-import-btn" data-type="soundboard" data-tooltip="Import multiple sound files from a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-open"></i> Bulk Import
+                    </button>
+                    <button class="add-soundboard-btn soundboard-accent">
+                        <i class="fas fa-plus"></i> Add Sound
+                    </button>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{#if isGM}}
+            <div class="soundboard-hint">
+                <i class="fas fa-info-circle"></i>
+                <span>Soundboard has its own Preview/Broadcast toggle, independent from Music. Enable <strong>Broadcast</strong> above for players to hear sounds.</span>
+            </div>
+            {{/if}}
+
+            {{#if soundboard.length}}
+            <div class="soundboard-grid">
+                {{#each soundboard}}
+                <div class="soundboard-card {{#if isPlaying}}playing{{/if}} {{#if isLooping}}looping{{/if}}"
+                     data-sound-id="{{id}}"
+                     style="--card-color: {{#if color}}{{color}}{{else}}#ff6b35{{/if}};">
+
+                    <!-- Card Background/Thumbnail -->
+                    <div class="sb-card-bg">
+                        {{#if thumbnail}}
+                        <img src="{{thumbnail}}" alt="{{name}}">
+                        {{/if}}
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="sb-card-content">
+                        <!-- Icon -->
+                        <div class="sb-icon">
+                            <i class="{{#if icon}}{{icon}}{{else}}fas fa-volume-up{{/if}}"></i>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="sb-name" title="{{name}}">{{name}}</div>
+
+                        <!-- Source indicator -->
+                        <div class="sb-source">
+                            {{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}
+                        </div>
+                    </div>
+
+                    <!-- Card Controls -->
+                    <div class="sb-card-controls">
+                        <!-- Play/Stop Button (main action) -->
+                        <button class="sb-play-btn {{#if isPlaying}}playing{{/if}}" data-tooltip="{{#if isPlaying}}Stop{{else}}Play{{/if}}">
+                            <i class="fas {{#if isPlaying}}fa-stop{{else}}fa-play{{/if}}"></i>
+                        </button>
+
+                        <!-- Loop Toggle -->
+                        <button class="sb-loop-btn {{#if isLooping}}active{{/if}}" data-tooltip="Loop {{#if isLooping}}(On){{else}}(Off){{/if}}">
+                            <i class="fas fa-redo"></i>
+                        </button>
+
+                        {{#if ../isGM}}
+                        <!-- Edit/Delete (GM only) -->
+                        <button class="sb-edit-btn" data-tooltip="Edit sound">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="sb-delete-btn" data-tooltip="Delete sound">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {{/if}}
+                    </div>
+
+                    <!-- Playing indicator -->
+                    {{#if isPlaying}}
+                    <div class="sb-playing-indicator">
+                        <div class="sb-wave">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="empty-state soundboard-empty">
+                <i class="fas fa-th" style="font-size: 4rem; color: #ff6b35; margin-bottom: 20px;"></i>
+                <h3>Your Soundboard is Empty</h3>
+                <p>Add quick sound effects like thunder, wolf howls, door creaks, and more!</p>
+                {{#if isGM}}
+                <button class="add-soundboard-btn soundboard-accent" style="margin-top: 16px;">
+                    <i class="fas fa-plus"></i> Add Your First Sound
+                </button>
+                {{/if}}
+            </div>
+            {{/if}}
+        </div>
+
+    </div>
+  </main>
+
+  </div><!-- End Content Wrapper -->
+
+  <!-- Unified Player Bar v3 - Spotify Style - ALWAYS VISIBLE -->
+  <footer class="jb-unified-player">
+
+    <!-- ========== MUSIC SECTION (Left) ========== -->
+    <div class="player-section music-section">
+
+      <!-- Now Playing Info -->
+      <div class="now-playing-info">
+        <div class="now-playing-art">
+          {{#if currentTrack.thumbnail}}
+          <img src="{{currentTrack.thumbnail}}" alt="{{currentTrack.name}}">
+          {{else}}
+          <div class="art-placeholder"><i class="fas fa-music"></i></div>
+          {{/if}}
+        </div>
+        <div class="track-details">
+          <div class="np-title-wrapper">
+            <div class="np-title" id="music-title">{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}</div>
+            <span class="title-tooltip" id="music-title-tooltip">{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}</span>
+          </div>
+          <div class="np-subtitle">
+            {{#if currentPlaylist}}
+              <i class="fas fa-list-music"></i> {{currentPlaylist.name}}
+            {{else if currentTrack}}
+              <i class="fas fa-music"></i> Library
+            {{else}}
+              Music
+            {{/if}}
+          </div>
+        </div>
+        {{#if isGM}}
+        <div class="broadcast-indicator {{#if isPreviewMode}}preview{{else}}broadcast{{/if}}" data-tooltip="{{#if isPreviewMode}}Preview Mode - Only you can hear{{else}}Broadcast Mode - All players can hear{{/if}}">
+          <i class="fas {{#if isPreviewMode}}fa-headphones{{else}}fa-broadcast-tower{{/if}}"></i>
+        </div>
+        {{/if}}
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="playback-controls">
+        <button class="control-btn" id="shuffle-btn" data-tooltip="Shuffle {{#if shuffle}}(On){{else}}(Off){{/if}}">
+          <i class="fas fa-random {{#if shuffle}}active{{/if}}"></i>
+        </button>
+        <button class="control-btn" id="prev-btn" data-tooltip="Previous">
+          <i class="fas fa-step-backward"></i>
+        </button>
+        <button class="control-btn-main" id="play-pause-btn" data-tooltip="{{#if isPlaying}}Pause{{else}}Play{{/if}}">
+          <i class="fas {{#if isPlaying}}fa-pause{{else}}fa-play{{/if}}"></i>
+        </button>
+        <button class="control-btn" id="next-btn" data-tooltip="Next">
+          <i class="fas fa-step-forward"></i>
+        </button>
+        <button class="control-btn" id="loop-btn" data-tooltip="Loop {{#if musicLoop}}(On){{else}}(Off){{/if}}">
+          <i class="fas fa-redo {{#if musicLoop}}active{{/if}}"></i>
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-section music-progress">
+        <span class="time-display" id="current-time">0:00</span>
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill music-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+          <input type="range" id="progress-bar" class="progress-bar-input" min="0" max="100" value="0">
+        </div>
+        <span class="time-display" id="total-time">0:00</span>
+      </div>
+
+      <!-- Volume Control -->
+      <div class="volume-section music-volume">
+        <button class="volume-btn" id="mute-btn" data-tooltip="{{#if isMuted}}Unmute{{else}}Mute{{/if}}">
+          <i class="fas {{#if isMuted}}fa-volume-mute{{else}}{{#if (gt volume 50)}}fa-volume-up{{else if (gt volume 0)}}fa-volume-down{{else}}fa-volume-off{{/if}}{{/if}}"></i>
+        </button>
+        <input type="range" id="volume-slider" class="volume-slider music-slider" min="0" max="100" value="{{volume}}">
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Selection Toolbar (floating) -->
+  {{#if isGM}}
+  <div class="selection-toolbar {{#if selectedCount}}visible{{/if}}">
+    <span class="selection-count">{{selectedCountText}}</span>
+    <button class="btn-add-to-playlist" data-tooltip="{{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}">
+      <i class="fas fa-plus"></i> {{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}
+    </button>
+    <button class="btn-clear-selection" data-tooltip="{{localize "NARRATOR-JUKEBOX.Common.Cancel"}}">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  {{/if}}
+</div>
