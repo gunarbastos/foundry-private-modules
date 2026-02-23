@@ -1,0 +1,38 @@
+{
+  "id": "sessionflow",
+  "title": "SessionFlow",
+  "description": "A session preparation and organization tool for Game Masters. Manage characters, events, notes and everything you need for your sessions.",
+  "version": "0.2.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "Wand & Widgets"
+    }
+  ],
+  "esmodules": [
+    "scripts/sessionflow.js"
+  ],
+  "styles": [
+    "styles/sessionflow.css",
+    "styles/sessionflow-icon-picker.css",
+    "styles/sessionflow-storyline.css",
+    "styles/sessionflow-beat.css",
+    "styles/sessionflow-scene.css",
+    "styles/sessionflow-canvas.css",
+    "styles/sessionflow-character.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "socket": true,
+  "url": "",
+  "manifest": "",
+  "download": ""
+}

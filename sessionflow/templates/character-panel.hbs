@@ -1,0 +1,86 @@
+<section class="sessionflow-root sessionflow-character-panel" data-open="false">
+
+  {{!-- Backdrop --}}
+  <div class="sessionflow-character-panel__backdrop"></div>
+
+  <div class="sessionflow-character-panel__content">
+    {{!-- Header --}}
+    <header class="sessionflow-character-panel__header">
+      <button class="sessionflow-character-panel__back" type="button"
+              data-action="navigate-back" title="{{ backLabel }}">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h3 class="sessionflow-character-panel__title">
+        <i class="fas fa-user"></i>
+        {{ title }}
+      </h3>
+      {{#if canEdit}}
+        <div class="sessionflow-character-panel__slots">
+          <button class="sessionflow-character-panel__slot-btn" type="button"
+                  data-action="toggle-slot" data-slot="1"
+                  title="{{slot1Label}}">
+            <i class="fas fa-bolt"></i>
+          </button>
+          <button class="sessionflow-character-panel__slot-btn" type="button"
+                  data-action="toggle-slot" data-slot="2"
+                  title="{{slot2Label}}">
+            <i class="fas fa-star"></i>
+          </button>
+          <button class="sessionflow-character-panel__slot-btn" type="button"
+                  data-action="toggle-slot" data-slot="3"
+                  title="{{slot3Label}}">
+            <i class="fas fa-diamond"></i>
+          </button>
+        </div>
+      {{/if}}
+      <button class="sessionflow-character-panel__close" type="button"
+              aria-label="Close" data-action="close">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    {{!-- Scrollable Body --}}
+    <div class="sessionflow-character-panel__body">
+
+      {{!-- Hero Image (character portrait) --}}
+      {{#if hasCharacterImage}}
+        <div class="sessionflow-character-panel__hero"
+             style="background-image: url('{{ characterImage }}');">
+        </div>
+      {{/if}}
+
+      {{!-- Character Name --}}
+      <div class="sessionflow-character-panel__details">
+        <h2 class="sessionflow-character-panel__name">{{ characterName }}</h2>
+      </div>
+
+      {{!-- Widget Toolbar --}}
+      {{#if canEdit}}
+        <div class="sessionflow-character-panel__toolbar">
+          {{#each widgetTypes}}
+            <button class="sessionflow-character-panel__toolbar-btn" type="button"
+                    data-action="add-widget"
+                    data-widget-type="{{this.type}}"
+                    title="{{this.label}}">
+              <i class="{{this.icon}}"></i>
+            </button>
+          {{/each}}
+          <span class="sessionflow-character-panel__toolbar-sep"></span>
+          <button class="sessionflow-character-panel__toolbar-btn sessionflow-character-panel__toolbar-btn--template"
+                  type="button" data-action="open-templates"
+                  title="{{ templateLabel }}">
+            <i class="fas fa-layer-group"></i>
+          </button>
+        </div>
+      {{/if}}
+
+      {{!-- Canvas --}}
+      <div class="sessionflow-character-panel__canvas-wrapper">
+        <div class="sessionflow-canvas"></div>
+      </div>
+    </div>
+
+    {{!-- Resize edge --}}
+    <div class="sessionflow-character-panel__resize-edge"></div>
+  </div>
+</section>

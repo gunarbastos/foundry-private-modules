@@ -1,0 +1,105 @@
+<section class="sessionflow-root sessionflow-storyline" data-open="false"
+         style="--sf-session-color: {{ sessionColor }};">
+
+  {{!-- Backdrop --}}
+  <div class="sessionflow-storyline__backdrop"></div>
+
+  <div class="sessionflow-storyline__content">
+    {{!-- Header --}}
+    <header class="sessionflow-storyline__header">
+      <button class="sessionflow-storyline__back" type="button"
+              data-action="navigate-back" title="{{ backLabel }}">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h3 class="sessionflow-storyline__title">
+        <i class="fas fa-timeline"></i>
+        {{ title }}
+      </h3>
+      <span class="sessionflow-storyline__session-name">{{ sessionName }}</span>
+      {{#if beatCount}}
+        <span class="sessionflow-storyline__count">{{ beatCount }}</span>
+      {{/if}}
+      <button class="sessionflow-storyline__anchor {{#if isAnchored}}is-active{{/if}}"
+              type="button" data-action="toggle-anchor"
+              title="{{ anchorLabel }}">
+        <i class="fas fa-anchor"></i>
+      </button>
+      <button class="sessionflow-storyline__close" type="button"
+              aria-label="Close" data-action="close">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    {{!-- Body: horizontal scrolling beat cards --}}
+    <div class="sessionflow-storyline__body">
+      {{#if beats.length}}
+        <div class="sessionflow-storyline__timeline">
+          {{#each beats}}
+            <article class="sessionflow-beat-card {{#if this.isEditing}}is-editing{{/if}}"
+                     data-beat-id="{{this.id}}"
+                     data-action="select-beat"
+                     style="--sf-beat-index: {{this.index}};{{#if this.color}} --sf-beat-color: {{this.color}};{{/if}}">
+
+              {{!-- Image area (16:9) --}}
+              <div class="sessionflow-beat-card__image">
+                {{#if this.hasImage}}
+                  <img src="{{this.image}}" alt="{{this.title}}" />
+                {{else}}
+                  <div class="sessionflow-beat-card__placeholder">
+                    <i class="fas fa-image"></i>
+                  </div>
+                {{/if}}
+                <span class="sessionflow-beat-card__number">{{this.displayNumber}}</span>
+              </div>
+
+              {{!-- Text area --}}
+              <div class="sessionflow-beat-card__content">
+                <h4 class="sessionflow-beat-card__title">{{this.title}}</h4>
+                {{#if this.text}}
+                  <p class="sessionflow-beat-card__text">{{this.text}}</p>
+                {{/if}}
+              </div>
+
+              {{!-- Hover actions --}}
+              {{#if ../canEdit}}
+                <div class="sessionflow-beat-card__actions">
+                  <button type="button" data-action="edit-beat"
+                          data-beat-id="{{this.id}}"
+                          title="{{../editLabel}}">
+                    <i class="fas fa-pencil"></i>
+                  </button>
+                  <button type="button" data-action="delete-beat"
+                          data-beat-id="{{this.id}}"
+                          title="{{../deleteLabel}}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              {{/if}}
+            </article>
+          {{/each}}
+
+          {{!-- Add beat card (always at the end of the timeline) --}}
+          {{#if canEdit}}
+            <button class="sessionflow-storyline__add-card" type="button"
+                    data-action="add-beat" title="{{ addBeatLabel }}">
+              <i class="fas fa-plus"></i>
+              <span>{{ addBeatLabel }}</span>
+            </button>
+          {{/if}}
+        </div>
+      {{else}}
+        <div class="sessionflow-storyline__empty-state">
+          <i class="fas fa-timeline sessionflow-storyline__empty-icon"></i>
+          <p class="sessionflow-storyline__empty-title">{{ emptyMessage }}</p>
+          <p class="sessionflow-storyline__empty-subtitle">{{ emptySubtitle }}</p>
+          {{#if canEdit}}
+            <button class="sessionflow-storyline__add-btn" type="button" data-action="add-beat">
+              <i class="fas fa-plus"></i>
+              <span>{{ addBeatLabel }}</span>
+            </button>
+          {{/if}}
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</section>

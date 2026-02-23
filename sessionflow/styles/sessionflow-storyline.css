@@ -1,0 +1,755 @@
+/* ============================================ */
+/*  SessionFlow - Storyline Panel               */
+/*  Bottom slide-up panel for story beats       */
+/* ============================================ */
+
+/* -------------------------------------------- */
+/*  Animations                                  */
+/* -------------------------------------------- */
+
+@keyframes sessionflow-slide-up {
+  0%   { transform: translateY(100%); }
+  40%  { transform: translateY(-4%); }
+  65%  { transform: translateY(2%); }
+  82%  { transform: translateY(-1%); }
+  92%  { transform: translateY(0.3%); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes sessionflow-slide-down {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes sessionflow-beat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sessionflow-empty-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* -------------------------------------------- */
+/*  Panel Container                             */
+/* -------------------------------------------- */
+
+.sessionflow-storyline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.sessionflow-storyline[data-open="true"] {
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Backdrop                                    */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.sessionflow-storyline[data-open="true"] .sessionflow-storyline__backdrop {
+  animation: sessionflow-fade-in 0.3s ease forwards;
+  pointer-events: none;
+}
+
+.sessionflow-storyline[data-open="false"] .sessionflow-storyline__backdrop {
+  animation: sessionflow-fade-out 0.25s ease forwards;
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Panel Content                               */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--sf-storyline-height, 380px);
+  background: var(--sf-color-bg);
+  border-top: 2px solid color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 40%, var(--sf-color-border));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  transform: translateY(100%);
+  pointer-events: auto;
+}
+
+.sessionflow-storyline[data-open="true"] .sessionflow-storyline__content {
+  animation: sessionflow-slide-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sessionflow-storyline[data-open="false"] .sessionflow-storyline__content {
+  animation: sessionflow-slide-down 0.25s ease forwards;
+}
+
+/* -------------------------------------------- */
+/*  Header                                      */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-sm) var(--sf-spacing-lg);
+  background: linear-gradient(180deg, var(--sf-color-bg-light) 0%, var(--sf-color-bg) 100%);
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.sessionflow-storyline__title {
+  margin: 0;
+  font-size: var(--sf-font-size-md);
+  font-weight: 700;
+  color: var(--sf-color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-xs);
+  flex-shrink: 0;
+}
+
+.sessionflow-storyline__title i {
+  color: var(--sf-session-color, var(--sf-color-primary));
+  font-size: var(--sf-font-size-sm);
+}
+
+.sessionflow-storyline__session-name {
+  font-size: var(--sf-font-size-sm);
+  color: var(--sf-session-color, var(--sf-color-primary));
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.sessionflow-storyline__count {
+  background: var(--sf-color-bg-light);
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-storyline__close {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs);
+  border-radius: var(--sf-border-radius);
+  font-size: var(--sf-font-size-md);
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.sessionflow-storyline__close:hover {
+  color: var(--sf-color-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Back Button ---- */
+
+.sessionflow-storyline__back {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs) var(--sf-spacing-sm);
+  border-radius: var(--sf-border-radius);
+  font-size: var(--sf-font-size-sm);
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.sessionflow-storyline__back:hover {
+  color: var(--sf-color-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Anchor pushes right-side buttons to the end ---- */
+
+.sessionflow-storyline__anchor {
+  margin-left: auto;
+}
+
+/* -------------------------------------------- */
+/*  Body                                        */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__body {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--sf-spacing-lg) var(--sf-spacing-xl);
+  display: flex;
+  align-items: stretch;
+}
+
+/* Custom horizontal scrollbar */
+.sessionflow-storyline__body::-webkit-scrollbar {
+  height: 6px;
+}
+
+.sessionflow-storyline__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sessionflow-storyline__body::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 3px;
+}
+
+.sessionflow-storyline__body::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-color-primary);
+}
+
+/* -------------------------------------------- */
+/*  Timeline                                    */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__timeline {
+  display: flex;
+  gap: var(--sf-spacing-lg);
+  align-items: stretch;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--sf-spacing-lg);
+}
+
+/* -------------------------------------------- */
+/*  Beat Card                                   */
+/* -------------------------------------------- */
+
+.sessionflow-beat-card {
+  /* Per-card color: uses beat color → session color → primary fallback */
+  --sf-active-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+
+  position: relative;
+  flex-shrink: 0;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    var(--sf-color-bg-light) 0%,
+    color-mix(in srgb, var(--sf-color-bg-light) 95%, var(--sf-active-color)) 100%
+  );
+  border: 1px solid var(--sf-color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+
+  /* Staggered entrance */
+  animation: sessionflow-beat-enter 0.4s ease both;
+  animation-delay: calc(0.06s + var(--sf-beat-index, 0) * 0.06s);
+}
+
+/* ---- Color accent stripe on top ---- */
+
+.sessionflow-beat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    var(--sf-active-color),
+    color-mix(in srgb, var(--sf-active-color) 60%, #fff));
+  z-index: 1;
+  border-radius: 8px 8px 0 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.sessionflow-beat-card:hover::before {
+  opacity: 1;
+}
+
+.sessionflow-beat-card:hover {
+  border-color: var(--sf-active-color);
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    0 0 0 1px color-mix(in srgb, var(--sf-active-color) 25%, transparent),
+    0 0 20px color-mix(in srgb, var(--sf-active-color) 10%, transparent);
+}
+
+/* ---- Card Image (16:9) ---- */
+
+.sessionflow-beat-card__image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: color-mix(in srgb, var(--sf-active-color) 8%, var(--sf-color-bg));
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Gradient overlay at bottom of image */
+.sessionflow-beat-card__image::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(to top, var(--sf-color-bg-light), transparent);
+  pointer-events: none;
+}
+
+.sessionflow-beat-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.sessionflow-beat-card:hover .sessionflow-beat-card__image img {
+  transform: scale(1.05);
+}
+
+.sessionflow-beat-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sf-color-text-muted);
+  font-size: 1.5rem;
+  opacity: 0.25;
+}
+
+/* ---- Beat Number Badge ---- */
+
+.sessionflow-beat-card__number {
+  position: absolute;
+  bottom: var(--sf-spacing-xs);
+  left: var(--sf-spacing-xs);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: var(--sf-active-color);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+  line-height: 1;
+}
+
+/* ---- Card Content ---- */
+
+.sessionflow-beat-card__content {
+  padding: var(--sf-spacing-sm) var(--sf-spacing-md);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-spacing-xs);
+  min-height: 0;
+}
+
+.sessionflow-beat-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sf-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.sessionflow-beat-card__text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sf-color-text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Hover Actions ---- */
+
+.sessionflow-beat-card__actions {
+  position: absolute;
+  top: var(--sf-spacing-xs);
+  right: var(--sf-spacing-xs);
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.sessionflow-beat-card:hover .sessionflow-beat-card__actions {
+  opacity: 1;
+}
+
+.sessionflow-beat-card__actions button {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: var(--sf-color-text);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sessionflow-beat-card__actions button:hover {
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--sf-active-color);
+}
+
+.sessionflow-beat-card__actions button[data-action="delete-beat"]:hover {
+  color: var(--sf-color-danger);
+}
+
+/* ---- Editing State ---- */
+
+.sessionflow-beat-card.is-editing {
+  width: 320px;
+  border-color: var(--sf-active-color);
+  box-shadow: 0 0 0 1px var(--sf-active-color), 0 4px 16px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  transform: none;
+  animation: sessionflow-pulse-glow 1s ease-out;
+}
+
+.sessionflow-beat-card.is-editing::before {
+  opacity: 1;
+}
+
+.sessionflow-beat-card.is-editing:hover {
+  transform: none;
+}
+
+.sessionflow-beat-card.is-editing .sessionflow-beat-card__actions {
+  display: none;
+}
+
+/* ---- Edit Form Elements ---- */
+
+.sessionflow-beat-edit__image-btn {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sf-spacing-xs);
+  background: color-mix(in srgb, var(--sf-active-color) 8%, var(--sf-color-bg));
+  border: 2px dashed var(--sf-color-border);
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: var(--sf-font-size-sm);
+  transition: border-color 0.2s, color 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+
+.sessionflow-beat-edit__image-btn:hover {
+  border-color: var(--sf-active-color);
+  color: var(--sf-color-text);
+}
+
+.sessionflow-beat-edit__image-btn img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sessionflow-beat-edit__image-btn .sessionflow-beat-edit__image-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: var(--sf-font-size-sm);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sessionflow-beat-edit__image-btn:hover .sessionflow-beat-edit__image-overlay {
+  opacity: 1;
+}
+
+.sessionflow-beat-edit__fields {
+  padding: var(--sf-spacing-sm) var(--sf-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-spacing-xs);
+  flex: 1;
+}
+
+/* Title row: title input + color picker side by side */
+.sessionflow-beat-edit__title-row {
+  display: flex;
+  gap: var(--sf-spacing-xs);
+  align-items: center;
+}
+
+.sessionflow-beat-edit__title {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sf-spacing-xs) var(--sf-spacing-sm);
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text);
+  font-size: var(--sf-font-size-sm);
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sessionflow-beat-edit__title:focus {
+  border-color: var(--sf-active-color);
+}
+
+.sessionflow-beat-edit__color {
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+
+.sessionflow-beat-edit__color:hover {
+  border-color: var(--sf-active-color);
+}
+
+.sessionflow-beat-edit__text {
+  width: 100%;
+  padding: var(--sf-spacing-xs) var(--sf-spacing-sm);
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text);
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  min-height: 40px;
+  line-height: 1.4;
+  transition: border-color 0.2s;
+}
+
+.sessionflow-beat-edit__text:focus {
+  border-color: var(--sf-active-color);
+}
+
+.sessionflow-beat-edit__actions {
+  display: flex;
+  gap: var(--sf-spacing-xs);
+  justify-content: flex-end;
+}
+
+.sessionflow-beat-edit__actions button {
+  background: none;
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.sessionflow-beat-edit__actions button[data-action="save-edit"] {
+  color: var(--sf-color-success);
+  border-color: var(--sf-color-success);
+}
+
+.sessionflow-beat-edit__actions button[data-action="save-edit"]:hover {
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.sessionflow-beat-edit__actions button[data-action="cancel-edit"]:hover {
+  color: var(--sf-color-danger);
+  border-color: var(--sf-color-danger);
+  background: rgba(244, 67, 54, 0.1);
+}
+
+/* -------------------------------------------- */
+/*  Add Beat Card (ghost card at end)           */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__add-card {
+  flex-shrink: 0;
+  align-self: center;
+  min-width: 140px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-xl) var(--sf-spacing-lg);
+  margin: 0;
+  background: transparent;
+  border: 2px dashed var(--sf-color-border);
+  border-radius: 8px;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: var(--sf-font-size-sm);
+  text-align: center;
+  line-height: 1;
+  transition: border-color 0.3s, color 0.3s, background 0.3s;
+
+  /* Stagger after last beat card */
+  animation: sessionflow-beat-enter 0.4s ease both;
+  animation-delay: calc(0.06s + var(--sf-beat-index, 0) * 0.06s + 0.12s);
+}
+
+.sessionflow-storyline__add-card i {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.sessionflow-storyline__add-card span {
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sessionflow-storyline__add-card:hover {
+  border-color: var(--sf-session-color, var(--sf-color-primary));
+  color: var(--sf-session-color, var(--sf-color-primary));
+  background: color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 5%, transparent);
+}
+
+.sessionflow-storyline__add-card:hover i {
+  transform: scale(1.15);
+}
+
+/* -------------------------------------------- */
+/*  Empty State                                 */
+/* -------------------------------------------- */
+
+.sessionflow-storyline__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  gap: var(--sf-spacing-sm);
+  text-align: center;
+  padding: var(--sf-spacing-xl);
+}
+
+.sessionflow-storyline__empty-icon {
+  font-size: 2rem;
+  color: var(--sf-session-color, var(--sf-color-primary));
+  opacity: 0.4;
+  animation: sessionflow-empty-float 3s ease-in-out infinite;
+}
+
+.sessionflow-storyline__empty-title {
+  margin: 0;
+  font-size: var(--sf-font-size-md);
+  font-weight: 600;
+  color: var(--sf-color-text);
+}
+
+.sessionflow-storyline__empty-subtitle {
+  margin: 0;
+  font-size: var(--sf-font-size-sm);
+  color: var(--sf-color-text-muted);
+  max-width: 300px;
+}
+
+.sessionflow-storyline__add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-xs);
+  margin-top: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-sm) var(--sf-spacing-lg);
+  background: var(--sf-session-color, var(--sf-color-primary));
+  border: none;
+  border-radius: var(--sf-border-radius);
+  color: #fff;
+  cursor: pointer;
+  font-size: var(--sf-font-size-sm);
+  font-weight: 600;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.sessionflow-storyline__add-btn:hover {
+  background: color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 85%, #000);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 30%, transparent);
+}
+
+/* -------------------------------------------- */
+/*  Drag & Drop Reorder                         */
+/* -------------------------------------------- */
+
+.sessionflow-beat-card[draggable="true"] {
+  cursor: grab;
+}
+
+.sessionflow-beat-card.is-drag-source {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.sessionflow-beat-card.is-drop-before {
+  box-shadow: -3px 0 0 0 var(--sf-session-color, var(--sf-color-primary)),
+              0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sessionflow-beat-card.is-drop-after {
+  box-shadow: 3px 0 0 0 var(--sf-session-color, var(--sf-color-primary)),
+              0 2px 8px rgba(0, 0, 0, 0.15);
+}

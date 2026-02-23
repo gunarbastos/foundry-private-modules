@@ -1,0 +1,754 @@
+/* ============================================ */
+/*  SessionFlow - Base Styles                   */
+/*  All styles scoped under .sessionflow-       */
+/* ============================================ */
+
+/* -------------------------------------------- */
+/*  CSS Custom Properties (Scoped)              */
+/* -------------------------------------------- */
+
+.sessionflow-root {
+  --sf-color-primary: #7c5cbf;
+  --sf-color-primary-hover: #6a4daa;
+  --sf-color-primary-glow: rgba(124, 92, 191, 0.4);
+  --sf-color-bg: #1e1e2e;
+  --sf-color-bg-light: #2a2a3d;
+  --sf-color-text: #e0e0e0;
+  --sf-color-text-muted: #a0a0b0;
+  --sf-color-border: #3a3a4d;
+  --sf-color-success: #4caf50;
+  --sf-color-warning: #ff9800;
+  --sf-color-danger: #f44336;
+  --sf-border-radius: 6px;
+  --sf-spacing-xs: 4px;
+  --sf-spacing-sm: 8px;
+  --sf-spacing-md: 12px;
+  --sf-spacing-lg: 16px;
+  --sf-spacing-xl: 24px;
+  --sf-font-size-sm: 0.85rem;
+  --sf-font-size-md: 1rem;
+  --sf-font-size-lg: 1.2rem;
+  --sf-panel-width: 320px;
+}
+
+/* -------------------------------------------- */
+/*  Animations                                  */
+/* -------------------------------------------- */
+
+@keyframes sessionflow-slide-in {
+  0% { transform: translateX(-100%); }
+  40% { transform: translateX(6%); }
+  65% { transform: translateX(-3%); }
+  82% { transform: translateX(1.5%); }
+  92% { transform: translateX(-0.5%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes sessionflow-slide-out {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes sessionflow-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sessionflow-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes sessionflow-item-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes sessionflow-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes sessionflow-edit-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sessionflow-pulse-glow {
+  0% { box-shadow: 0 0 0 0 var(--sf-color-primary-glow); }
+  70% { box-shadow: 0 0 0 8px rgba(124, 92, 191, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 92, 191, 0); }
+}
+
+/* -------------------------------------------- */
+/*  Panel Container                             */
+/* -------------------------------------------- */
+
+.sessionflow-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  pointer-events: none;
+}
+
+.sessionflow-panel[data-open="true"] {
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Backdrop                                    */
+/* -------------------------------------------- */
+
+.sessionflow-panel__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.sessionflow-panel[data-open="true"] .sessionflow-panel__backdrop {
+  animation: sessionflow-fade-in 0.3s ease forwards;
+  pointer-events: none;
+}
+
+.sessionflow-panel[data-open="false"] .sessionflow-panel__backdrop {
+  animation: sessionflow-fade-out 0.25s ease forwards;
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Panel Content                               */
+/* -------------------------------------------- */
+
+.sessionflow-panel__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--sf-panel-width);
+  height: 100%;
+  background: var(--sf-color-bg);
+  border-right: 1px solid var(--sf-color-border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  transform: translateX(-100%);
+  pointer-events: auto;
+}
+
+.sessionflow-panel[data-open="true"] .sessionflow-panel__content {
+  animation: sessionflow-slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sessionflow-panel[data-open="false"] .sessionflow-panel__content {
+  animation: sessionflow-slide-out 0.25s ease forwards;
+}
+
+/* -------------------------------------------- */
+/*  Panel Header                                */
+/* -------------------------------------------- */
+
+.sessionflow-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-lg);
+  background: linear-gradient(180deg, var(--sf-color-bg) 0%, var(--sf-color-bg-light) 100%);
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sessionflow-panel__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: var(--sf-spacing-lg);
+  right: var(--sf-spacing-lg);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sf-color-primary), transparent);
+}
+
+.sessionflow-panel__title {
+  margin: 0;
+  font-size: var(--sf-font-size-lg);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, var(--sf-color-primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex: 1;
+}
+
+.sessionflow-panel__count {
+  background: var(--sf-color-bg);
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-panel__close {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  font-size: var(--sf-font-size-md);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs);
+  border-radius: var(--sf-border-radius);
+  transition: color 0.2s, background 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sessionflow-panel__close:hover {
+  color: var(--sf-color-text);
+  background: var(--sf-color-bg-light);
+}
+
+/* -------------------------------------------- */
+/*  Panel Body                                  */
+/* -------------------------------------------- */
+
+.sessionflow-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sf-spacing-md);
+}
+
+/* Custom scrollbar */
+.sessionflow-panel__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sessionflow-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sessionflow-panel__body::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 3px;
+}
+
+.sessionflow-panel__body::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-color-primary);
+}
+
+/* -------------------------------------------- */
+/*  Empty State                                 */
+/* -------------------------------------------- */
+
+.sessionflow-panel__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sf-spacing-xl) var(--sf-spacing-md);
+  text-align: center;
+  gap: var(--sf-spacing-sm);
+}
+
+.sessionflow-panel__empty-icon {
+  font-size: 2.5rem;
+  color: var(--sf-color-primary);
+  opacity: 0.4;
+  animation: sessionflow-float 3s ease-in-out infinite;
+}
+
+.sessionflow-panel__empty-title {
+  color: var(--sf-color-text-muted);
+  font-size: var(--sf-font-size-md);
+  margin: 0;
+  font-weight: 500;
+}
+
+.sessionflow-panel__empty-subtitle {
+  color: var(--sf-color-text-muted);
+  font-size: var(--sf-font-size-sm);
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* -------------------------------------------- */
+/*  Panel Footer                                */
+/* -------------------------------------------- */
+
+.sessionflow-panel__footer {
+  padding: var(--sf-spacing-md);
+  border-top: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-panel__create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sf-spacing-sm);
+  width: 100%;
+  padding: var(--sf-spacing-md);
+  background: linear-gradient(135deg, var(--sf-color-primary), #6a4daa);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--sf-border-radius);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--sf-font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sessionflow-panel__create-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transition: left 0.5s ease;
+}
+
+.sessionflow-panel__create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--sf-color-primary-glow);
+}
+
+.sessionflow-panel__create-btn:hover::before {
+  left: 100%;
+}
+
+.sessionflow-panel__create-btn:active {
+  transform: translateY(0);
+}
+
+/* ---- Data Actions (Export / Import) -------- */
+
+.sessionflow-panel__data-actions {
+  display: flex;
+  gap: var(--sf-spacing-xs);
+  justify-content: flex-end;
+  margin-top: var(--sf-spacing-sm);
+}
+
+.sessionflow-panel__data-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--sf-color-bg-light);
+  color: var(--sf-color-text-muted);
+  border: 1px solid var(--sf-color-border);
+  border-radius: var(--sf-border-radius);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.sessionflow-panel__data-btn:hover {
+  color: var(--sf-color-text);
+  background: var(--sf-color-bg);
+  border-color: var(--sf-color-primary);
+  box-shadow: 0 0 8px rgba(124, 92, 191, 0.25);
+}
+
+.sessionflow-panel__data-btn:active {
+  transform: scale(0.95);
+}
+
+/* -------------------------------------------- */
+/*  Session List                                */
+/* -------------------------------------------- */
+
+.sessionflow-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sf-spacing-sm);
+}
+
+/* -------------------------------------------- */
+/*  Session Item                                */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--sf-color-bg-light);
+  border: 1px solid var(--sf-color-border);
+  border-radius: var(--sf-border-radius);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+
+  /* Staggered entrance animation */
+  animation: sessionflow-item-enter 0.4s ease both;
+  animation-delay: calc(0.06s + var(--sf-item-index, 0) * 0.06s);
+}
+
+.sessionflow-session-list__item:hover {
+  border-color: var(--sf-session-color, var(--sf-color-primary));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* -------------------------------------------- */
+/*  Color Stripe                                */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__color-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--sf-session-color, var(--sf-color-primary));
+  border-radius: 3px 0 0 3px;
+  transition: width 0.2s ease;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__color-stripe {
+  width: 5px;
+}
+
+/* -------------------------------------------- */
+/*  Main Content Row                            */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__main {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-md);
+  padding: var(--sf-spacing-sm) var(--sf-spacing-md);
+  padding-left: calc(var(--sf-spacing-md) + 6px); /* space for stripe */
+}
+
+/* -------------------------------------------- */
+/*  Session Icon                                */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 20%, transparent);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__icon {
+  background: color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 18%, transparent);
+  border-color: color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 35%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 20%, transparent);
+}
+
+.sessionflow-session-list__icon i {
+  color: var(--sf-session-color, var(--sf-color-primary));
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 40%, transparent));
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__icon i {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 55%, transparent));
+  transform: scale(1.1);
+}
+
+/* Custom image icon in session list */
+.sessionflow-session-list__custom-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 40%, transparent));
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__custom-img {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 55%, transparent));
+  transform: scale(1.1);
+}
+
+/* Custom image preview in edit mode */
+.sessionflow-session-edit__icon-preview {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------- */
+/*  Session Text                                */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sessionflow-session-list__number {
+  font-size: 0.7rem;
+  color: var(--sf-session-color, var(--sf-color-primary));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.sessionflow-session-list__name {
+  font-size: var(--sf-font-size-md);
+  color: var(--sf-color-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -------------------------------------------- */
+/*  Edit Button (Hover)                         */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__edit-btn {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs);
+  border-radius: 4px;
+  font-size: var(--sf-font-size-sm);
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__edit-btn {
+  opacity: 1;
+}
+
+.sessionflow-session-list__edit-btn:hover {
+  color: var(--sf-color-primary);
+  background: rgba(124, 92, 191, 0.1);
+}
+
+/* -------------------------------------------- */
+/*  Delete Button (Hover)                       */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__delete-btn {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs);
+  border-radius: 4px;
+  font-size: var(--sf-font-size-sm);
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.sessionflow-session-list__item:hover .sessionflow-session-list__delete-btn {
+  opacity: 1;
+}
+
+.sessionflow-session-list__delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* -------------------------------------------- */
+/*  Active Session State                        */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__item.is-active {
+  border-color: var(--sf-session-color, var(--sf-color-primary));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--sf-session-color, var(--sf-color-primary)) 25%, transparent);
+}
+
+.sessionflow-session-list__item.is-active .sessionflow-session-list__color-stripe {
+  width: 4px;
+}
+
+/* -------------------------------------------- */
+/*  Editing State                               */
+/* -------------------------------------------- */
+
+.sessionflow-session-list__item.is-editing {
+  background: var(--sf-color-bg);
+  border-color: var(--sf-color-primary);
+  box-shadow: 0 0 0 1px var(--sf-color-primary),
+              0 4px 16px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  transform: none;
+  animation: sessionflow-pulse-glow 1s ease-out;
+}
+
+.sessionflow-session-list__item.is-editing:hover {
+  transform: none;
+}
+
+.sessionflow-session-list__item.is-editing .sessionflow-session-list__main {
+  flex-wrap: wrap;
+  animation: sessionflow-edit-enter 0.2s ease;
+}
+
+/* -------------------------------------------- */
+/*  Edit Mode Elements                          */
+/* -------------------------------------------- */
+
+.sessionflow-session-edit__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--sf-color-bg-light);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 8px;
+  color: var(--sf-color-primary);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.sessionflow-session-edit__icon-btn:hover {
+  border-color: var(--sf-color-primary);
+  background: rgba(124, 92, 191, 0.1);
+}
+
+.sessionflow-session-edit__name {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sf-spacing-xs) var(--sf-spacing-sm);
+  background: var(--sf-color-bg-light);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text);
+  font-size: var(--sf-font-size-md);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sessionflow-session-edit__name:focus {
+  border-color: var(--sf-color-primary);
+}
+
+.sessionflow-session-edit__color {
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  background: var(--sf-color-bg-light);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sessionflow-session-edit__actions {
+  display: flex;
+  gap: var(--sf-spacing-xs);
+  width: 100%;
+  justify-content: flex-end;
+  padding-top: var(--sf-spacing-xs);
+}
+
+.sessionflow-session-edit__actions button {
+  background: none;
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs) var(--sf-spacing-sm);
+  font-size: var(--sf-font-size-sm);
+  transition: all 0.2s;
+}
+
+.sessionflow-session-edit__actions button[data-action="save-edit"] {
+  color: var(--sf-color-success);
+  border-color: var(--sf-color-success);
+}
+
+.sessionflow-session-edit__actions button[data-action="save-edit"]:hover {
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.sessionflow-session-edit__actions button[data-action="cancel-edit"]:hover {
+  color: var(--sf-color-danger);
+  border-color: var(--sf-color-danger);
+  background: rgba(244, 67, 54, 0.1);
+}
+
+/* ============================================ */
+/*  Anchor Button — shared across all panels   */
+/* ============================================ */
+
+.sessionflow-panel__anchor,
+.sessionflow-storyline__anchor {
+  background: none;
+  border: none;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  padding: var(--sf-spacing-xs);
+  border-radius: var(--sf-border-radius);
+  font-size: var(--sf-font-size-sm);
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+  opacity: 0.4;
+  line-height: 1;
+}
+
+.sessionflow-panel__anchor:hover,
+.sessionflow-storyline__anchor:hover {
+  color: var(--sf-color-text);
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+}
+
+.sessionflow-panel__anchor.is-active,
+.sessionflow-storyline__anchor.is-active {
+  color: var(--sf-color-primary);
+  opacity: 1;
+}
+
+.sessionflow-panel__anchor.is-active:hover,
+.sessionflow-storyline__anchor.is-active:hover {
+  color: var(--sf-color-primary-hover);
+}

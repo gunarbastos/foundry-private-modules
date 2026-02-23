@@ -1,0 +1,190 @@
+/* ============================================ */
+/*  SessionFlow - Icon Picker Styles            */
+/*  All styles scoped under .sessionflow-       */
+/* ============================================ */
+
+.sessionflow-icon-picker {
+  position: fixed;
+  z-index: 10001;
+  width: 300px;
+  max-height: 500px;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: var(--sf-border-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sessionflow-picker-enter 0.2s ease;
+}
+
+@keyframes sessionflow-picker-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* -------------------------------------------- */
+/*  Header                                      */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-sm) var(--sf-spacing-md);
+  border-bottom: 1px solid var(--sf-color-border);
+  background: var(--sf-color-bg-light);
+  flex-shrink: 0;
+}
+
+.sessionflow-icon-picker__title {
+  flex: 1;
+  font-size: var(--sf-font-size-sm);
+  font-weight: 600;
+  color: var(--sf-color-text);
+  letter-spacing: 0.3px;
+}
+
+.sessionflow-icon-picker__upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--sf-color-border);
+  border-radius: 4px;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.sessionflow-icon-picker__upload-btn:hover {
+  color: var(--sf-color-primary);
+  border-color: var(--sf-color-primary);
+  background: rgba(124, 92, 191, 0.1);
+}
+
+/* -------------------------------------------- */
+/*  Search Bar                                  */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__search {
+  width: 100%;
+  padding: var(--sf-spacing-sm) var(--sf-spacing-md);
+  background: var(--sf-color-bg-light);
+  border: none;
+  border-bottom: 1px solid var(--sf-color-border);
+  color: var(--sf-color-text);
+  font-size: var(--sf-font-size-sm);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sessionflow-icon-picker__search::placeholder {
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-icon-picker__search:focus {
+  background: var(--sf-color-bg);
+  border-bottom-color: var(--sf-color-primary);
+}
+
+/* -------------------------------------------- */
+/*  Grid Container                              */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sf-spacing-sm);
+}
+
+.sessionflow-icon-picker__grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sessionflow-icon-picker__grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sessionflow-icon-picker__grid::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+.sessionflow-icon-picker__grid::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-color-primary);
+}
+
+/* -------------------------------------------- */
+/*  Category Heading                            */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__category {
+  margin: var(--sf-spacing-sm) 0 var(--sf-spacing-xs);
+  padding: 0 var(--sf-spacing-xs);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-icon-picker__category:first-child {
+  margin-top: 0;
+}
+
+/* -------------------------------------------- */
+/*  Icon Row                                    */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  margin-bottom: var(--sf-spacing-xs);
+}
+
+/* -------------------------------------------- */
+/*  Icon Button                                 */
+/* -------------------------------------------- */
+
+.sessionflow-icon-picker__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--sf-color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-icon-picker__btn:hover {
+  background: var(--sf-color-bg-light);
+  border-color: var(--sf-color-border);
+  color: var(--sf-color-text);
+  transform: scale(1.1);
+}
+
+.sessionflow-icon-picker__btn.is-selected {
+  background: rgba(124, 92, 191, 0.2);
+  border-color: var(--sf-color-primary);
+  color: var(--sf-color-primary);
+  box-shadow: 0 0 8px rgba(124, 92, 191, 0.3);
+}

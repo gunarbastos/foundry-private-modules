@@ -1,0 +1,177 @@
+/* ============================================ */
+/*  SessionFlow - Scene Panel Shell Styles      */
+/*  Bottom slide-up panel container, header,    */
+/*  backdrop, and animations.                   */
+/*  Widget & canvas styles in canvas.css        */
+/* ============================================ */
+
+/* -------------------------------------------- */
+/*  Animations                                  */
+/* -------------------------------------------- */
+
+@keyframes sessionflow-scene-slide-down {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+/* -------------------------------------------- */
+/*  Panel Container                             */
+/* -------------------------------------------- */
+
+.sessionflow-scene-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 102;
+  pointer-events: none;
+}
+
+.sessionflow-scene-panel[data-open="true"] {
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Backdrop                                    */
+/* -------------------------------------------- */
+
+.sessionflow-scene-panel__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.sessionflow-scene-panel[data-open="true"] .sessionflow-scene-panel__backdrop {
+  animation: sessionflow-fade-in 0.3s ease forwards;
+  pointer-events: none;
+}
+
+.sessionflow-scene-panel[data-open="false"] .sessionflow-scene-panel__backdrop {
+  animation: sessionflow-fade-out 0.25s ease forwards;
+  pointer-events: none;
+}
+
+/* -------------------------------------------- */
+/*  Panel Content                               */
+/* -------------------------------------------- */
+
+.sessionflow-scene-panel__content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--sf-scene-panel-height, 420px);
+  background: var(--sf-color-bg);
+  border-top: 2px solid color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 40%, var(--sf-color-border));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  transform: translateY(100%);
+  pointer-events: auto;
+}
+
+.sessionflow-scene-panel[data-open="true"] .sessionflow-scene-panel__content {
+  animation: sessionflow-slide-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sessionflow-scene-panel[data-open="false"] .sessionflow-scene-panel__content {
+  animation: sessionflow-scene-slide-down 0.25s ease forwards;
+}
+
+/* -------------------------------------------- */
+/*  Header                                      */
+/* -------------------------------------------- */
+
+.sessionflow-scene-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-sm);
+  padding: var(--sf-spacing-sm) var(--sf-spacing-lg);
+  background: linear-gradient(180deg, var(--sf-color-bg-light) 0%, var(--sf-color-bg) 100%);
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.sessionflow-scene-panel__title {
+  margin: 0;
+  font-size: var(--sf-font-size-md);
+  font-weight: 700;
+  color: var(--sf-color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--sf-spacing-xs);
+  flex-shrink: 0;
+}
+
+.sessionflow-scene-panel__title i {
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  font-size: var(--sf-font-size-sm);
+}
+
+.sessionflow-scene-panel__back,
+.sessionflow-scene-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-scene-panel__back:hover,
+.sessionflow-scene-panel__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sf-color-text);
+}
+
+/* Anchor pushes right-side buttons to the end */
+.sessionflow-scene-panel__anchor {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-scene-panel__anchor:hover {
+  background: var(--sf-color-bg-light);
+  color: var(--sf-color-text);
+}
+
+.sessionflow-scene-panel__anchor.is-active {
+  color: var(--sf-beat-color, var(--sf-color-primary));
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
+}
+
+/* -------------------------------------------- */
+/*  Body                                        */
+/* -------------------------------------------- */
+
+.sessionflow-scene-panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

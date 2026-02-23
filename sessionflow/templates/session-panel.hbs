@@ -1,0 +1,100 @@
+<section class="sessionflow-root sessionflow-panel" data-open="false">
+  <div class="sessionflow-panel__backdrop"></div>
+
+  <div class="sessionflow-panel__content">
+    {{!-- Header --}}
+    <header class="sessionflow-panel__header">
+      <h2 class="sessionflow-panel__title">{{ title }}</h2>
+      {{#if sessionCount}}
+        <span class="sessionflow-panel__count">{{ sessionCount }}</span>
+      {{/if}}
+      <button class="sessionflow-panel__anchor {{#if isAnchored}}is-active{{/if}}"
+              type="button" data-action="toggle-anchor"
+              title="{{ anchorLabel }}">
+        <i class="fas fa-anchor"></i>
+      </button>
+      <button class="sessionflow-panel__close" type="button" aria-label="Close" data-action="close">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    {{!-- Session List --}}
+    <div class="sessionflow-panel__body">
+      {{#if sessions.length}}
+        <ul class="sessionflow-session-list">
+          {{#each sessions}}
+            <li class="sessionflow-session-list__item {{#if this.isActive}}is-active{{/if}}"
+                data-session-id="{{this.id}}"
+                data-action="select-session"
+                style="--sf-session-color: {{this.color}}; --sf-item-index: {{@index}};">
+
+              {{!-- Color accent stripe --}}
+              <div class="sessionflow-session-list__color-stripe"></div>
+
+              {{!-- Main content row --}}
+              <div class="sessionflow-session-list__main">
+                {{!-- Icon (FA or custom image) --}}
+                <span class="sessionflow-session-list__icon">
+                  {{#if this.isCustomImage}}
+                    <img src="{{this.imagePath}}" class="sessionflow-session-list__custom-img" />
+                  {{else}}
+                    <i class="{{this.icon}}"></i>
+                  {{/if}}
+                </span>
+
+                {{!-- Text block --}}
+                <div class="sessionflow-session-list__text">
+                  <span class="sessionflow-session-list__number">{{ ../sessionPrefix }} {{this.number}}</span>
+                  <span class="sessionflow-session-list__name">{{this.name}}</span>
+                </div>
+
+                {{!-- Edit button (visible on hover) --}}
+                <button class="sessionflow-session-list__edit-btn"
+                        data-action="edit-session"
+                        data-session-id="{{this.id}}"
+                        type="button"
+                        title="{{ ../editLabel }}">
+                  <i class="fas fa-pencil"></i>
+                </button>
+                {{!-- Delete button (visible on hover) --}}
+                <button class="sessionflow-session-list__delete-btn"
+                        data-action="delete-session"
+                        data-session-id="{{this.id}}"
+                        type="button"
+                        title="{{ ../deleteLabel }}">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <div class="sessionflow-panel__empty-state">
+          <i class="fas fa-book-open sessionflow-panel__empty-icon"></i>
+          <p class="sessionflow-panel__empty-title">{{ emptyMessage }}</p>
+          <p class="sessionflow-panel__empty-subtitle">{{ emptySubtitle }}</p>
+        </div>
+      {{/if}}
+    </div>
+
+    {{!-- Footer: Create + Data Management --}}
+    {{#if canCreate}}
+      <footer class="sessionflow-panel__footer">
+        <button class="sessionflow-panel__create-btn" type="button" data-action="create-session">
+          <i class="fas fa-plus"></i>
+          <span>{{ createLabel }}</span>
+        </button>
+        <div class="sessionflow-panel__data-actions">
+          <button class="sessionflow-panel__data-btn" type="button"
+                  data-action="export-data" title="{{ exportLabel }}">
+            <i class="fas fa-download"></i>
+          </button>
+          <button class="sessionflow-panel__data-btn" type="button"
+                  data-action="import-data" title="{{ importLabel }}">
+            <i class="fas fa-upload"></i>
+          </button>
+        </div>
+      </footer>
+    {{/if}}
+  </div>
+</section>

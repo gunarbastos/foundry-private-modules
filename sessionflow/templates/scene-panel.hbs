@@ -1,0 +1,55 @@
+<section class="sessionflow-root sessionflow-scene-panel" data-open="false"
+         style="--sf-beat-color: {{ beatColor }}; --sf-session-color: {{ sessionColor }};">
+
+  {{!-- Backdrop --}}
+  <div class="sessionflow-scene-panel__backdrop"></div>
+
+  <div class="sessionflow-scene-panel__content">
+    {{!-- Resize edge at top of panel --}}
+    <div class="sessionflow-scene-panel__resize-edge"></div>
+
+    {{!-- Header --}}
+    <header class="sessionflow-scene-panel__header">
+      <button class="sessionflow-scene-panel__back" type="button"
+              data-action="navigate-back" title="{{ backLabel }}">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h3 class="sessionflow-scene-panel__title">
+        <i class="fas fa-clapperboard"></i>
+        {{ title }}
+      </h3>
+      <button class="sessionflow-scene-panel__anchor {{#if isAnchored}}is-active{{/if}}"
+              type="button" data-action="toggle-anchor"
+              title="{{ anchorLabel }}">
+        <i class="fas fa-anchor"></i>
+      </button>
+      <button class="sessionflow-scene-panel__close" type="button"
+              aria-label="Close" data-action="close">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    {{!-- Body: Toolbar + Canvas --}}
+    <div class="sessionflow-scene-panel__body">
+      {{#if canEdit}}
+        <div class="sessionflow-scene-panel__toolbar">
+          {{#each widgetTypes}}
+            <button class="sessionflow-scene-panel__toolbar-btn" type="button"
+                    data-action="add-widget"
+                    data-widget-type="{{this.type}}"
+                    title="{{this.label}}">
+              <i class="{{this.icon}}"></i>
+            </button>
+          {{/each}}
+          <span class="sessionflow-scene-panel__toolbar-sep"></span>
+          <button class="sessionflow-scene-panel__toolbar-btn sessionflow-scene-panel__toolbar-btn--template"
+                  type="button" data-action="open-templates"
+                  title="{{ templateLabel }}">
+            <i class="fas fa-layer-group"></i>
+          </button>
+        </div>
+      {{/if}}
+      <div class="sessionflow-canvas"></div>
+    </div>
+  </div>
+</section>

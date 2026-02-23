@@ -1,0 +1,640 @@
+/* ============================================ */
+/*  SessionFlow - Beat Panel Styles             */
+/* ============================================ */
+
+/* ---------------------------------------- */
+/*  Panel Container                         */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  pointer-events: none;
+}
+
+.sessionflow-beat-panel[data-open="true"] {
+  pointer-events: none;
+}
+
+/* ---------------------------------------- */
+/*  Backdrop                                */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sessionflow-beat-panel[data-open="true"] .sessionflow-beat-panel__backdrop {
+  opacity: 1;
+  pointer-events: none;
+}
+
+.sessionflow-beat-panel[data-open="false"] .sessionflow-beat-panel__backdrop {
+  pointer-events: none;
+}
+
+/* ---------------------------------------- */
+/*  Panel Content (slide-in from left)      */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 580px;
+  max-width: 90vw;
+  background: var(--sf-color-bg, #1a1a2e);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    4px 0 16px rgba(0, 0, 0, 0.4),
+    1px 0 0 var(--sf-color-border, #2a2a4a);
+  transform: translateX(-100%);
+  pointer-events: auto;
+}
+
+.sessionflow-beat-panel[data-open="true"] .sessionflow-beat-panel__content {
+  animation: sessionflow-slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sessionflow-beat-panel[data-open="false"] .sessionflow-beat-panel__content {
+  animation: sessionflow-beat-slide-out 0.25s ease forwards;
+}
+
+@keyframes sessionflow-beat-slide-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+
+/* ---------------------------------------- */
+/*  Header                                  */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--sf-color-border, #2a2a4a);
+  background: var(--sf-color-bg, #1a1a2e);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.sessionflow-beat-panel__back,
+.sessionflow-beat-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-color-text-muted, #8888aa);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-beat-panel__back:hover,
+.sessionflow-beat-panel__close:hover {
+  background: var(--sf-color-bg-light, #252545);
+  color: var(--sf-color-text, #e0e0e0);
+}
+
+.sessionflow-beat-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sf-color-text, #e0e0e0);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-beat-panel__title i {
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  font-size: 0.85rem;
+}
+
+.sessionflow-beat-panel__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 20%, transparent);
+  color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Anchor button */
+.sessionflow-beat-panel__anchor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-color-text-muted, #8888aa);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-beat-panel__anchor:hover {
+  background: var(--sf-color-bg-light, #252545);
+  color: var(--sf-color-text, #e0e0e0);
+}
+
+.sessionflow-beat-panel__anchor.is-active {
+  color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 15%, transparent);
+}
+
+/* ---------------------------------------- */
+/*  Scrollable Body                         */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+.sessionflow-beat-panel__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sessionflow-beat-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sessionflow-beat-panel__body::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border, #2a2a4a);
+  border-radius: 3px;
+}
+
+.sessionflow-beat-panel__body::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-color-primary, #7c5cbf);
+}
+
+/* ---------------------------------------- */
+/*  Hero Image — Parallax                   */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__hero {
+  width: 100%;
+  height: 340px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sessionflow-beat-panel__hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, var(--sf-color-bg, #1a1a2e), transparent);
+  pointer-events: none;
+}
+
+/* ---------------------------------------- */
+/*  Beat Details                            */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__details {
+  padding: 24px 20px 16px;
+}
+
+.sessionflow-beat-panel__beat-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.sessionflow-beat-panel__beat-text {
+  font-size: 0.9rem;
+  color: var(--sf-color-text, #e0e0e0);
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------- */
+/*  Scenes Section                          */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__scenes-section {
+  padding: 0 20px 20px;
+}
+
+.sessionflow-beat-panel__section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0 10px;
+  border-bottom: 1px solid var(--sf-color-border, #2a2a4a);
+  margin-bottom: 12px;
+}
+
+.sessionflow-beat-panel__section-header i {
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  font-size: 0.85rem;
+}
+
+.sessionflow-beat-panel__section-header h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sf-color-text, #e0e0e0);
+  margin: 0;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sessionflow-beat-panel__scene-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 15%, transparent);
+  color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ---------------------------------------- */
+/*  Scene Cards                             */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__scene-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sessionflow-scene-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--sf-color-bg-light, #252545);
+  border: 1px solid var(--sf-color-border, #2a2a4a);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  animation: sessionflow-scene-enter 0.35s ease both;
+  animation-delay: calc(0.05s + var(--sf-scene-index, 0) * 0.06s);
+}
+
+@keyframes sessionflow-scene-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sessionflow-scene-card:hover {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  transform: translateY(-3px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 20%, transparent);
+}
+
+/* Scene card image — top of card, 16:9 */
+.sessionflow-scene-card__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--sf-color-bg, #1a1a2e);
+  flex-shrink: 0;
+}
+
+.sessionflow-scene-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.sessionflow-scene-card:hover .sessionflow-scene-card__image img {
+  transform: scale(1.05);
+}
+
+.sessionflow-scene-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sf-color-text-muted, #8888aa);
+  font-size: 1.4rem;
+  opacity: 0.4;
+}
+
+/* Scene card info — below image */
+.sessionflow-scene-card__info {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sessionflow-scene-card__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sf-color-text, #e0e0e0);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-scene-card__link {
+  font-size: 0.7rem;
+  color: var(--sf-color-text-muted, #8888aa);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-scene-card__link i {
+  font-size: 0.6rem;
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  flex-shrink: 0;
+}
+
+/* Scene card actions (hover) */
+.sessionflow-scene-card__actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sessionflow-scene-card:hover .sessionflow-scene-card__actions {
+  opacity: 1;
+}
+
+.sessionflow-scene-card__actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 5px;
+  background: var(--sf-color-bg, #1a1a2e);
+  color: var(--sf-color-text-muted, #8888aa);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.7rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.sessionflow-scene-card__actions button:hover {
+  background: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  color: #fff;
+}
+
+/* ---------------------------------------- */
+/*  Scene Edit Mode                         */
+/* ---------------------------------------- */
+
+.sessionflow-scene-card.is-editing {
+  grid-column: 1 / -1;
+  cursor: default;
+  transform: none !important;
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  animation: sessionflow-pulse-glow 1s ease-out;
+  padding: 12px;
+}
+
+.sessionflow-scene-card.is-editing:hover {
+  transform: none !important;
+}
+
+.sessionflow-scene-edit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sessionflow-scene-edit__title {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--sf-color-bg, #1a1a2e);
+  border: 1px solid var(--sf-color-border, #2a2a4a);
+  border-radius: 6px;
+  color: var(--sf-color-text, #e0e0e0);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sessionflow-scene-edit__title:focus {
+  border-color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+}
+
+.sessionflow-scene-edit__select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--sf-color-bg, #1a1a2e);
+  border: 1px solid var(--sf-color-border, #2a2a4a);
+  border-radius: 6px;
+  color: var(--sf-color-text, #e0e0e0);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sessionflow-scene-edit__select:focus {
+  border-color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+}
+
+.sessionflow-scene-edit__select option {
+  background: var(--sf-color-bg, #1a1a2e);
+  color: var(--sf-color-text, #e0e0e0);
+}
+
+.sessionflow-scene-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.sessionflow-scene-edit__actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--sf-color-border, #2a2a4a);
+  border-radius: 6px;
+  background: var(--sf-color-bg, #1a1a2e);
+  color: var(--sf-color-text-muted, #8888aa);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.8rem;
+}
+
+.sessionflow-scene-edit__actions button:first-child:hover {
+  background: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  border-color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  color: #fff;
+}
+
+.sessionflow-scene-edit__actions button:last-child:hover {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+/* ---------------------------------------- */
+/*  Add Scene Button                        */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__add-scene-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  background: transparent;
+  border: 2px dashed var(--sf-color-border, #2a2a4a);
+  border-radius: 8px;
+  color: var(--sf-color-text-muted, #8888aa);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.sessionflow-beat-panel__add-scene-btn:hover {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary, #7c5cbf)));
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 5%, transparent);
+}
+
+.sessionflow-beat-panel__add-scene-btn i {
+  font-size: 0.8rem;
+}
+
+/* ---------------------------------------- */
+/*  Empty States                            */
+/* ---------------------------------------- */
+
+.sessionflow-beat-panel__empty-scenes {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.sessionflow-beat-panel__empty-scenes > i {
+  font-size: 2.5rem;
+  color: var(--sf-beat-color, var(--sf-color-primary, #7c5cbf));
+  opacity: 0.3;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.sessionflow-beat-panel__empty-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sf-color-text, #e0e0e0);
+  margin: 0 0 4px 0;
+  opacity: 0.7;
+}
+
+.sessionflow-beat-panel__empty-subtitle {
+  font-size: 0.8rem;
+  color: var(--sf-color-text-muted, #8888aa);
+  margin: 0;
+}
+
+/* Exalted Scenes required message */
+.sessionflow-beat-panel__exalted-required {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.sessionflow-beat-panel__exalted-required > i {
+  font-size: 2.5rem;
+  color: var(--sf-color-text-muted, #8888aa);
+  opacity: 0.3;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.sessionflow-beat-panel__exalted-required > p {
+  font-size: 0.85rem;
+  color: var(--sf-color-text-muted, #8888aa);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------- */
+/*  Pulse Glow (reuse keyframes if needed)  */
+/* ---------------------------------------- */
+
+@keyframes sessionflow-pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary, #7c5cbf)) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(124, 92, 191, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 92, 191, 0);
+  }
+}

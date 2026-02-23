@@ -1,0 +1,129 @@
+<section class="sessionflow-root sessionflow-beat-panel" data-open="false"
+         style="--sf-beat-color: {{ beatColor }}; --sf-session-color: {{ sessionColor }};">
+
+  {{!-- Backdrop --}}
+  <div class="sessionflow-beat-panel__backdrop"></div>
+
+  <div class="sessionflow-beat-panel__content">
+    {{!-- Header --}}
+    <header class="sessionflow-beat-panel__header">
+      <button class="sessionflow-beat-panel__back" type="button"
+              data-action="navigate-back" title="{{ backLabel }}">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h3 class="sessionflow-beat-panel__title">
+        <i class="fas fa-film"></i>
+        {{ title }}
+      </h3>
+      {{#if sceneCount}}
+        <span class="sessionflow-beat-panel__count">{{ sceneCount }}</span>
+      {{/if}}
+      <button class="sessionflow-beat-panel__anchor {{#if isAnchored}}is-active{{/if}}"
+              type="button" data-action="toggle-anchor"
+              title="{{ anchorLabel }}">
+        <i class="fas fa-anchor"></i>
+      </button>
+      <button class="sessionflow-beat-panel__close" type="button"
+              aria-label="Close" data-action="close">
+        <i class="fas fa-times"></i>
+      </button>
+    </header>
+
+    {{!-- Scrollable Body --}}
+    <div class="sessionflow-beat-panel__body">
+
+      {{!-- Hero Image with Parallax --}}
+      {{#if hasBeatImage}}
+        <div class="sessionflow-beat-panel__hero"
+             style="background-image: url('{{ beatImage }}');">
+        </div>
+      {{/if}}
+
+      {{!-- Beat Details --}}
+      <div class="sessionflow-beat-panel__details">
+        <h2 class="sessionflow-beat-panel__beat-title">{{ beatTitle }}</h2>
+        {{#if beatText}}
+          <p class="sessionflow-beat-panel__beat-text">{{ beatText }}</p>
+        {{/if}}
+      </div>
+
+      {{!-- Scenes Section --}}
+      {{#if exaltedScenesAvailable}}
+        <div class="sessionflow-beat-panel__scenes-section">
+          <header class="sessionflow-beat-panel__section-header">
+            <i class="fas fa-clapperboard"></i>
+            <h3>{{ scenesLabel }}</h3>
+            {{#if sceneCount}}
+              <span class="sessionflow-beat-panel__scene-count">{{ sceneCount }}</span>
+            {{/if}}
+          </header>
+
+          {{#if scenes.length}}
+            <div class="sessionflow-beat-panel__scene-list">
+              {{#each scenes}}
+                <article class="sessionflow-scene-card"
+                         data-scene-id="{{this.id}}"
+                         data-action="select-scene"
+                         style="--sf-scene-index: {{this.index}};">
+
+                  <div class="sessionflow-scene-card__image">
+                    {{#if this.hasBackground}}
+                      <img src="{{this.background}}" alt="{{this.title}}" />
+                    {{else}}
+                      <div class="sessionflow-scene-card__placeholder">
+                        <i class="fas fa-image"></i>
+                      </div>
+                    {{/if}}
+                  </div>
+
+                  <div class="sessionflow-scene-card__info">
+                    <h4 class="sessionflow-scene-card__title">{{this.title}}</h4>
+                    {{#if this.exaltedSceneName}}
+                      <span class="sessionflow-scene-card__link">
+                        <i class="fas fa-link"></i> {{this.exaltedSceneName}}
+                      </span>
+                    {{/if}}
+                  </div>
+
+                  {{#if ../canEdit}}
+                    <div class="sessionflow-scene-card__actions">
+                      <button type="button" data-action="edit-scene"
+                              data-scene-id="{{this.id}}"
+                              title="{{../editSceneLabel}}">
+                        <i class="fas fa-pencil"></i>
+                      </button>
+                      <button type="button" data-action="delete-scene"
+                              data-scene-id="{{this.id}}"
+                              title="{{../deleteSceneLabel}}">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  {{/if}}
+                </article>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="sessionflow-beat-panel__empty-scenes">
+              <i class="fas fa-film"></i>
+              <p class="sessionflow-beat-panel__empty-title">{{ emptyScenesMessage }}</p>
+              <p class="sessionflow-beat-panel__empty-subtitle">{{ emptyScenesSubtitle }}</p>
+            </div>
+          {{/if}}
+
+          {{#if canEdit}}
+            <button class="sessionflow-beat-panel__add-scene-btn" type="button"
+                    data-action="add-scene">
+              <i class="fas fa-plus"></i>
+              <span>{{ addSceneLabel }}</span>
+            </button>
+          {{/if}}
+        </div>
+      {{else}}
+        <div class="sessionflow-beat-panel__exalted-required">
+          <i class="fas fa-puzzle-piece"></i>
+          <p>{{ exaltedRequiredMessage }}</p>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</section>
