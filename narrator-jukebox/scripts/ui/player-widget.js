@@ -679,6 +679,11 @@ export class PlayerWidget {
     else if (payload.action === 'stop') {
       this._render();
     }
+    // Update slider when GM broadcasts volume change
+    else if (payload.action === 'volume') {
+      this._updateVolumeSlider();
+      this._updateVolumeIcon();
+    }
     // Handle ambience layers sync
     else if (payload.action === 'ambienceLayers' || payload.action === 'ambienceLayersStopAll') {
       const layerCount = this._getAmbienceLayerCount();

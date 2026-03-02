@@ -1,7 +1,7 @@
 {
   "id": "narrator-jukebox",
   "title": "Narrator's Jukebox",
-  "version": "3.0.4",
+  "version": "3.0.8",
   "description": "An elegant music player and manager for FoundryVTT with YouTube support, playlists, soundboard, tags, dual audio channels (Music + Ambience), mood boards, and Spotify-inspired design. Refactored modular architecture.",
   "authors": [
     {

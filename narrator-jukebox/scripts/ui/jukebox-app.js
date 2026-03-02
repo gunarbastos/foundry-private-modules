@@ -101,7 +101,7 @@ export class NarratorsJukeboxApp extends Application {
       minWidth: 950,
       minHeight: 650,
       resizable: true,
-      classes: ['narrator-jukebox-window']
+      classes: ['narrator-jukebox-window', 'narrator-jukebox-app']
     });
   }
 

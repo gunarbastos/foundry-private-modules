@@ -135,6 +135,22 @@ class SyncService {
   }
 
   /**
+   * Broadcast seek/scrub position
+   * @param {string} channel - 'music' or 'ambience'
+   * @param {number} percent - Seek position (0-100)
+   */
+  broadcastSeek(channel, percent) {
+    if (!this.socket) return;
+    const payload = {
+      action: 'seek',
+      channel,
+      percent,
+      timestamp: Date.now()
+    };
+    this.socket.executeForOthers('handleRemoteCommand', payload);
+  }
+
+  /**
    * Broadcast soundboard play
    * @param {string} soundId - Soundboard sound ID
    * @param {boolean} loop - Whether to loop
@@ -434,6 +450,18 @@ class SyncService {
 
       case 'volume':
         this.playbackService.channels[payload.channel].setVolume(payload.volume);
+        // Persist GM's volume broadcast to player's client settings
+        // so it's preserved across track changes
+        if (!game.user.isGM && payload.volume > 0) {
+          const settingKey = payload.channel === 'music'
+            ? JUKEBOX.SETTINGS.VOLUME
+            : JUKEBOX.SETTINGS.AMBIENCE_VOLUME;
+          game.settings.set(JUKEBOX.ID, settingKey, payload.volume);
+        }
+        break;
+
+      case 'seek':
+        this.playbackService.channels[payload.channel].seek(payload.percent);
         break;
 
       case 'syncState':
@@ -471,9 +499,24 @@ class SyncService {
     if (payload.channel === 'music') this.playbackService.isPlaying = true;
     if (payload.channel === 'ambience') this.playbackService.isAmbiencePlaying = true;
 
-    // Apply GM's volume before playing to prevent loud default volume
+    // Apply volume before playing
     if (payload.volume !== undefined) {
-      this.playbackService.channels[payload.channel].setVolume(payload.volume);
+      if (game.user.isGM) {
+        // GM uses broadcast volume directly
+        this.playbackService.channels[payload.channel].setVolume(payload.volume);
+      } else {
+        // Players use their own saved volume preference (persisted from widget/app slider)
+        // This prevents GM's volume from overriding the player's choice on every track change
+        const settingKey = payload.channel === 'music'
+          ? JUKEBOX.SETTINGS.VOLUME
+          : JUKEBOX.SETTINGS.AMBIENCE_VOLUME;
+        const muteKey = payload.channel === 'music'
+          ? JUKEBOX.SETTINGS.MUSIC_MUTED
+          : JUKEBOX.SETTINGS.AMBIENCE_MUTED;
+        const playerVolume = game.settings.get(JUKEBOX.ID, settingKey);
+        const isMuted = game.settings.get(JUKEBOX.ID, muteKey);
+        this.playbackService.channels[payload.channel].setVolume(isMuted ? 0 : playerVolume);
+      }
     }
 
     try {
@@ -498,19 +541,31 @@ class SyncService {
       const currentId = this.playbackService.channels.music.currentTrack?.id;
 
       if (track && currentId !== payload.musicTrackId) {
-        // Apply GM's volume before playing
-        if (payload.volume !== undefined) {
-          this.playbackService.channels.music.setVolume(payload.volume);
+        // Set playing state BEFORE calling play() (matches _handlePlayCommand pattern)
+        if (payload.isPlaying) {
+          this.playbackService.isPlaying = true;
         }
+
+        // Apply volume: players use their own saved preference, GM uses broadcast volume
+        if (game.user.isGM) {
+          if (payload.volume !== undefined) {
+            this.playbackService.channels.music.setVolume(payload.volume);
+          }
+        } else {
+          const playerVolume = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.VOLUME);
+          const isMuted = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_MUTED);
+          this.playbackService.channels.music.setVolume(isMuted ? 0 : playerVolume);
+        }
+
         this.playbackService.channels.music.play(track, () => {
+          // Seek to GM's current position after track loads
           const duration = this.playbackService.channels.music.duration;
-          if (duration) {
+          if (duration && payload.musicTime) {
             this.playbackService.channels.music.seek(payload.musicTime / duration * 100);
           }
           if (!payload.isPlaying) {
             this.playbackService.channels.music.pause();
-          } else {
-            this.playbackService.isPlaying = true;
+            this.playbackService.isPlaying = false;
           }
         });
       }
@@ -523,15 +578,26 @@ class SyncService {
       const currentId = this.playbackService.channels.ambience.currentTrack?.id;
 
       if (track && currentId !== payload.ambienceTrackId) {
-        // Apply GM's volume before playing
-        if (payload.ambienceVolume !== undefined) {
-          this.playbackService.channels.ambience.setVolume(payload.ambienceVolume);
+        // Set playing state BEFORE calling play()
+        if (payload.isAmbiencePlaying) {
+          this.playbackService.isAmbiencePlaying = true;
         }
+
+        // Apply volume: players use their own saved preference
+        if (game.user.isGM) {
+          if (payload.ambienceVolume !== undefined) {
+            this.playbackService.channels.ambience.setVolume(payload.ambienceVolume);
+          }
+        } else {
+          const playerVolume = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_VOLUME);
+          const isMuted = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MUTED);
+          this.playbackService.channels.ambience.setVolume(isMuted ? 0 : playerVolume);
+        }
+
         this.playbackService.channels.ambience.play(track, () => {
           if (!payload.isAmbiencePlaying) {
             this.playbackService.channels.ambience.pause();
-          } else {
-            this.playbackService.isAmbiencePlaying = true;
+            this.playbackService.isAmbiencePlaying = false;
           }
         });
       }

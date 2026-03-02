@@ -5,7 +5,7 @@
 
 import { JUKEBOX, MOOD_GRADIENTS, MOOD_ICONS } from '../core/constants.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
-import { applyMoodEditorTheme } from './base-dialog.js';
+import { applyMoodEditorTheme, applyDialogClasses } from './base-dialog.js';
 import { localize, format } from '../utils/i18n.js';
 
 /**
@@ -139,6 +139,7 @@ export function showEditMoodsDialog({ music = [], onSuccess }) {
     content: content,
     classes: ['narrator-jukebox-dialog', 'mood-editor-dialog-v2'],
     render: (html) => {
+      applyDialogClasses(html, ['narrator-jukebox-dialog', 'mood-editor-dialog-v2']);
       applyMoodEditorTheme(html);
       setupMoodEditorListeners(html, allTags, () => dialog);
     },

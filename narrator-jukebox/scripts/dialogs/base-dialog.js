@@ -101,6 +101,20 @@ export const MOOD_EDITOR_THEME = {
 };
 
 /**
+ * Apply CSS classes to a dialog's wrapper element.
+ * Foundry V13's Dialog V1 API does not reliably apply the `classes` option
+ * to the outer wrapper element, so we manually add them in the render callback.
+ * @param {jQuery} html - The dialog HTML element (from render callback)
+ * @param {string[]} classes - Array of CSS class names to add
+ */
+export function applyDialogClasses(html, classes) {
+  if (!classes || !classes.length) return;
+  const dialogApp = html.closest('.app.dialog');
+  if (!dialogApp.length) return;
+  classes.forEach(cls => dialogApp[0].classList.add(cls));
+}
+
+/**
  * Apply dark theme to a dialog element
  * @param {jQuery} html - The dialog HTML element
  * @param {Object} theme - Theme object (defaults to DIALOG_THEME)

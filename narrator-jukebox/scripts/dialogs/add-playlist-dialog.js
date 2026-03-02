@@ -4,7 +4,7 @@
  */
 
 import { JUKEBOX } from '../core/constants.js';
-import { applyDarkTheme, DIALOG_CLASSES } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField } from '../services/validation-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
@@ -45,6 +45,7 @@ export function showAddPlaylistDialog({ jukebox, onSuccess }) {
     content: content,
     classes: DIALOG_CLASSES.playlist,
     render: (html) => {
+      applyDialogClasses(html, DIALOG_CLASSES.playlist);
       applyDarkTheme(html);
     },
     buttons: {

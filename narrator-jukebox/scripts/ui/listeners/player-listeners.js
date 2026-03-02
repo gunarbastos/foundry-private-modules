@@ -7,6 +7,7 @@
 
 import { formatTime } from '../../utils/time-format.js';
 import { localize } from '../../utils/i18n.js';
+import { syncService } from '../../core/jukebox-state.js';
 
 /**
  * Activate music player control listeners
@@ -28,9 +29,9 @@ export function activatePlayerListeners(app, html) {
         updatePlayButton(e.currentTarget, jukebox.isPlaying);
     });
 
-    // Next
+    // Next (wrap=true: manual click always wraps around at end of library/playlist)
     html.find('#next-btn').click(() => {
-        jukebox.next();
+        jukebox.next(true);
     });
 
     // Prev
@@ -114,6 +115,11 @@ function activateProgressBarListeners(app, html, jukebox, progressFillEl, curren
     progressBar.on('change', e => {
         const percent = e.target.value;
         jukebox.channels.music.seek(percent);
+
+        // Broadcast seek to players (GM in broadcast mode only)
+        if (game.user.isGM && !jukebox.isPreviewMode) {
+            syncService.broadcastSeek('music', parseFloat(percent));
+        }
 
         // Small delay to prevent timer from jumping back immediately
         setTimeout(() => {

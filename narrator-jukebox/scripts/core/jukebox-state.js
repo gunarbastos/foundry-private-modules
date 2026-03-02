@@ -38,6 +38,7 @@ class NarratorJukebox {
 
   static instance = null;
   static socket = null;
+  static _hooksRegistered = false;
 
   static initialize() {
     if (!NarratorJukebox.instance) {
@@ -78,41 +79,45 @@ class NarratorJukebox {
       syncService.requestState();
     }
 
-    // Listen for Track End to trigger Next/Loop
-    Hooks.on('narratorJukeboxTrackEnded', (channel) => {
-      if (!NarratorJukebox.instance) return;
+    // Listen for Track End to trigger Next/Loop (only register once)
+    if (!NarratorJukebox._hooksRegistered) {
+      NarratorJukebox._hooksRegistered = true;
 
-      if (channel === 'music') {
-        // Check if loop is enabled - if so, replay the same track
-        if (playbackService.musicLoop) {
-          const currentTrack = NarratorJukebox.instance.channels.music.currentTrack;
-          if (currentTrack) {
-            debugLog("Looping music:", currentTrack.name);
-            NarratorJukebox.instance.playMusic(currentTrack.id, 'music');
-          }
-        } else {
-          debugLog("Music track ended, calling next()");
-          NarratorJukebox.instance.next();
-        }
-      } else if (channel === 'ambience') {
-        debugLog("Ambience track ended");
-        if (playbackService.ambienceLoop) {
-          const currentTrack = NarratorJukebox.instance.channels.ambience.currentTrack;
-          if (currentTrack) {
-            debugLog("Looping ambience:", currentTrack.name);
-            NarratorJukebox.instance.playMusic(currentTrack.id, 'ambience');
-          }
-        } else {
-          playbackService.isAmbiencePlaying = false;
-          Hooks.call('narratorJukeboxStateChanged');
-        }
-      }
-    });
+      Hooks.on('narratorJukeboxTrackEnded', (channel) => {
+        if (!NarratorJukebox.instance) return;
 
-    // Listen for remote command UI updates
-    Hooks.on('narratorJukeboxRemoteCommand', () => {
-      Hooks.call('narratorJukeboxStateChanged');
-    });
+        if (channel === 'music') {
+          // Check if loop is enabled - if so, replay the same track
+          if (playbackService.musicLoop) {
+            const currentTrack = NarratorJukebox.instance.channels.music.currentTrack;
+            if (currentTrack) {
+              debugLog("Looping music:", currentTrack.name);
+              NarratorJukebox.instance.playMusic(currentTrack.id, 'music');
+            }
+          } else {
+            debugLog("Music track ended, calling next()");
+            NarratorJukebox.instance.next();
+          }
+        } else if (channel === 'ambience') {
+          debugLog("Ambience track ended");
+          if (playbackService.ambienceLoop) {
+            const currentTrack = NarratorJukebox.instance.channels.ambience.currentTrack;
+            if (currentTrack) {
+              debugLog("Looping ambience:", currentTrack.name);
+              NarratorJukebox.instance.playMusic(currentTrack.id, 'ambience');
+            }
+          } else {
+            playbackService.isAmbiencePlaying = false;
+            Hooks.call('narratorJukeboxStateChanged');
+          }
+        }
+      });
+
+      // Listen for remote command UI updates
+      Hooks.on('narratorJukeboxRemoteCommand', () => {
+        Hooks.call('narratorJukeboxStateChanged');
+      });
+    }
   }
 
   /**
@@ -305,8 +310,8 @@ class NarratorJukebox {
     Hooks.call('narratorJukeboxStateChanged');
   }
 
-  next() {
-    const result = playbackService.next();
+  next(wrap = false) {
+    const result = playbackService.next(wrap);
     Hooks.call('narratorJukeboxStateChanged');
     return result;
   }
@@ -349,7 +354,9 @@ class NarratorJukebox {
   // ==========================================
 
   async playSoundboardSound(id, options = {}) {
-    return await playbackService.playSoundboardSound(id, options);
+    const result = await playbackService.playSoundboardSound(id, options);
+    Hooks.call('narratorJukeboxStateChanged');
+    return result;
   }
 
   stopSoundboardSound(id, broadcast = true) {

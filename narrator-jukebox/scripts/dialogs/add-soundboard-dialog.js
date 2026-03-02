@@ -7,7 +7,7 @@ import { JUKEBOX } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { parseTimeInput } from '../utils/time-format.js';
-import { applyDarkTheme, DIALOG_CLASSES } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
@@ -219,6 +219,7 @@ export function showAddSoundboardDialog({ jukebox, onSuccess }) {
     content: content,
     classes: DIALOG_CLASSES.soundboard,
     render: (html) => {
+      applyDialogClasses(html, DIALOG_CLASSES.soundboard);
       applyDarkTheme(html, SOUNDBOARD_THEME);
       setupAddSoundboardListeners(html);
     },

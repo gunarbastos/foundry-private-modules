@@ -2194,7 +2194,7 @@
 }
 
 /* Playlist options container (for Add to Playlist dialog) */
-.narrator-jukebox-app .playlist-options-container {
+.add-track-dialog-window .playlist-options-container {
     padding: 16px 24px 24px;
     display: flex;
     flex-direction: column;
@@ -2203,7 +2203,7 @@
     overflow-y: auto;
 }
 
-.narrator-jukebox-app .playlist-option {
+.add-track-dialog-window .playlist-option {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2215,17 +2215,17 @@
     transition: all 0.2s ease;
 }
 
-.narrator-jukebox-app .playlist-option:hover {
+.add-track-dialog-window .playlist-option:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
-.narrator-jukebox-app .playlist-option.selected {
+.add-track-dialog-window .playlist-option.selected {
     background: rgba(29, 185, 84, 0.15);
     border-color: var(--jb-accent);
 }
 
-.narrator-jukebox-app .playlist-option-icon {
+.add-track-dialog-window .playlist-option-icon {
     width: 40px;
     height: 40px;
     background: rgba(255, 255, 255, 0.1);
@@ -2238,12 +2238,12 @@
     flex-shrink: 0;
 }
 
-.narrator-jukebox-app .playlist-option.selected .playlist-option-icon {
+.add-track-dialog-window .playlist-option.selected .playlist-option-icon {
     background: var(--jb-accent);
     color: #000;
 }
 
-.narrator-jukebox-app .playlist-option-info {
+.add-track-dialog-window .playlist-option-info {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -2251,7 +2251,7 @@
     min-width: 0;
 }
 
-.narrator-jukebox-app .playlist-option-name {
+.add-track-dialog-window .playlist-option-name {
     color: #fff;
     font-size: 0.95rem;
     font-weight: 500;
@@ -2260,12 +2260,12 @@
     text-overflow: ellipsis;
 }
 
-.narrator-jukebox-app .playlist-option-count {
+.add-track-dialog-window .playlist-option-count {
     color: var(--jb-text-secondary);
     font-size: 0.8rem;
 }
 
-.narrator-jukebox-app .playlist-option-check {
+.add-track-dialog-window .playlist-option-check {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -2278,36 +2278,36 @@
     flex-shrink: 0;
 }
 
-.narrator-jukebox-app .playlist-option:hover .playlist-option-check {
+.add-track-dialog-window .playlist-option:hover .playlist-option-check {
     color: #fff;
     background: rgba(255, 255, 255, 0.1);
 }
 
-.narrator-jukebox-app .playlist-option.selected .playlist-option-check {
+.add-track-dialog-window .playlist-option.selected .playlist-option-check {
     background: var(--jb-accent);
     color: #000;
 }
 
-.narrator-jukebox-app .playlist-option.selected .playlist-option-check i {
+.add-track-dialog-window .playlist-option.selected .playlist-option-check i {
     transform: rotate(45deg);
 }
 
 /* Scrollbar styling for playlist options */
-.narrator-jukebox-app .playlist-options-container::-webkit-scrollbar {
+.add-track-dialog-window .playlist-options-container::-webkit-scrollbar {
     width: 8px;
 }
 
-.narrator-jukebox-app .playlist-options-container::-webkit-scrollbar-track {
+.add-track-dialog-window .playlist-options-container::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 4px;
 }
 
-.narrator-jukebox-app .playlist-options-container::-webkit-scrollbar-thumb {
+.add-track-dialog-window .playlist-options-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
 }
 
-.narrator-jukebox-app .playlist-options-container::-webkit-scrollbar-thumb:hover {
+.add-track-dialog-window .playlist-options-container::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
@@ -2369,14 +2369,16 @@
     background: #0a0a0a !important;
     color: #fff !important;
     padding: 0 !important;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* Main Editor Container */
 .mood-editor-dialog-v2 .mood-editor-v2 {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
+    height: auto;
     font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -3140,226 +3142,10 @@
     }
 }
 
-/* ==========================================
-   Legacy Mood Edit Dialog (kept for compatibility)
-   ========================================== */
-.mood-editor-dialog,
-.mood-editor-dialog.app.window-app {
-    width: 900px !important;
-    min-width: 900px !important;
-    max-width: 95vw !important;
-}
-
-.mood-editor-dialog .window-content {
-    max-height: 70vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px !important;
-}
-
-.narrator-jukebox-app .mood-edit-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.narrator-jukebox-app .mood-edit-container .help-text {
-    background: rgba(102, 126, 234, 0.1);
-    border-left: 3px solid var(--jb-accent);
-    padding: 12px;
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--jb-text-secondary);
-    border-radius: 4px;
-}
-
-.narrator-jukebox-app #mood-edit-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.narrator-jukebox-app .mood-edit-card {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 20px;
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 24px;
-    align-items: start;
-    transition: all 0.2s;
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.narrator-jukebox-app .mood-edit-card:hover {
-    border-color: var(--jb-accent);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.narrator-jukebox-app .mood-card-preview {
-    width: 200px;
-    height: 160px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: all 0.3s;
-}
-
-.narrator-jukebox-app .mood-card-preview i {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-
-.narrator-jukebox-app .mood-card-preview span {
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    text-align: center;
-    padding: 0 8px;
-}
-
-.narrator-jukebox-app .mood-card-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.narrator-jukebox-app .mood-card-fields .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.narrator-jukebox-app .mood-card-fields .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.narrator-jukebox-app .mood-card-fields .form-group label {
-    color: var(--jb-text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.narrator-jukebox-app .mood-card-fields .form-group input {
-    background: #282828;
-    border: 1px solid #333;
-    border-radius: 6px;
-    color: white;
-    padding: 10px 12px;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-}
-
-.narrator-jukebox-app .mood-card-fields .form-group input:focus {
-    outline: none;
-    border-color: var(--jb-accent);
-    background: #333;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.narrator-jukebox-app .mood-card-fields .icon-picker-group {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-}
-
-.narrator-jukebox-app .mood-card-fields .icon-picker-group input {
-    flex: 1;
-}
-
-.narrator-jukebox-app .mood-card-fields .icon-picker-btn {
-    background: var(--jb-accent);
-    border: none;
-    border-radius: 6px;
-    color: black;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-
-.narrator-jukebox-app .mood-card-fields .icon-picker-btn:hover {
-    background: var(--jb-accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-}
-
-.narrator-jukebox-app .mood-card-fields .form-group small {
-    color: #888;
-    font-size: 0.75rem;
-    font-style: italic;
-}
-
-.narrator-jukebox-app .delete-mood-card-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: 6px;
-    color: #ff4081;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    opacity: 0.7;
-}
-
-.narrator-jukebox-app .delete-mood-card-btn:hover {
-    background: #e91e63;
-    color: white;
-    transform: scale(1.1);
-    opacity: 1;
-    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.5);
-}
-
-.narrator-jukebox-app #add-mood-btn {
-    background: var(--jb-accent);
-    border: none;
-    border-radius: 8px;
-    color: black;
-    padding: 16px 24px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.narrator-jukebox-app #add-mood-btn:hover {
-    background: var(--jb-accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-}
-
-.narrator-jukebox-app #add-mood-btn i {
-    font-size: 1.2rem;
-}
+/* Legacy Mood Edit Dialog V1 - REMOVED (v3.0.5)
+   Dead code: no JS references .mood-editor-dialog, .mood-edit-container,
+   .mood-edit-card, .mood-card-preview, .mood-card-fields, #add-mood-btn.
+   The V2 mood editor uses .mood-editor-dialog-v2 classes (see above). */
 
 /* ==========================================
    Loading States & Spinners
@@ -7033,8 +6819,8 @@
    Bulk Import Styles
    ========================================== */
 
-/* Toggle Switch - iOS Style */
-.jb-toggle-switch {
+/* Toggle Switch - iOS Style (scoped to module dialogs) */
+.narrator-jukebox-dialog .jb-toggle-switch {
     position: relative;
     width: 44px;
     height: 24px;
@@ -7047,19 +6833,19 @@
     padding: 0;
 }
 
-.jb-toggle-switch:hover {
+.narrator-jukebox-dialog .jb-toggle-switch:hover {
     background: #3d3d3d;
 }
 
-.jb-toggle-switch.active {
+.narrator-jukebox-dialog .jb-toggle-switch.active {
     background: var(--jb-accent);
 }
 
-.jb-toggle-switch.active:hover {
+.narrator-jukebox-dialog .jb-toggle-switch.active:hover {
     background: var(--jb-accent-hover);
 }
 
-.jb-toggle-switch::after {
+.narrator-jukebox-dialog .jb-toggle-switch::after {
     content: '';
     position: absolute;
     width: 20px;
@@ -7072,25 +6858,25 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.jb-toggle-switch.active::after {
+.narrator-jukebox-dialog .jb-toggle-switch.active::after {
     transform: translateX(20px);
 }
 
 /* Ambience variant */
-.jb-toggle-switch.ambience.active {
+.narrator-jukebox-dialog .jb-toggle-switch.ambience.active {
     background: var(--jb-ambience-accent);
 }
 
-.jb-toggle-switch.ambience.active:hover {
+.narrator-jukebox-dialog .jb-toggle-switch.ambience.active:hover {
     background: var(--jb-ambience-accent-hover);
 }
 
 /* Soundboard variant */
-.jb-toggle-switch.soundboard.active {
+.narrator-jukebox-dialog .jb-toggle-switch.soundboard.active {
     background: #ff6b35;
 }
 
-.jb-toggle-switch.soundboard.active:hover {
+.narrator-jukebox-dialog .jb-toggle-switch.soundboard.active:hover {
     background: #ff8555;
 }
 

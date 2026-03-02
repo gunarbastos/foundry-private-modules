@@ -5,7 +5,7 @@
 
 import { JUKEBOX } from '../core/constants.js';
 import { formatTimeForInput } from '../utils/time-format.js';
-import { applyDarkTheme, DIALOG_CLASSES } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
@@ -150,8 +150,9 @@ export function showEditSoundboardDialog({ soundId, jukebox, onSuccess }) {
   const dialog = new Dialog({
     title: localize('Dialog.Soundboard.EditTitle'),
     content: content,
-    classes: ['narrator-jukebox-dialog', 'soundboard-theme'],
+    classes: DIALOG_CLASSES.soundboard,
     render: (html) => {
+      applyDialogClasses(html, DIALOG_CLASSES.soundboard);
       applyDarkTheme(html);
       setupEditSoundboardListeners(html);
     },

@@ -23,6 +23,9 @@ export class AudioChannel {
 
     // Robust Interval Management
     this.activeIntervals = new Set();
+
+    // Play generation counter: prevents concurrent play() calls from creating phantom audio
+    this._playGeneration = 0;
   }
 
   async initialize() {
@@ -60,6 +63,9 @@ export class AudioChannel {
   async play(track, startCallback = null) {
     debugLog(`AudioChannel.play() called for ${this.name}`, track);
 
+    // Increment play generation to invalidate any concurrent in-flight play() calls
+    const generation = ++this._playGeneration;
+
     // 1. Atomic Reset: Stop all pending fades/actions
     this.clearAllIntervals();
 
@@ -84,6 +90,7 @@ export class AudioChannel {
     // 2. Handle Transitions
     // If we have an existing local audio element, we must fade it out and destroy it
     if (this.audioElement) {
+        this._removeAudioListeners(this.audioElement); // Prevent phantom triggers during fade-out
         this.fadeOutLocal(this.audioElement);
         this.audioElement = null; // Detach from channel immediately
     }
@@ -100,12 +107,26 @@ export class AudioChannel {
         if (track.source === 'youtube') {
             await this.playYouTube(track.url);
         } else {
-            await this.playLocal(track.url);
+            const newAudio = await this.playLocal(track.url);
+
+            // Check if this play was superseded by a newer play() call during the await
+            if (this._playGeneration !== generation) {
+                debugLog(`Play superseded for ${track.name}, cleaning up stale audio`);
+                newAudio.pause();
+                this._removeAudioListeners(newAudio);
+                if (newAudio.remove) newAudio.remove();
+                return;
+            }
+
+            this.audioElement = newAudio;
+            this.fadeIn(newAudio);
         }
 
         if (startCallback) startCallback();
 
     } catch (err) {
+        // Only handle error if this is still the active play
+        if (this._playGeneration !== generation) return;
         debugError(`Playback failed:`, err);
         this.currentTrack = null; // Revert state
         throw err;
@@ -117,23 +138,26 @@ export class AudioChannel {
     newAudio.volume = 0; // Start silent for fade in
     newAudio.loop = (this.name === 'ambience');
 
-    newAudio.addEventListener('ended', () => {
+    // Store named references so we can remove them later (prevents phantom audio)
+    newAudio._jbOnEnded = () => {
       debugLog(`Track ended on ${this.name}`);
       Hooks.call('narratorJukeboxTrackEnded', this.name);
-    });
-
-    newAudio.addEventListener('error', (e) => {
+    };
+    newAudio._jbOnError = (e) => {
       debugError(`Audio error on ${this.name}:`, e);
       Hooks.call('narratorJukeboxPlaybackError', { channel: this.name, error: e });
-    });
-
-    newAudio.addEventListener('canplaythrough', () => {
+    };
+    newAudio._jbOnLoaded = () => {
       Hooks.call('narratorJukeboxTrackLoaded', this.name);
-    });
+    };
+
+    newAudio.addEventListener('ended', newAudio._jbOnEnded);
+    newAudio.addEventListener('error', newAudio._jbOnError);
+    newAudio.addEventListener('canplaythrough', newAudio._jbOnLoaded);
 
     await newAudio.play();
-    this.audioElement = newAudio;
-    this.fadeIn(newAudio);
+    // Return the element — play() handles assignment after generation check
+    return newAudio;
   }
 
   async playYouTube(url) {
@@ -235,6 +259,7 @@ export class AudioChannel {
 
   fadeOutLocal(audio) {
     if (!audio) return;
+    this._removeAudioListeners(audio); // Safety: ensure no phantom triggers during fade
     let vol = audio.volume;
 
     // Track this interval to prevent memory leaks
@@ -278,6 +303,7 @@ export class AudioChannel {
     this.clearAllIntervals(); // Stop any fades
 
     if (this.audioElement) {
+        this._removeAudioListeners(this.audioElement); // Prevent phantom triggers
         this.audioElement.pause();
         this.audioElement = null;
     }
@@ -348,6 +374,28 @@ export class AudioChannel {
     }
     if (this.youtubePlayer && this.youtubePlayer.seekTo) {
         this.youtubePlayer.seekTo(targetTime, true);
+    }
+  }
+
+  /**
+   * Remove stored event listeners from an audio element.
+   * Prevents phantom audio: old elements firing 'ended' during fade-out
+   * would trigger next() and start a second track playing simultaneously.
+   * @param {HTMLAudioElement} audio - The audio element to clean up
+   */
+  _removeAudioListeners(audio) {
+    if (!audio) return;
+    if (audio._jbOnEnded) {
+      audio.removeEventListener('ended', audio._jbOnEnded);
+      audio._jbOnEnded = null;
+    }
+    if (audio._jbOnError) {
+      audio.removeEventListener('error', audio._jbOnError);
+      audio._jbOnError = null;
+    }
+    if (audio._jbOnLoaded) {
+      audio.removeEventListener('canplaythrough', audio._jbOnLoaded);
+      audio._jbOnLoaded = null;
     }
   }
 

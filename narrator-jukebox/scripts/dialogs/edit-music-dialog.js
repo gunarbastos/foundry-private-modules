@@ -5,7 +5,7 @@
 
 import { JUKEBOX } from '../core/constants.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
-import { applyDarkTheme, DIALOG_CLASSES } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
@@ -86,6 +86,7 @@ export function showEditMusicDialog({ trackId, jukebox, onSuccess }) {
     content: content,
     classes: DIALOG_CLASSES.music,
     render: (html) => {
+      applyDialogClasses(html, DIALOG_CLASSES.music);
       applyDarkTheme(html);
       setupEditMusicListeners(html);
     },

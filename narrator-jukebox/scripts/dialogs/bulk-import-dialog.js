@@ -6,7 +6,7 @@
 import { JUKEBOX } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
-import { applyDarkTheme } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses } from './base-dialog.js';
 import { debugLog, debugError, debugWarn } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
 
@@ -91,6 +91,7 @@ export function showBulkImportDialog({ type = 'music', jukebox, onSuccess }) {
     classes: ['narrator-jukebox-dialog', 'bulk-import-dialog', config.accentClass],
     buttons: {},
     render: (html) => {
+      applyDialogClasses(html, ['narrator-jukebox-dialog', 'bulk-import-dialog', config.accentClass].filter(c => c));
       applyBulkImportTheme(html);
 
       // Source button toggle

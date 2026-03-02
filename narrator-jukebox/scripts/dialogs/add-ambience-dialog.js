@@ -6,7 +6,7 @@
 import { JUKEBOX } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
-import { applyDarkTheme, DIALOG_CLASSES } from './base-dialog.js';
+import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
@@ -144,6 +144,7 @@ export function showAddAmbienceDialog({ jukebox, onSuccess }) {
     content: content,
     classes: DIALOG_CLASSES.ambience,
     render: (html) => {
+      applyDialogClasses(html, DIALOG_CLASSES.ambience);
       applyDarkTheme(html, AMBIENCE_THEME);
       setupAddAmbienceListeners(html);
     },

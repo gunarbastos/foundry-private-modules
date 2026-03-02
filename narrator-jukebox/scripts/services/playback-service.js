@@ -182,8 +182,10 @@ class PlaybackService {
 
   /**
    * Skip to next track
+   * @param {boolean} wrap - If true, always wrap around at end (for manual next button).
+   *                         If false, stop at end when musicLoop is off (for auto-advance).
    */
-  next() {
+  next(wrap = false) {
     const currentId = this.channels.music.currentTrack?.id;
 
     // 1. Handle Playlist Logic
@@ -197,7 +199,7 @@ class PlaybackService {
         const currentIndex = this.currentPlaylist.musicIds.indexOf(currentId);
         nextIndex = currentIndex + 1;
         if (nextIndex >= this.currentPlaylist.musicIds.length) {
-          if (this.musicLoop) {
+          if (this.musicLoop || wrap) {
             nextIndex = 0;
           } else {
             debugLog(" Playlist ended, no loop");
@@ -224,7 +226,7 @@ class PlaybackService {
 
       let nextIndex = currentIndex + 1;
       if (nextIndex >= music.length) {
-        if (this.musicLoop) {
+        if (this.musicLoop || wrap) {
           nextIndex = 0;
         } else {
           debugLog(" End of library, no loop");
