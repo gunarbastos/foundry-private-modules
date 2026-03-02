@@ -1,0 +1,29 @@
+{
+  "id": "eskie-effects",
+  "title": "Eskie Effects",
+  "description": "<p>A collection of animated assets geared toward being combined and remixed using the Sequencer module, allowing you to create a variety of unique visual effects for spells, abilities, and cinematic scenes.</p><p>❤️Thank you for your support!<br>Join the <a href='https://discord.gg/efjjV6Yy' target='_blank'>Discord</a> community!</p>",
+  "version": "1.3.0",
+  "authors": [
+    {
+      "name": "eskie",
+      "discord": ".eskie"
+    }
+  ],
+  "media": [
+    {
+      "type": "setup",
+      "url": "modules/eskie-effects/art/banner.gif"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13.350",
+    "maximum": "13.999"
+  },
+  "esmodules": [
+"scripts/hooks.js"
+  ],
+  "url": "https://patreon.com/EskieEffects",
+  "manifest": "https://github.com/Eskie-dog/eskie-effects/releases/latest/download/module.json",
+  "download": "https://github.com/Eskie-dog/eskie-effects/releases/latest/download/eskie-effects.zip"
+}
