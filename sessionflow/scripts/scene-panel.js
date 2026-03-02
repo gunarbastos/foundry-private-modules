@@ -26,6 +26,11 @@ import './widgets/progress-clock-widget.js';
 import './widgets/faction-widget.js';
 import './widgets/time-tracker-widget.js';
 import './widgets/journal-board-widget.js';
+import './widgets/macro-widget.js';
+import './widgets/scene-link-widget.js';
+import './widgets/day-night-widget.js';
+import './widgets/sequence-widget.js';
+import './widgets/slideshow-widget.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -87,9 +92,9 @@ const BUILTIN_TEMPLATES = [
     name: 'SESSIONFLOW.Canvas.TemplateClassic',
     icon: 'fas fa-columns',
     widgets: () => widgetsFromTemplate([
-      { type: 'scene-image', x: 20, y: 20, width: 540, height: 340 },
-      { type: 'divider', x: 580, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
-      { type: 'characters', x: 620, y: 20, width: 400, height: 340 }
+      { type: 'scene-image', x: 20, y: 20, width: 520, height: 340 },
+      { type: 'divider', x: 560, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
+      { type: 'characters', x: 600, y: 20, width: 460, height: 340 }
     ])
   },
   {
@@ -99,9 +104,9 @@ const BUILTIN_TEMPLATES = [
     widgets: () => widgetsFromTemplate([
       { type: 'scene-image', x: 20, y: 20, width: 480, height: 340 },
       { type: 'divider', x: 520, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'ornamental' } },
-      { type: 'teleprompter', x: 560, y: 20, width: 460, height: 36 },
-      { type: 'divider', x: 560, y: 76, width: 460, height: 20, config: { orientation: 'horizontal', style: 'dotted' } },
-      { type: 'paragraph', x: 560, y: 116, width: 460, height: 244 }
+      { type: 'teleprompter', x: 560, y: 20, width: 500, height: 44 },
+      { type: 'divider', x: 600, y: 84, width: 420, height: 20, config: { orientation: 'horizontal', style: 'dotted' } },
+      { type: 'paragraph', x: 560, y: 120, width: 500, height: 240 }
     ])
   },
   {
@@ -109,11 +114,10 @@ const BUILTIN_TEMPLATES = [
     name: 'SESSIONFLOW.Canvas.TemplateCombat',
     icon: 'fas fa-swords',
     widgets: () => widgetsFromTemplate([
-      { type: 'scene-image', x: 20, y: 20, width: 400, height: 340 },
-      { type: 'divider', x: 440, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'solid' } },
-      { type: 'characters', x: 480, y: 20, width: 300, height: 340 },
-      { type: 'divider', x: 800, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'solid' } },
-      { type: 'timer', x: 840, y: 20, width: 280, height: 200 }
+      { type: 'scene-image', x: 20, y: 20, width: 420, height: 340 },
+      { type: 'divider', x: 460, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'solid' } },
+      { type: 'characters', x: 500, y: 20, width: 300, height: 340 },
+      { type: 'timer', x: 820, y: 20, width: 260, height: 200 }
     ])
   },
   {
@@ -121,11 +125,10 @@ const BUILTIN_TEMPLATES = [
     name: 'SESSIONFLOW.Canvas.TemplateExploration',
     icon: 'fas fa-compass',
     widgets: () => widgetsFromTemplate([
-      { type: 'scene-image', x: 20, y: 20, width: 420, height: 340 },
-      { type: 'divider', x: 460, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
-      { type: 'checklist', x: 500, y: 20, width: 280, height: 340 },
-      { type: 'divider', x: 800, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
-      { type: 'time-tracker', x: 840, y: 20, width: 280, height: 340 }
+      { type: 'scene-image', x: 20, y: 20, width: 440, height: 340 },
+      { type: 'divider', x: 480, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
+      { type: 'checklist', x: 520, y: 20, width: 280, height: 140 },
+      { type: 'time-tracker', x: 520, y: 180, width: 280, height: 180 }
     ])
   },
   {
@@ -135,9 +138,44 @@ const BUILTIN_TEMPLATES = [
     widgets: () => widgetsFromTemplate([
       { type: 'scene-image', x: 20, y: 20, width: 440, height: 340 },
       { type: 'divider', x: 480, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'ornamental' } },
-      { type: 'characters', x: 520, y: 20, width: 500, height: 140 },
-      { type: 'inspiration', x: 520, y: 180, width: 240, height: 36 },
-      { type: 'paragraph', x: 520, y: 236, width: 500, height: 124 }
+      { type: 'characters', x: 520, y: 20, width: 540, height: 160 },
+      { type: 'inspiration', x: 520, y: 200, width: 260, height: 44 },
+      { type: 'paragraph', x: 520, y: 260, width: 540, height: 120 }
+    ])
+  },
+  {
+    id: '_intrigue',
+    name: 'SESSIONFLOW.Canvas.TemplateIntrigue',
+    icon: 'fas fa-magnifying-glass',
+    widgets: () => widgetsFromTemplate([
+      { type: 'progress-clock', x: 20, y: 20, width: 280, height: 340 },
+      { type: 'divider', x: 320, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'dotted' } },
+      { type: 'journal-board', x: 360, y: 20, width: 340, height: 340 },
+      { type: 'divider', x: 720, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'dotted' } },
+      { type: 'paragraph', x: 760, y: 20, width: 300, height: 340 }
+    ])
+  },
+  {
+    id: '_atmosphere',
+    name: 'SESSIONFLOW.Canvas.TemplateAtmosphere',
+    icon: 'fas fa-cloud-moon',
+    widgets: () => widgetsFromTemplate([
+      { type: 'scene-image', x: 20, y: 20, width: 380, height: 340 },
+      { type: 'divider', x: 420, y: 60, width: 20, height: 260, config: { orientation: 'vertical', style: 'fade' } },
+      { type: 'music', x: 460, y: 20, width: 300, height: 160 },
+      { type: 'ambience', x: 460, y: 200, width: 300, height: 160 },
+      { type: 'soundboard', x: 780, y: 20, width: 280, height: 340 }
+    ])
+  },
+  {
+    id: '_theater',
+    name: 'SESSIONFLOW.Canvas.TemplateTheaterOfMind',
+    icon: 'fas fa-masks-theater',
+    widgets: () => widgetsFromTemplate([
+      { type: 'teleprompter', x: 20, y: 20, width: 300, height: 44 },
+      { type: 'inspiration', x: 340, y: 20, width: 300, height: 44 },
+      { type: 'divider', x: 60, y: 84, width: 940, height: 20, config: { orientation: 'horizontal', style: 'ornamental' } },
+      { type: 'paragraph', x: 20, y: 120, width: 1040, height: 240 }
     ])
   },
   {
@@ -517,10 +555,10 @@ export class ScenePanel {
     saveBtn.type = 'button';
     saveBtn.className = 'sessionflow-template-picker__save';
     saveBtn.innerHTML = `<i class="fas fa-floppy-disk"></i><span>${game.i18n.localize('SESSIONFLOW.Canvas.TemplateSaveCurrent')}</span>`;
-    saveBtn.addEventListener('click', (e) => {
+    saveBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      this.#saveCurrentAsTemplate();
       picker.remove();
+      await this.#saveCurrentAsTemplate();
     });
 
     // Custom templates section
@@ -635,19 +673,22 @@ export class ScenePanel {
   /**
    * Save the current canvas layout as a custom template.
    */
-  #saveCurrentAsTemplate() {
+  async #saveCurrentAsTemplate() {
     if (!this.#engine) return;
 
-    // Prompt for name
-    const name = prompt(game.i18n.localize('SESSIONFLOW.Canvas.TemplateSavePrompt'));
-    if (!name?.trim()) return;
+    // Prompt for name using Foundry-native dialog (prompt() is unreliable in Electron)
+    const name = await this.#promptTemplateName();
+    if (!name) return;
 
-    // Extract widget layout (type + position + size only, no content)
-    this.#engine.flushPendingSave();
+    // Flush pending save and WAIT for it to complete before reading
+    await this.#engine.flushPendingSave();
+
+    // Now read the fresh data from settings
     const scenes = getScenes(this.#sessionId, this.#beatId);
     const scene = scenes.find(sc => sc.id === this.#sceneId);
     const currentWidgets = scene?.widgets ?? [];
 
+    // Extract layout-only data (strip content, keep structure)
     const layoutWidgets = currentWidgets.map(w => {
       const base = { type: w.type, x: w.x, y: w.y, width: w.width, height: w.height };
       // Preserve config for dividers (orientation/style/color are layout properties)
@@ -658,12 +699,50 @@ export class ScenePanel {
     const customs = this.#getCustomTemplates();
     customs.push({
       id: foundry.utils.randomID(),
-      name: name.trim(),
+      name: name,
       widgets: layoutWidgets
     });
 
-    game.settings.set(MODULE_ID, 'sceneTemplates', customs);
+    await game.settings.set(MODULE_ID, 'sceneTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateSaved'));
+  }
+
+  /**
+   * Show a Foundry-native dialog to prompt for a template name.
+   * @returns {Promise<string|null>} The trimmed name, or null if cancelled.
+   */
+  async #promptTemplateName() {
+    return new Promise((resolve) => {
+      const dialog = new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize('SESSIONFLOW.Canvas.TemplateSaveCurrent') },
+        content: `
+          <form>
+            <div class="form-group">
+              <label>${game.i18n.localize('SESSIONFLOW.Canvas.TemplateSavePrompt')}</label>
+              <input type="text" name="templateName" autofocus />
+            </div>
+          </form>
+        `,
+        buttons: [{
+          action: 'save',
+          label: game.i18n.localize('Save'),
+          icon: 'fas fa-floppy-disk',
+          default: true,
+          callback: (event, button, dialog) => {
+            const input = button.form.elements.templateName;
+            resolve(input?.value?.trim() || null);
+          }
+        }, {
+          action: 'cancel',
+          label: game.i18n.localize('Cancel'),
+          icon: 'fas fa-times',
+          callback: () => resolve(null)
+        }],
+        close: () => resolve(null),
+        modal: true
+      });
+      dialog.render(true);
+    });
   }
 
   /** @returns {object[]} */
@@ -675,9 +754,9 @@ export class ScenePanel {
     }
   }
 
-  #deleteCustomTemplate(id) {
+  async #deleteCustomTemplate(id) {
     const customs = this.#getCustomTemplates().filter(t => t.id !== id);
-    game.settings.set(MODULE_ID, 'sceneTemplates', customs);
+    await game.settings.set(MODULE_ID, 'sceneTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateDeleted'));
   }
 

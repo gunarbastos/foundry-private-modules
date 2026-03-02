@@ -2,7 +2,7 @@
   "id": "sessionflow",
   "title": "SessionFlow",
   "description": "A session preparation and organization tool for Game Masters. Manage characters, events, notes and everything you need for your sessions.",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "compatibility": {
     "minimum": "13",
     "verified": "13"

@@ -44,9 +44,15 @@
 
       {{!-- Hero Image (character portrait) --}}
       {{#if hasCharacterImage}}
-        <div class="sessionflow-character-panel__hero"
-             style="background-image: url('{{ characterImage }}');">
-        </div>
+        {{#if isCharacterImageVideo}}
+          <div class="sessionflow-character-panel__hero">
+            <video src="{{ characterImage }}" autoplay loop muted playsinline></video>
+          </div>
+        {{else}}
+          <div class="sessionflow-character-panel__hero"
+               style="background-image: url('{{ characterImage }}');">
+          </div>
+        {{/if}}
       {{/if}}
 
       {{!-- Character Name --}}

@@ -25,11 +25,13 @@ import './widgets/progress-clock-widget.js';
 import './widgets/faction-widget.js';
 import './widgets/time-tracker-widget.js';
 import './widgets/journal-board-widget.js';
+import './widgets/macro-widget.js';
+import './widgets/day-night-widget.js';
 
 const MODULE_ID = 'sessionflow';
 
 /** Widget types excluded from the character panel toolbar */
-const EXCLUDED_TYPES = new Set(['scene-image', 'characters', 'timer']);
+const EXCLUDED_TYPES = new Set(['scene-image', 'characters', 'timer', 'scene-link', 'sequence', 'slideshow']);
 
 /** Panel width constraints */
 const DEFAULT_PANEL_WIDTH = 580;
@@ -93,6 +95,18 @@ const BUILTIN_TEMPLATES_CHARACTER = [
       { type: 'faction', x: 20, y: 20, width: 500, height: 360 },
       { type: 'divider', x: 60, y: 400, width: 420, height: 20, config: { orientation: 'horizontal', style: 'ornamental' } },
       { type: 'relationships', x: 20, y: 440, width: 500, height: 300 }
+    ])
+  },
+  {
+    id: '_chronicle',
+    name: 'SESSIONFLOW.Canvas.TemplateChronicle',
+    icon: 'fas fa-clock-rotate-left',
+    canvasHeight: 620,
+    widgets: () => widgetsFromTemplate([
+      { type: 'time-tracker', x: 20, y: 20, width: 500, height: 240 },
+      { type: 'divider', x: 60, y: 280, width: 420, height: 20, config: { orientation: 'horizontal', style: 'dotted' } },
+      { type: 'progress-clock', x: 20, y: 320, width: 240, height: 280 },
+      { type: 'paragraph', x: 280, y: 320, width: 240, height: 280 }
     ])
   },
   {
@@ -291,6 +305,7 @@ export class CharacterPanel {
       characterName: character?.name ?? '',
       characterImage: character?.image ?? '',
       hasCharacterImage: !!character?.image,
+      isCharacterImageVideo: this.#isVideoSource(character?.image),
 
       // Panel chrome
       title: game.i18n.localize('SESSIONFLOW.CharacterPanel.Title'),
@@ -594,10 +609,10 @@ export class CharacterPanel {
     saveBtn.type = 'button';
     saveBtn.className = 'sessionflow-template-picker__save';
     saveBtn.innerHTML = `<i class="fas fa-floppy-disk"></i><span>${game.i18n.localize('SESSIONFLOW.Canvas.TemplateSaveCurrent')}</span>`;
-    saveBtn.addEventListener('click', (e) => {
+    saveBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      this.#saveCurrentAsTemplate();
       picker.remove();
+      await this.#saveCurrentAsTemplate();
     });
 
     // Custom templates section
@@ -716,19 +731,22 @@ export class CharacterPanel {
   /**
    * Save the current canvas layout as a custom template.
    */
-  #saveCurrentAsTemplate() {
+  async #saveCurrentAsTemplate() {
     if (!this.#engine) return;
 
-    // Prompt for name
-    const name = prompt(game.i18n.localize('SESSIONFLOW.Canvas.TemplateSavePrompt'));
-    if (!name?.trim()) return;
+    // Prompt for name using Foundry-native dialog (prompt() is unreliable in Electron)
+    const name = await this.#promptTemplateName();
+    if (!name) return;
 
-    // Extract widget layout (type + position + size only, no content)
-    this.#engine.flushPendingSave();
+    // Flush pending save and WAIT for it to complete before reading
+    await this.#engine.flushPendingSave();
+
+    // Now read the fresh data from settings
     const charData = getCharacterCanvas(this.#characterId);
     const currentWidgets = charData?.widgets ?? [];
     const canvasHeight = charData?.canvasHeight ?? 420;
 
+    // Extract layout-only data (strip content, keep structure)
     const layoutWidgets = currentWidgets.map(w => {
       const base = { type: w.type, x: w.x, y: w.y, width: w.width, height: w.height };
       // Preserve config for dividers (orientation/style/color are layout properties)
@@ -739,13 +757,51 @@ export class CharacterPanel {
     const customs = this.#getCustomTemplates();
     customs.push({
       id: foundry.utils.randomID(),
-      name: name.trim(),
+      name: name,
       canvasHeight,
       widgets: layoutWidgets
     });
 
-    game.settings.set(MODULE_ID, 'characterTemplates', customs);
+    await game.settings.set(MODULE_ID, 'characterTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateSaved'));
+  }
+
+  /**
+   * Show a Foundry-native dialog to prompt for a template name.
+   * @returns {Promise<string|null>} The trimmed name, or null if cancelled.
+   */
+  async #promptTemplateName() {
+    return new Promise((resolve) => {
+      const dialog = new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize('SESSIONFLOW.Canvas.TemplateSaveCurrent') },
+        content: `
+          <form>
+            <div class="form-group">
+              <label>${game.i18n.localize('SESSIONFLOW.Canvas.TemplateSavePrompt')}</label>
+              <input type="text" name="templateName" autofocus />
+            </div>
+          </form>
+        `,
+        buttons: [{
+          action: 'save',
+          label: game.i18n.localize('Save'),
+          icon: 'fas fa-floppy-disk',
+          default: true,
+          callback: (event, button, dialog) => {
+            const input = button.form.elements.templateName;
+            resolve(input?.value?.trim() || null);
+          }
+        }, {
+          action: 'cancel',
+          label: game.i18n.localize('Cancel'),
+          icon: 'fas fa-times',
+          callback: () => resolve(null)
+        }],
+        close: () => resolve(null),
+        modal: true
+      });
+      dialog.render(true);
+    });
   }
 
   /** @returns {object[]} */
@@ -757,10 +813,20 @@ export class CharacterPanel {
     }
   }
 
-  #deleteCustomTemplate(id) {
+  async #deleteCustomTemplate(id) {
     const customs = this.#getCustomTemplates().filter(t => t.id !== id);
-    game.settings.set(MODULE_ID, 'characterTemplates', customs);
+    await game.settings.set(MODULE_ID, 'characterTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateDeleted'));
+  }
+
+  /* ---------------------------------------- */
+  /*  Utilities                               */
+  /* ---------------------------------------- */
+
+  #isVideoSource(src) {
+    if (!src) return false;
+    const ext = src.split('.').pop()?.toLowerCase()?.split('?')[0];
+    return ['mp4', 'webm', 'm4v'].includes(ext);
   }
 
   /* ---------------------------------------- */

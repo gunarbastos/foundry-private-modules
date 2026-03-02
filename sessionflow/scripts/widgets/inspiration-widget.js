@@ -19,6 +19,26 @@ const POPOVER_HEIGHT = 500;
 const DEFAULT_PILL_COLOR = '#3b82f6';
 const DEFAULT_CHIP_COLOR = '#d97706';
 
+/** Quick-access color+icon presets for consistent categorization */
+const PRESETS = [
+  { icon: 'fa-solid fa-eye',            color: '#3b82f6', label: 'Sight' },
+  { icon: 'fa-solid fa-volume-high',    color: '#8b5cf6', label: 'Sound' },
+  { icon: 'fa-solid fa-wind',           color: '#14b8a6', label: 'Smell' },
+  { icon: 'fa-solid fa-hand',           color: '#f97316', label: 'Touch' },
+  { icon: 'fa-solid fa-utensils',       color: '#e11d48', label: 'Taste' },
+  { icon: 'fa-solid fa-comments',       color: '#22c55e', label: 'Dialogue' },
+  { icon: 'fa-solid fa-skull',          color: '#dc2626', label: 'Danger' },
+  { icon: 'fa-solid fa-heart',          color: '#ec4899', label: 'Emotion' },
+  { icon: 'fa-solid fa-location-dot',   color: '#d97706', label: 'Location' },
+  { icon: 'fa-solid fa-scroll',         color: '#ca8a04', label: 'Lore' },
+  { icon: 'fa-solid fa-puzzle-piece',   color: '#10b981', label: 'Clue' },
+  { icon: 'fa-solid fa-wand-sparkles',  color: '#6366f1', label: 'Magic' },
+  { icon: 'fa-solid fa-shield-halved',  color: '#64748b', label: 'Combat' },
+  { icon: 'fa-solid fa-gem',            color: '#f59e0b', label: 'Treasure' },
+  { icon: 'fa-solid fa-masks-theater',  color: '#a855f7', label: 'NPC' },
+  { icon: 'fa-solid fa-leaf',           color: '#16a34a', label: 'Nature' },
+];
+
 export class InspirationWidget extends Widget {
 
   static TYPE = 'inspiration';
@@ -457,6 +477,51 @@ export class InspirationWidget extends Widget {
   }
 
   /* ---------------------------------------- */
+  /*  Presets                                 */
+  /* ---------------------------------------- */
+
+  /**
+   * Build a row of preset swatches for quick icon+color selection.
+   * @param {string} currentIcon - Currently selected icon class
+   * @param {string} currentColor - Currently selected color hex
+   * @param {(icon: string, color: string) => void} onSelect - Callback when a preset is clicked
+   * @returns {HTMLElement}
+   */
+  #buildPresetsRow(currentIcon, currentColor, onSelect) {
+    const row = document.createElement('div');
+    row.className = 'sessionflow-inspiration-popover__presets';
+
+    for (const preset of PRESETS) {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'sessionflow-inspiration-popover__preset';
+      swatch.title = preset.label;
+      swatch.style.setProperty('--sf-preset-color', preset.color);
+
+      // Check if this preset matches current selection
+      if (preset.icon === currentIcon && preset.color === currentColor) {
+        swatch.classList.add('is-selected');
+      }
+
+      const icon = document.createElement('i');
+      icon.className = preset.icon;
+      swatch.appendChild(icon);
+
+      swatch.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Update selection highlight
+        row.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
+        swatch.classList.add('is-selected');
+        onSelect(preset.icon, preset.color);
+      });
+
+      row.appendChild(swatch);
+    }
+
+    return row;
+  }
+
+  /* ---------------------------------------- */
   /*  Add Item                                */
   /* ---------------------------------------- */
 
@@ -515,6 +580,8 @@ export class InspirationWidget extends Widget {
           } else {
             iconBtn.innerHTML = `<i class="${icon}"></i><span>${game.i18n.localize('SESSIONFLOW.Canvas.InspirationIconSelected')}</span>`;
           }
+          // Clear preset highlight (manual override)
+          presetsRow.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
         }
       });
       picker.open();
@@ -528,6 +595,14 @@ export class InspirationWidget extends Widget {
     colorInput.value = DEFAULT_PILL_COLOR;
     colorInput.title = game.i18n.localize('SESSIONFLOW.Canvas.InspirationPillColor');
     row2.appendChild(colorInput);
+
+    // Presets row (between text input and controls)
+    const presetsRow = this.#buildPresetsRow(selectedIcon, colorInput.value, (icon, color) => {
+      selectedIcon = icon;
+      colorInput.value = color;
+      iconBtn.innerHTML = `<i class="${icon}"></i><span>${game.i18n.localize('SESSIONFLOW.Canvas.InspirationIconSelected')}</span>`;
+    });
+    addForm.appendChild(presetsRow);
 
     // Cancel button
     const cancelBtn = document.createElement('button');
@@ -641,24 +716,11 @@ export class InspirationWidget extends Widget {
     const cardEl = this.#popoverEl?.querySelector(`[data-item-id="${itemId}"]`);
     if (!cardEl) return;
 
-    // Build inline edit form
+    // Build inline edit form (2-row: presets + controls)
     const form = document.createElement('div');
     form.className = 'sessionflow-inspiration-popover__edit-form';
 
-    // Text input
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.className = 'sessionflow-inspiration-popover__edit-text';
-    textInput.value = item.text;
-    textInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        saveBtn.click();
-      }
-    });
-    form.appendChild(textInput);
-
-    // Icon button
+    // Icon button (needed early for preset callback)
     let editIcon = item.icon || '';
     const iconBtn = document.createElement('button');
     iconBtn.type = 'button';
@@ -672,6 +734,39 @@ export class InspirationWidget extends Widget {
     } else {
       iconBtn.innerHTML = '<i class="fas fa-icons"></i>';
     }
+
+    // Color input (needed early for preset callback)
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.className = 'sessionflow-inspiration-popover__edit-color';
+    colorInput.value = item.color || DEFAULT_PILL_COLOR;
+
+    // Presets row
+    const presetsRow = this.#buildPresetsRow(editIcon, item.color || DEFAULT_PILL_COLOR, (icon, color) => {
+      editIcon = icon;
+      colorInput.value = color;
+      iconBtn.innerHTML = `<i class="${icon}"></i>`;
+    });
+    form.appendChild(presetsRow);
+
+    // Controls row
+    const controlsRow = document.createElement('div');
+    controlsRow.className = 'sessionflow-inspiration-popover__edit-controls';
+
+    // Text input
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'sessionflow-inspiration-popover__edit-text';
+    textInput.value = item.text;
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveBtn.click();
+      }
+    });
+    controlsRow.appendChild(textInput);
+
+    // Icon picker (manual override clears preset highlight)
     iconBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const { IconPicker } = await import('../icon-picker.js');
@@ -685,18 +780,14 @@ export class InspirationWidget extends Widget {
           } else {
             iconBtn.innerHTML = `<i class="${icon}"></i>`;
           }
+          presetsRow.querySelectorAll('.is-selected').forEach(el => el.classList.remove('is-selected'));
         }
       });
       picker.open();
     });
-    form.appendChild(iconBtn);
+    controlsRow.appendChild(iconBtn);
 
-    // Color input
-    const colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.className = 'sessionflow-inspiration-popover__edit-color';
-    colorInput.value = item.color || DEFAULT_PILL_COLOR;
-    form.appendChild(colorInput);
+    controlsRow.appendChild(colorInput);
 
     // Cancel button
     const cancelBtn = document.createElement('button');
@@ -707,7 +798,7 @@ export class InspirationWidget extends Widget {
       e.stopPropagation();
       this.#exitEditItem(false);
     });
-    form.appendChild(cancelBtn);
+    controlsRow.appendChild(cancelBtn);
 
     // Save button
     const saveBtn = document.createElement('button');
@@ -730,7 +821,9 @@ export class InspirationWidget extends Widget {
 
       this.#exitEditItem(true);
     });
-    form.appendChild(saveBtn);
+    controlsRow.appendChild(saveBtn);
+
+    form.appendChild(controlsRow);
 
     // Replace card with form
     cardEl.replaceWith(form);

@@ -222,6 +222,13 @@
   background-attachment: fixed;
   position: relative;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sessionflow-character-panel__hero video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sessionflow-character-panel__hero::after {

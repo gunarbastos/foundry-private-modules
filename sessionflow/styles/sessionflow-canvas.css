@@ -3124,14 +3124,19 @@
 
 .sessionflow-inspiration-popover__edit-form {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   background: var(--sf-color-bg-light);
   border: 2px solid var(--sf-beat-color, var(--sf-color-primary));
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  min-height: 56px;
+}
+
+.sessionflow-inspiration-popover__edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .sessionflow-inspiration-popover__edit-text {
@@ -3230,6 +3235,44 @@
   background: var(--sf-beat-color, var(--sf-color-primary));
   border-color: var(--sf-beat-color, var(--sf-color-primary));
   color: white;
+}
+
+/* ---- Presets Row (quick icon+color swatches) ---- */
+
+.sessionflow-inspiration-popover__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.sessionflow-inspiration-popover__preset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--sf-preset-color, #3b82f6);
+  border: 2px solid transparent;
+  color: white;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.sessionflow-inspiration-popover__preset:hover {
+  transform: scale(1.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.sessionflow-inspiration-popover__preset.is-selected {
+  border-color: white;
+  box-shadow: 0 0 0 2px var(--sf-preset-color, #3b82f6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
 }
 
 /* ========================================================================
@@ -5339,47 +5382,117 @@
 }
 
 /* ============================================ */
-/*  Clock HUD (Player Broadcast Overlay)        */
+/*  Clock Dock (Player Broadcast Overlay)       */
 /* ============================================ */
 
-@keyframes sessionflow-clock-hud-enter {
+@keyframes sessionflow-clock-dock-enter {
   from { transform: translateX(-100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes sessionflow-clock-hud-leave {
+@keyframes sessionflow-clock-dock-leave {
   from { transform: translateX(0); opacity: 1; }
   to { transform: translateX(-100%); opacity: 0; }
 }
 
-.sessionflow-clock-hud {
+.sessionflow-clock-dock {
   position: fixed;
   left: 16px;
   bottom: 16px;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 10px;
+  align-items: stretch;
   background: linear-gradient(135deg, rgba(30, 30, 40, 0.92), rgba(20, 20, 30, 0.88));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 3px solid var(--sf-beat-color, #7c5cbf);
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   z-index: 1000;
   pointer-events: auto;
   opacity: 0;
   transform: translateX(-100%);
-  transition: bottom 0.3s ease;
+}
+
+.sessionflow-clock-dock.is-visible {
+  animation: sessionflow-clock-dock-enter 0.35s ease-out forwards;
+}
+
+.sessionflow-clock-dock.is-leaving {
+  animation: sessionflow-clock-dock-leave 0.3s ease-in forwards;
+}
+
+.sessionflow-clock-dock.is-dragging {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ---- Drag Handle ---- */
+
+.sessionflow-clock-dock__handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  padding: 4px 0;
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 9px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.sessionflow-clock-dock__handle:hover {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sessionflow-clock-dock.is-dragging .sessionflow-clock-dock__handle {
+  cursor: grabbing;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Content Area ---- */
+
+.sessionflow-clock-dock__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+}
+
+/* ---- Individual Clock HUD ---- */
+
+@keyframes sessionflow-clock-hud-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sessionflow-clock-hud-leave {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-8px); }
+}
+
+.sessionflow-clock-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: background 0.15s ease;
 }
 
 .sessionflow-clock-hud.is-visible {
-  animation: sessionflow-clock-hud-enter 0.35s ease-out forwards;
+  animation: sessionflow-clock-hud-enter 0.25s ease-out forwards;
 }
 
 .sessionflow-clock-hud.is-leaving {
-  animation: sessionflow-clock-hud-leave 0.3s ease-in forwards;
+  animation: sessionflow-clock-hud-leave 0.2s ease-in forwards;
+}
+
+.sessionflow-clock-hud:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .sessionflow-clock-hud__svg {
@@ -5535,6 +5648,7 @@
   opacity: 1;
   pointer-events: auto;
   background: linear-gradient(180deg, color-mix(in srgb, var(--sf-sticky-bg, #FEF3C7) 95%, transparent) 0%, transparent 100%);
+  z-index: 5; /* above color dots row (z-index: 4) */
 }
 
 .sessionflow-widget[data-widget-type="sticky"]:hover .sessionflow-widget__collapse-btn,
@@ -6441,75 +6555,84 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   margin-top: 2px;
-  flex-wrap: wrap;
 }
 
-.sessionflow-widget-clock__seg-select {
-  background: var(--sf-color-bg);
-  border: 1px solid var(--sf-color-border);
-  border-radius: 4px;
-  color: var(--sf-color-text);
-  font-size: 0.65rem;
-  font-family: inherit;
-  padding: 1px 2px;
-  cursor: pointer;
-  outline: none;
-  min-width: 36px;
-}
-
-.sessionflow-widget-clock__seg-select:focus {
-  border-color: var(--sf-beat-color, var(--sf-color-primary));
-}
-
+.sessionflow-widget-clock__seg-select,
 .sessionflow-widget-clock__style-select {
   background: var(--sf-color-bg);
   border: 1px solid var(--sf-color-border);
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--sf-color-text);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-family: inherit;
   padding: 1px 2px;
   cursor: pointer;
   outline: none;
-  min-width: 42px;
+  height: 18px;
 }
 
+.sessionflow-widget-clock__seg-select {
+  min-width: 30px;
+}
+
+.sessionflow-widget-clock__style-select {
+  min-width: 36px;
+}
+
+.sessionflow-widget-clock__seg-select:focus,
 .sessionflow-widget-clock__style-select:focus {
   border-color: var(--sf-beat-color, var(--sf-color-primary));
 }
 
-.sessionflow-widget-clock__color-input {
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--sf-color-border);
-  border-radius: 4px;
+/* ---- Color Preset Dots ---- */
+
+.sessionflow-widget-clock__colors {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin: 2px 0;
+}
+
+.sessionflow-widget-clock__color-dot {
+  width: 12px;
+  height: 12px;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
   padding: 0;
+  margin: 0;
   cursor: pointer;
-  background: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  line-height: 0;
+  font-size: 0;
 }
 
-.sessionflow-widget-clock__color-input::-webkit-color-swatch-wrapper {
-  padding: 1px;
+.sessionflow-widget-clock__color-dot:hover {
+  transform: scale(1.25);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.sessionflow-widget-clock__color-input::-webkit-color-swatch {
-  border: none;
-  border-radius: 2px;
+.sessionflow-widget-clock__color-dot.is-active {
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.15);
 }
 
 .sessionflow-widget-clock__broadcast-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
   color: var(--sf-color-text-muted);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -6534,16 +6657,16 @@
 }
 
 .sessionflow-widget-clock__flash-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
   color: var(--sf-color-text-muted);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -6557,16 +6680,16 @@
 }
 
 .sessionflow-widget-clock__delete-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
   color: var(--sf-color-text-muted);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -8379,4 +8502,2468 @@
 .sessionflow-widget-journal__empty-subtitle {
   font-size: 0.7rem !important;
   opacity: 0.7;
+}
+
+/* ============================================ */
+/*  Macro Pad Widget                            */
+/* ============================================ */
+
+.sessionflow-widget[data-widget-type="macro-pad"] .sessionflow-widget__body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionflow-widget-macropad {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
+}
+
+/* ---- Grid ---- */
+
+.sessionflow-widget-macropad__grid {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+  padding: 8px;
+  align-content: start;
+}
+
+.sessionflow-widget-macropad__grid::-webkit-scrollbar { width: 4px; }
+.sessionflow-widget-macropad__grid::-webkit-scrollbar-track { background: transparent; }
+.sessionflow-widget-macropad__grid::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+/* ---- Drop target visual ---- */
+
+.sessionflow-widget-macropad.is-drop-target {
+  outline: 2px dashed var(--sf-beat-color, var(--sf-color-primary));
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 5%, transparent);
+}
+
+/* ---- Empty state ---- */
+
+.sessionflow-widget-macropad__empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 12px;
+  color: var(--sf-color-text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.sessionflow-widget-macropad__empty i {
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+/* ---- Tile ---- */
+
+.sessionflow-widget-macropad__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid color-mix(in srgb, var(--sf-color-border) 30%, transparent);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  min-height: 70px;
+}
+
+.sessionflow-widget-macropad__tile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 40%, transparent);
+  transform: translateY(-1px);
+}
+
+.sessionflow-widget-macropad__tile:active {
+  transform: scale(0.97);
+  transition-duration: 0.05s;
+}
+
+.sessionflow-widget-macropad__tile.is-dragging {
+  opacity: 0.4;
+}
+
+.sessionflow-widget-macropad__tile.drag-over {
+  outline: 2px solid var(--sf-beat-color, var(--sf-color-primary));
+  outline-offset: -2px;
+}
+
+/* Missing macro */
+.sessionflow-widget-macropad__tile.is-missing {
+  opacity: 0.5;
+  border-style: dashed;
+  cursor: default;
+}
+
+.sessionflow-widget-macropad__tile.is-missing:hover {
+  transform: none;
+}
+
+/* ---- Tile icon ---- */
+
+.sessionflow-widget-macropad__tile-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-macropad__tile-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.sessionflow-widget-macropad__tile-icon i {
+  font-size: 1.2rem;
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-widget-macropad__tile.is-missing .sessionflow-widget-macropad__tile-icon i {
+  color: #f59e0b;
+}
+
+/* ---- Tile name ---- */
+
+.sessionflow-widget-macropad__tile-name {
+  font-size: 0.65rem;
+  color: var(--sf-color-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* ---- Tile remove button ---- */
+
+.sessionflow-widget-macropad__tile-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #ef4444;
+  font-size: 0.55rem;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  padding: 0;
+}
+
+.sessionflow-widget-macropad__tile:hover .sessionflow-widget-macropad__tile-remove {
+  opacity: 1;
+}
+
+.sessionflow-widget-macropad__tile-remove:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ---- Bottom bar ---- */
+
+.sessionflow-widget-macropad__bottom-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-top: 1px solid color-mix(in srgb, var(--sf-color-border) 40%, transparent);
+  flex-shrink: 0;
+  position: relative;
+  justify-content: flex-end;
+}
+
+/* ---- Add button ---- */
+
+.sessionflow-widget-macropad__add-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--sf-color-border) 50%, transparent);
+  color: var(--sf-color-text-muted);
+  font-size: 0.6rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-macropad__add-btn:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+  color: var(--sf-color-text);
+}
+
+/* ---- Dropdown ---- */
+
+.sessionflow-widget-macropad__dropdown {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+  right: -1px;
+  margin-bottom: 4px;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 6px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 240px;
+  z-index: 10;
+}
+
+.sessionflow-widget-macropad__dropdown.is-visible {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Filter input row */
+
+.sessionflow-widget-macropad__dropdown-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-macropad__dropdown-filter i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-macropad__dropdown-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 2px 0;
+  outline: none;
+}
+
+.sessionflow-widget-macropad__dropdown-filter-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+/* Scrollable list */
+
+.sessionflow-widget-macropad__dropdown-list {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sessionflow-widget-macropad__dropdown-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-macropad__dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+/* Folder header */
+
+.sessionflow-widget-macropad__dropdown-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 3px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sf-color-text-muted);
+  opacity: 0.6;
+}
+
+.sessionflow-widget-macropad__dropdown-folder i {
+  font-size: 0.5rem;
+}
+
+/* Macro item */
+
+.sessionflow-widget-macropad__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.sessionflow-widget-macropad__dropdown-item:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 12%, transparent);
+}
+
+.sessionflow-widget-macropad__dropdown-item img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-macropad__dropdown-item i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-macropad__dropdown-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty state */
+
+.sessionflow-widget-macropad__dropdown-empty {
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.7;
+}
+
+/* ============================================ */
+/*  Scene Link Widget                           */
+/* ============================================ */
+
+.sessionflow-widget[data-widget-type="scene-link"] .sessionflow-widget__body {
+  overflow: hidden;
+}
+
+.sessionflow-widget-scenelink {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 8%, var(--sf-color-bg));
+}
+
+/* ---- Image ---- */
+
+.sessionflow-widget-scenelink__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Gradient overlay on bottom */
+.sessionflow-widget-scenelink::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* No gradient on empty state */
+.sessionflow-widget-scenelink--empty::after {
+  display: none;
+}
+
+.sessionflow-widget-scenelink__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sf-color-text-muted);
+  font-size: 2.5rem;
+  opacity: 0.2;
+}
+
+/* ---- Drop target ---- */
+
+.sessionflow-widget-scenelink.is-drop-target {
+  outline: 2px dashed var(--sf-beat-color, var(--sf-color-primary));
+  outline-offset: -2px;
+}
+
+.sessionflow-widget-scenelink--empty.is-drop-target {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 10%, var(--sf-color-bg));
+}
+
+/* ---- Bottom overlay (name + badge) ---- */
+
+.sessionflow-widget-scenelink__overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sessionflow-widget-scenelink__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- Active badge ---- */
+
+.sessionflow-widget-scenelink__active-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: #22c55e;
+  padding: 2px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+/* ---- Activate button (centered) ---- */
+
+.sessionflow-widget-scenelink__activate-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease;
+  z-index: 3;
+}
+
+.sessionflow-widget-scenelink:hover .sessionflow-widget-scenelink__activate-btn {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sessionflow-widget-scenelink__activate-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* Active state — green glow */
+.sessionflow-widget-scenelink__activate-btn.is-active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  background: #22c55e;
+}
+
+.sessionflow-widget-scenelink__activate-btn.is-active:hover {
+  background: #16a34a;
+}
+
+/* ---- Change button (top-right) ---- */
+
+.sessionflow-widget-scenelink__change-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 3;
+}
+
+.sessionflow-widget-scenelink:hover .sessionflow-widget-scenelink__change-btn {
+  opacity: 1;
+}
+
+.sessionflow-widget-scenelink__change-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* ---- Empty state ---- */
+
+.sessionflow-widget-scenelink__empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sessionflow-widget-scenelink__empty:hover {
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-scenelink__empty i {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.sessionflow-widget-scenelink__empty span {
+  text-align: center;
+  max-width: 80%;
+}
+
+/* Missing scene variant */
+.sessionflow-widget-scenelink__empty--missing i {
+  color: #f59e0b;
+  opacity: 0.6;
+}
+
+/* ---- Dropdown ---- */
+
+.sessionflow-widget-scenelink__dropdown {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 6px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 70%;
+  z-index: 10;
+}
+
+.sessionflow-widget-scenelink__dropdown.is-visible {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Filter input row */
+
+.sessionflow-widget-scenelink__dropdown-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-scenelink__dropdown-filter i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-scenelink__dropdown-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 2px 0;
+  outline: none;
+}
+
+.sessionflow-widget-scenelink__dropdown-filter-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+/* Scrollable list */
+
+.sessionflow-widget-scenelink__dropdown-list {
+  flex: 1;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sessionflow-widget-scenelink__dropdown-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-scenelink__dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+/* Folder header */
+
+.sessionflow-widget-scenelink__dropdown-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 3px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sf-color-text-muted);
+  opacity: 0.6;
+}
+
+.sessionflow-widget-scenelink__dropdown-folder i {
+  font-size: 0.5rem;
+}
+
+/* Scene item */
+
+.sessionflow-widget-scenelink__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.sessionflow-widget-scenelink__dropdown-item:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 12%, transparent);
+}
+
+.sessionflow-widget-scenelink__dropdown-item img {
+  width: 28px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-scenelink__dropdown-item i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.sessionflow-widget-scenelink__dropdown-item span:not(.sessionflow-widget-scenelink__dropdown-active) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Active scene dot in dropdown */
+
+.sessionflow-widget-scenelink__dropdown-item .sessionflow-widget-scenelink__dropdown-active {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex: 0 0 6px;
+  overflow: visible;
+}
+
+/* Empty state */
+
+.sessionflow-widget-scenelink__dropdown-empty {
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.7;
+}
+
+/* ============================================ */
+/*  Day/Night Widget — Transparent Frame        */
+/* ============================================ */
+
+.sessionflow-widget[data-widget-type="day-night"] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="day-night"]:hover {
+  border-color: color-mix(in srgb, var(--sf-active-color, var(--sf-color-primary)) 20%, transparent);
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="day-night"].is-selected {
+  border-color: color-mix(in srgb, var(--sf-active-color, var(--sf-color-primary)) 40%, transparent);
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="day-night"].is-dragging {
+  background: color-mix(in srgb, var(--sf-color-bg-light) 80%, transparent);
+  border-color: var(--sf-color-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.sessionflow-widget[data-widget-type="day-night"] .sessionflow-widget__header {
+  opacity: 0;
+  background: transparent;
+  border-bottom: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 3;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.sessionflow-widget[data-widget-type="day-night"]:hover .sessionflow-widget__header {
+  opacity: 1;
+  pointer-events: auto;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-color-bg) 90%, transparent) 0%, transparent 100%);
+}
+
+.sessionflow-widget[data-widget-type="day-night"]:hover .sessionflow-widget__collapse-btn,
+.sessionflow-widget[data-widget-type="day-night"]:hover .sessionflow-widget__remove-btn {
+  opacity: 0.6;
+}
+
+/* ============================================ */
+/*  Day/Night Clock Widget (The Sky Bar)        */
+/* ============================================ */
+
+.sessionflow-widget-daynight {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+  height: 100%;
+}
+
+/* --- Sky Bar --- */
+
+.sessionflow-widget-daynight__sky {
+  position: relative;
+  width: 100%;
+  height: 80px;
+  border-radius: 40px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: box-shadow 0.6s ease;
+  contain: layout style paint;
+}
+
+/* Inner vignette for depth */
+.sessionflow-widget-daynight__sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 20px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Disable transitions during animation for perf */
+.sessionflow-widget-daynight__sky.is-animating {
+  transition: none;
+}
+
+.sessionflow-widget-daynight__sky-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* --- Star Twinkle --- */
+
+.sessionflow-widget-daynight__stars circle {
+  animation: sf-star-twinkle 3s ease-in-out infinite;
+}
+
+.sessionflow-widget-daynight__stars circle:nth-child(3n) {
+  animation-delay: -1s;
+}
+
+.sessionflow-widget-daynight__stars circle:nth-child(3n+1) {
+  animation-delay: -2s;
+}
+
+.sessionflow-widget-daynight__stars circle:nth-child(5n) {
+  animation-duration: 4.5s;
+}
+
+.sessionflow-widget-daynight__stars circle:nth-child(7n) {
+  animation-duration: 5.5s;
+  animation-delay: -0.5s;
+}
+
+@keyframes sf-star-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* --- Sun Breathing --- */
+
+.sessionflow-widget-daynight__sun {
+  animation: sf-sun-breathe 4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sessionflow-widget-daynight__sky.is-animating .sessionflow-widget-daynight__sun {
+  animation: none;
+}
+
+@keyframes sf-sun-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* --- Moon Pulse --- */
+
+.sessionflow-widget-daynight__moon {
+  animation: sf-moon-pulse 6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sessionflow-widget-daynight__sky.is-animating .sessionflow-widget-daynight__moon {
+  animation: none;
+}
+
+@keyframes sf-moon-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(0.85); }
+}
+
+/* --- Label --- */
+
+.sessionflow-widget-daynight__label {
+  text-align: center;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  min-height: 14px;
+  line-height: 14px;
+  margin-top: 3px;
+  transition: color 0.15s;
+}
+
+.sessionflow-widget-daynight__label:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sessionflow-widget-daynight__label.is-placeholder {
+  font-style: italic;
+  opacity: 0.4;
+}
+
+.sessionflow-widget-daynight__label-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.65rem;
+  text-align: center;
+  padding: 2px 8px;
+  width: 80%;
+  margin: 0 auto;
+  display: block;
+  outline: none;
+}
+
+.sessionflow-widget-daynight__label-input:focus {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+}
+
+/* --- Time Display --- */
+
+.sessionflow-widget-daynight__time-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.sessionflow-widget-daynight__time-display {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  letter-spacing: 1.5px;
+  line-height: 1;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+.sessionflow-widget-daynight__format-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.sessionflow-widget-daynight__format-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.sessionflow-widget-daynight__format-btn:active {
+  transform: scale(0.95);
+}
+
+/* --- Advance Controls --- */
+
+.sessionflow-widget-daynight__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  margin-bottom: 6px;
+}
+
+.sessionflow-widget-daynight__advance-btn {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 5px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  position: relative;
+  overflow: hidden;
+}
+
+.sessionflow-widget-daynight__advance-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sessionflow-widget-daynight__advance-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.sessionflow-widget-daynight__advance-btn:hover::before {
+  opacity: 1;
+}
+
+.sessionflow-widget-daynight__advance-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.sessionflow-widget-daynight__set-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+}
+
+/* --- Set Time Popover --- */
+
+.sessionflow-widget-daynight__set-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 15, 25, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  animation: sessionflow-daynight-popover-in 0.2s ease;
+}
+
+@keyframes sessionflow-daynight-popover-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.sessionflow-widget-daynight__set-input {
+  width: 40px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 2px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sessionflow-widget-daynight__set-input:focus {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 25%, transparent);
+}
+
+/* Hide number input spinner */
+.sessionflow-widget-daynight__set-input::-webkit-inner-spin-button,
+.sessionflow-widget-daynight__set-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.sessionflow-widget-daynight__set-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.sessionflow-widget-daynight__set-separator {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.sessionflow-widget-daynight__set-confirm {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.65rem;
+  transition: all 0.2s ease;
+  margin-left: 2px;
+}
+
+.sessionflow-widget-daynight__set-confirm:hover {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: scale(1.1);
+}
+
+.sessionflow-widget-daynight__set-confirm:active {
+  transform: scale(0.9);
+}
+
+/* --- Utility Row (set time, broadcast, flash) --- */
+
+.sessionflow-widget-daynight__broadcast-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.sessionflow-widget-daynight__broadcast-btn,
+.sessionflow-widget-daynight__flash-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+}
+
+.sessionflow-widget-daynight__set-btn:hover,
+.sessionflow-widget-daynight__broadcast-btn:hover,
+.sessionflow-widget-daynight__flash-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: scale(1.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.sessionflow-widget-daynight__set-btn:active,
+.sessionflow-widget-daynight__broadcast-btn:active,
+.sessionflow-widget-daynight__flash-btn:active {
+  transform: scale(0.92);
+}
+
+.sessionflow-widget-daynight__broadcast-btn.is-active {
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  border-color: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 50%, transparent);
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 12%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 20%, transparent);
+}
+
+.sessionflow-widget-daynight__broadcast-btn.is-active:hover {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 30%, transparent);
+}
+
+/* ============================================ */
+/*  Sky HUD (persistent player overlay)         */
+/* ============================================ */
+
+.sessionflow-sky-hud {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(13, 13, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  cursor: grab;
+  user-select: none;
+  font-family: inherit;
+  animation: sessionflow-sky-hud-enter 0.3s ease forwards;
+}
+
+.sessionflow-sky-hud.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes sessionflow-sky-hud-enter {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sessionflow-sky-hud.is-leaving {
+  animation: sessionflow-sky-hud-leave 0.3s ease-in forwards;
+}
+
+@keyframes sessionflow-sky-hud-leave {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+.sessionflow-sky-hud__mini-sky {
+  width: 80px;
+  height: 24px;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sessionflow-sky-hud__mini-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 8px 3px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.sessionflow-sky-hud__mini-sky svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sessionflow-sky-hud__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessionflow-sky-hud__time {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  line-height: 1;
+}
+
+.sessionflow-sky-hud__label {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1;
+}
+
+/* ============================================ */
+/*  Sky Flash (dramatic center popup)           */
+/* ============================================ */
+
+.sessionflow-sky-flash {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.92));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  z-index: 10001;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.sessionflow-sky-flash.is-visible {
+  animation: sessionflow-sky-flash-enter 0.4s ease-out forwards;
+}
+
+.sessionflow-sky-flash.is-leaving {
+  animation: sessionflow-sky-flash-leave 0.4s ease-in forwards;
+}
+
+@keyframes sessionflow-sky-flash-enter {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes sessionflow-sky-flash-leave {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+.sessionflow-sky-flash__sky {
+  width: 200px;
+  height: 50px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.sessionflow-sky-flash__sky svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sessionflow-sky-flash__time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sessionflow-sky-flash__label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1;
+}
+
+/* ============================================ */
+/*  Sequence Widget — "The Presenter"           */
+/* ============================================ */
+
+/* -- Transparent frame -- */
+
+.sessionflow-widget[data-widget-type="sequence"] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="sequence"]:hover {
+  border-color: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 20%, transparent);
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="sequence"].is-selected {
+  border-color: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 40%, transparent);
+  box-shadow: none;
+}
+
+.sessionflow-widget[data-widget-type="sequence"].is-dragging {
+  background: color-mix(in srgb, var(--sf-color-bg-light) 80%, transparent);
+  border-color: var(--sf-color-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.sessionflow-widget[data-widget-type="sequence"] .sessionflow-widget__header {
+  opacity: 0;
+  background: transparent;
+  border-bottom: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.sessionflow-widget[data-widget-type="sequence"]:hover .sessionflow-widget__header {
+  opacity: 1;
+  pointer-events: auto;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-color-bg) 90%, transparent) 0%, transparent 100%);
+}
+
+.sessionflow-widget[data-widget-type="sequence"]:hover .sessionflow-widget__collapse-btn,
+.sessionflow-widget[data-widget-type="sequence"]:hover .sessionflow-widget__remove-btn {
+  opacity: 0.6;
+}
+
+.sessionflow-widget[data-widget-type="sequence"] .sessionflow-widget__body {
+  overflow: hidden;
+}
+
+/* -- Container -- */
+
+.sessionflow-widget-sequence {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #111;
+}
+
+.sessionflow-widget-sequence--empty {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 8%, var(--sf-color-bg));
+}
+
+/* -- Hero area -- */
+
+.sessionflow-widget-sequence__hero {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.sessionflow-widget-sequence__hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.4s ease;
+}
+
+/* Hidden "next" image for crossfade */
+.sessionflow-widget-sequence__hero-next {
+  opacity: 0;
+  z-index: 1;
+}
+
+.sessionflow-widget-sequence__hero-next.is-transitioning {
+  opacity: 1;
+}
+
+.sessionflow-widget-sequence__hero-img.is-fading {
+  opacity: 0;
+}
+
+/* Video hero */
+.sessionflow-widget-sequence__hero video.sessionflow-widget-sequence__hero-img {
+  object-fit: cover;
+}
+
+/* -- Navigation arrows (frosted glass) -- */
+
+.sessionflow-widget-sequence__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 0.7rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease, transform 0.15s ease;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sessionflow-widget-sequence__nav--prev { left: 8px; }
+.sessionflow-widget-sequence__nav--next { right: 8px; }
+
+.sessionflow-widget-sequence__hero:hover .sessionflow-widget-sequence__nav {
+  opacity: 1;
+}
+
+.sessionflow-widget-sequence__nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.sessionflow-widget-sequence__nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.sessionflow-widget-sequence__nav:disabled {
+  opacity: 0.15 !important;
+  cursor: default;
+  transform: translateY(-50%);
+}
+
+/* -- Counter pill (frosted) -- */
+
+.sessionflow-widget-sequence__counter {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 12px;
+  z-index: 4;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sessionflow-widget-sequence__loop-icon {
+  font-size: 0.5rem;
+  opacity: 0.7;
+}
+
+/* -- Play button (centered, idle state) -- */
+
+.sessionflow-widget-sequence__play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sessionflow-widget-sequence__hero:hover .sessionflow-widget-sequence__play-btn {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sessionflow-widget-sequence__play-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.sessionflow-widget-sequence__play-btn:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* -- Stop button (top-right, active state) -- */
+
+.sessionflow-widget-sequence__stop-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(220, 38, 38, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 5;
+}
+
+.sessionflow-widget-sequence__hero:hover .sessionflow-widget-sequence__stop-btn {
+  opacity: 1;
+}
+
+.sessionflow-widget-sequence__stop-btn:hover {
+  background: rgba(220, 38, 38, 0.9);
+}
+
+/* -- Change button (top-left) -- */
+
+.sessionflow-widget-sequence__change-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 5;
+}
+
+.sessionflow-widget-sequence__hero:hover .sessionflow-widget-sequence__change-btn {
+  opacity: 1;
+}
+
+.sessionflow-widget-sequence__change-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* -- Filmstrip -- */
+
+.sessionflow-widget-sequence__filmstrip {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-sequence__filmstrip-track {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 2px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sessionflow-widget-sequence__filmstrip-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* -- Thumbnails -- */
+
+.sessionflow-widget-sequence__thumb {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+}
+
+.sessionflow-widget-sequence__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sessionflow-widget-sequence__thumb:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.06);
+}
+
+.sessionflow-widget-sequence__thumb:active {
+  transform: scale(0.96);
+}
+
+/* Video placeholder in filmstrip */
+.sessionflow-widget-sequence__thumb-video {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+}
+
+/* Active thumbnail — beat-color glow ring */
+.sessionflow-widget-sequence__thumb.is-active {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  box-shadow:
+    0 0 0 1px var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))),
+    0 0 12px -2px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 60%, transparent);
+  animation: sf-sequence-thumb-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes sf-sequence-thumb-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))),
+      0 0 12px -2px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 60%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))),
+      0 0 18px -1px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 40%, transparent);
+  }
+}
+
+/* -- Empty state -- */
+
+.sessionflow-widget-sequence__empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sessionflow-widget-sequence__empty:hover {
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-sequence__empty i {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.sessionflow-widget-sequence__empty span {
+  text-align: center;
+  max-width: 80%;
+}
+
+.sessionflow-widget-sequence__empty--missing i {
+  color: #f59e0b;
+  opacity: 0.6;
+}
+
+/* -- Dropdown (scene picker) -- */
+
+.sessionflow-widget-sequence__dropdown {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 6px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 70%;
+  z-index: 10;
+}
+
+.sessionflow-widget-sequence__dropdown.is-visible {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionflow-widget-sequence__dropdown-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-sequence__dropdown-filter i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-sequence__dropdown-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 2px 0;
+  outline: none;
+}
+
+.sessionflow-widget-sequence__dropdown-filter-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-sequence__dropdown-list {
+  flex: 1;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sessionflow-widget-sequence__dropdown-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-sequence__dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+.sessionflow-widget-sequence__dropdown-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 3px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sf-color-text-muted);
+  opacity: 0.6;
+}
+
+.sessionflow-widget-sequence__dropdown-folder i {
+  font-size: 0.5rem;
+}
+
+.sessionflow-widget-sequence__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.sessionflow-widget-sequence__dropdown-item:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 12%, transparent);
+}
+
+.sessionflow-widget-sequence__dropdown-item img {
+  width: 28px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-sequence__dropdown-item i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.sessionflow-widget-sequence__dropdown-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Background count badge */
+.sessionflow-widget-sequence__dropdown-count {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--sf-color-text-muted);
+  background: color-mix(in srgb, var(--sf-color-border) 40%, transparent);
+  padding: 1px 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+/* Selected dot */
+.sessionflow-widget-sequence__dropdown-active {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sf-beat-color, var(--sf-session-color, #22c55e));
+  flex: 0 0 6px !important;
+  overflow: visible !important;
+}
+
+.sessionflow-widget-sequence__dropdown-empty {
+  padding: 16px 10px;
+  text-align: center;
+  color: var(--sf-color-text-muted);
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+/* ============================================ */
+/*  Slideshow Widget — "Media Player"           */
+/* ============================================ */
+
+/* -- Container -- */
+
+.sessionflow-widget-slideshow {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sessionflow-widget-slideshow--empty {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 5%, transparent);
+}
+
+/* -- Empty state -- */
+
+.sessionflow-widget-slideshow__empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sessionflow-widget-slideshow__empty:hover {
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-slideshow__empty i {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.sessionflow-widget-slideshow__empty span {
+  text-align: center;
+  max-width: 80%;
+}
+
+.sessionflow-widget-slideshow__empty--missing i {
+  color: #f59e0b;
+  opacity: 0.6;
+}
+
+/* -- Info card (ready state) -- */
+
+.sessionflow-widget-slideshow__info-card {
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-slideshow__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sf-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.sessionflow-widget-slideshow__meta {
+  font-size: 0.65rem;
+  color: var(--sf-color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionflow-widget-slideshow__meta i {
+  font-size: 0.55rem;
+  opacity: 0.6;
+}
+
+/* -- Preview (ready state — first scene thumbnail) -- */
+
+.sessionflow-widget-slideshow__preview {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.sessionflow-widget-slideshow__preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sessionflow-widget-slideshow__preview-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 12px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+  pointer-events: none;
+}
+
+.sessionflow-widget-slideshow__preview-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  margin-bottom: 2px;
+}
+
+.sessionflow-widget-slideshow__preview-meta {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sessionflow-widget-slideshow__preview-meta i {
+  font-size: 0.5rem;
+  opacity: 0.7;
+}
+
+/* -- Play section (ready state) -- */
+
+.sessionflow-widget-slideshow__play-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 0;
+}
+
+/* When preview exists, overlay the play section on top */
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview) .sessionflow-widget-slideshow__play-section {
+  position: absolute;
+  inset: 0;
+  flex: none;
+  z-index: 2;
+}
+
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview) .sessionflow-widget-slideshow__big-play {
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+}
+
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview) .sessionflow-widget-slideshow__big-play:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview) .sessionflow-widget-slideshow__change-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview):hover .sessionflow-widget-slideshow__change-btn {
+  opacity: 0.7;
+}
+
+.sessionflow-widget-slideshow:has(.sessionflow-widget-slideshow__preview) .sessionflow-widget-slideshow__change-btn:hover {
+  opacity: 1;
+}
+
+.sessionflow-widget-slideshow__big-play {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 18%, transparent);
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.sessionflow-widget-slideshow__big-play:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 28%, transparent);
+  transform: scale(1.06);
+}
+
+.sessionflow-widget-slideshow__big-play:active {
+  transform: scale(0.95);
+}
+
+.sessionflow-widget-slideshow__change-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.sessionflow-widget-slideshow__change-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sf-color-border) 30%, transparent);
+}
+
+/* -- Now-playing area (playing state) -- */
+
+.sessionflow-widget-slideshow__now-playing {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.sessionflow-widget-slideshow__thumb {
+  width: 80px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 8%, var(--sf-color-bg));
+}
+
+.sessionflow-widget-slideshow__thumb--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sf-color-text-muted);
+  font-size: 1rem;
+  opacity: 0.3;
+}
+
+.sessionflow-widget-slideshow__now-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
+}
+
+.sessionflow-widget-slideshow__scene-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sf-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-widget-slideshow__counter {
+  font-size: 0.6rem;
+  color: var(--sf-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* -- Progress bar -- */
+
+.sessionflow-widget-slideshow__progress {
+  height: 3px;
+  background: color-mix(in srgb, var(--sf-color-border) 30%, transparent);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sessionflow-widget-slideshow__progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  transition: width 0.18s linear;
+  border-radius: 0 2px 2px 0;
+}
+
+/* -- Transport controls -- */
+
+.sessionflow-widget-slideshow__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--sf-color-border) 25%, transparent);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-slideshow__ctrl-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+
+.sessionflow-widget-slideshow__ctrl-btn:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 12%, transparent);
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-slideshow__ctrl-btn:active {
+  transform: scale(0.92);
+}
+
+/* Main play/pause button — larger, accent */
+.sessionflow-widget-slideshow__ctrl-btn--main {
+  width: 38px;
+  height: 38px;
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  font-size: 0.75rem;
+}
+
+.sessionflow-widget-slideshow__ctrl-btn--main:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 25%, transparent);
+}
+
+/* Stop button — subtle danger */
+.sessionflow-widget-slideshow__ctrl-btn--stop {
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-widget-slideshow__ctrl-btn--stop:hover {
+  background: rgba(220, 38, 38, 0.15);
+  color: #ef4444;
+}
+
+/* -- Dropdown (slideshow picker) -- */
+
+.sessionflow-widget-slideshow__dropdown {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 6px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 70%;
+  z-index: 10;
+}
+
+.sessionflow-widget-slideshow__dropdown.is-visible {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionflow-widget-slideshow__dropdown-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-slideshow__dropdown-filter i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-slideshow__dropdown-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 2px 0;
+  outline: none;
+}
+
+.sessionflow-widget-slideshow__dropdown-filter-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-slideshow__dropdown-list {
+  flex: 1;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sessionflow-widget-slideshow__dropdown-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-slideshow__dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+.sessionflow-widget-slideshow__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text);
+  font-size: 0.7rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.sessionflow-widget-slideshow__dropdown-item:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 12%, transparent);
+}
+
+.sessionflow-widget-slideshow__dropdown-item i {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-slideshow__dropdown-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.sessionflow-widget-slideshow__dropdown-count {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--sf-color-text-muted);
+  background: color-mix(in srgb, var(--sf-color-border) 40%, transparent);
+  padding: 1px 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+.sessionflow-widget-slideshow__dropdown-active {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sf-beat-color, var(--sf-session-color, #22c55e));
+  flex: 0 0 6px !important;
+  overflow: visible !important;
+}
+
+.sessionflow-widget-slideshow__dropdown-empty {
+  padding: 16px 10px;
+  text-align: center;
+  color: var(--sf-color-text-muted);
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+/* ============================================================
+ * Collapsed State Override
+ * When collapsed, force header visible and interactive
+ * regardless of transparent-frame styling.
+ * Also re-assert body/resize-handle hiding here so per-widget
+ * body rules (e.g. display:flex) don't override display:none.
+ * MUST be at the very end of this file to override per-widget
+ * rules that share the same specificity (0,3,0).
+ * ============================================================ */
+
+.sessionflow-widget.is-collapsed {
+  background: var(--sf-color-bg-light);
+  border-color: var(--sf-color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.sessionflow-widget.is-collapsed .sessionflow-widget__body {
+  display: none;
+}
+
+.sessionflow-widget.is-collapsed .sessionflow-widget__resize-handle {
+  display: none;
+}
+
+.sessionflow-widget.is-collapsed .sessionflow-widget__header {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  background: transparent;
+  border-bottom: none;
+  transition: none;
+}
+
+.sessionflow-widget.is-collapsed .sessionflow-widget__collapse-btn,
+.sessionflow-widget.is-collapsed .sessionflow-widget__remove-btn {
+  opacity: 0.5;
+}
+
+.sessionflow-widget.is-collapsed .sessionflow-widget__collapse-btn:hover,
+.sessionflow-widget.is-collapsed .sessionflow-widget__remove-btn:hover {
+  opacity: 1;
 }

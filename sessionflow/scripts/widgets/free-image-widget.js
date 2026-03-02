@@ -73,12 +73,23 @@ export class FreeImageWidget extends Widget {
   /* ---------------------------------------- */
 
   #buildImageView(container, src) {
-    // Image
-    const img = document.createElement('img');
-    img.className = 'sessionflow-widget-free-image__img';
-    img.src = src;
-    img.alt = this.config.title || '';
-    container.appendChild(img);
+    // Image or Video
+    if (this.#isVideoSource(src)) {
+      const video = document.createElement('video');
+      video.className = 'sessionflow-widget-free-image__img';
+      video.src = src;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      container.appendChild(video);
+    } else {
+      const img = document.createElement('img');
+      img.className = 'sessionflow-widget-free-image__img';
+      img.src = src;
+      img.alt = this.config.title || '';
+      container.appendChild(img);
+    }
 
     // Title overlay
     if (this.config.title) {
@@ -349,6 +360,16 @@ export class FreeImageWidget extends Widget {
     } catch (err) {
       console.warn(`[${MODULE_ID}] Failed to create journal entry for broadcast image:`, err);
     }
+  }
+
+  /* ---------------------------------------- */
+  /*  Utilities                               */
+  /* ---------------------------------------- */
+
+  #isVideoSource(src) {
+    if (!src) return false;
+    const ext = src.split('.').pop()?.toLowerCase()?.split('?')[0];
+    return ['mp4', 'webm', 'm4v'].includes(ext);
   }
 
   /* ---------------------------------------- */

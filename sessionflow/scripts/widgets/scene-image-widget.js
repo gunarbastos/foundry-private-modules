@@ -49,11 +49,22 @@ export class SceneImageWidget extends Widget {
 
     // Image or placeholder
     if (exaltedScene?.background) {
-      const img = document.createElement('img');
-      img.className = 'sessionflow-widget-scene-image__img';
-      img.src = exaltedScene.background;
-      img.alt = scene?.title ?? '';
-      container.appendChild(img);
+      const src = exaltedScene.background;
+      if (this.#isVideoSource(src)) {
+        const video = document.createElement('video');
+        video.className = 'sessionflow-widget-scene-image__img';
+        video.src = src;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        container.appendChild(video);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'sessionflow-widget-scene-image__img';
+        img.src = src;
+        img.alt = scene?.title ?? '';
+        container.appendChild(img);
+      }
     } else {
       const placeholder = document.createElement('div');
       placeholder.className = 'sessionflow-widget-scene-image__placeholder';
@@ -179,6 +190,17 @@ export class SceneImageWidget extends Widget {
   /* ---------------------------------------- */
   /*  Utilities                               */
   /* ---------------------------------------- */
+
+  /**
+   * Check if a source path points to a video file.
+   * @param {string} src
+   * @returns {boolean}
+   */
+  #isVideoSource(src) {
+    if (!src) return false;
+    const ext = src.split('.').pop()?.toLowerCase()?.split('?')[0];
+    return ['mp4', 'webm', 'm4v'].includes(ext);
+  }
 
   #escapeHtml(str) {
     const div = document.createElement('div');

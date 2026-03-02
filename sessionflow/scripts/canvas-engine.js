@@ -159,6 +159,9 @@ export class CanvasEngine {
       this.#saveTimer = null;
     }
 
+    // Persist final widget state before destruction (e.g. running timer elapsed time)
+    this.#persistNow();
+
     for (const widget of this.#widgets.values()) {
       widget.destroy();
     }
@@ -282,8 +285,9 @@ export class CanvasEngine {
     if (this.#saveTimer) {
       clearTimeout(this.#saveTimer);
       this.#saveTimer = null;
-      this.#persistNow();
+      return this.#persistNow();
     }
+    return Promise.resolve();
   }
 
   /**
@@ -319,7 +323,7 @@ export class CanvasEngine {
 
     // Don't initiate drag on interactive elements
     if (INTERACTIVE_TAGS.has(target.tagName)) return;
-    if (target.closest('button, a, input, select, textarea, .ProseMirror, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card')) return;
+    if (target.closest('button, a, input, select, textarea, .ProseMirror, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card, .sessionflow-widget-macropad__tile, .sessionflow-widget-macropad__dropdown, .sessionflow-widget-macropad__grid, .sessionflow-widget-scenelink__dropdown, .sessionflow-widget-scenelink__activate-btn, .sessionflow-widget-scenelink__change-btn, .sessionflow-widget-scenelink__empty, .sessionflow-widget-daynight__advance-btn, .sessionflow-widget-daynight__set-btn, .sessionflow-widget-daynight__set-popover, .sessionflow-widget-daynight__set-input, .sessionflow-widget-daynight__set-confirm, .sessionflow-widget-daynight__format-btn, .sessionflow-widget-daynight__broadcast-btn, .sessionflow-widget-daynight__flash-btn, .sessionflow-widget-daynight__label, .sessionflow-widget-daynight__label-input, .sessionflow-widget-sequence__filmstrip-track, .sessionflow-widget-sequence__dropdown, .sessionflow-widget-sequence__empty, .sessionflow-widget-slideshow__controls, .sessionflow-widget-slideshow__dropdown, .sessionflow-widget-slideshow__empty, .sessionflow-widget-slideshow__now-playing')) return;
 
     // Find the widget element
     const widgetEl = target.closest('.sessionflow-widget');

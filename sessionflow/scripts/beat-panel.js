@@ -179,11 +179,13 @@ export class BeatPanel {
     // Enrich scenes with Exalted Scene data
     const enrichedScenes = scenes.map((sc, i) => {
       const exalted = sc.exaltedSceneId ? this.#getExaltedScene(sc.exaltedSceneId) : null;
+      const bg = exalted?.background || '';
       return {
         ...sc,
-        background: exalted?.background || '',
+        background: bg,
         exaltedSceneName: exalted?.name || '',
-        hasBackground: !!exalted?.background,
+        hasBackground: !!bg,
+        isVideo: this.#isVideoSource(bg),
         index: i
       };
     });
@@ -194,6 +196,7 @@ export class BeatPanel {
       beatText: beat?.text ?? '',
       beatImage: beat?.image ?? '',
       hasBeatImage: !!beat?.image,
+      isBeatImageVideo: this.#isVideoSource(beat?.image),
       beatColor: beat?.color || session?.color || '#7c5cbf',
       sessionColor: session?.color || '#7c5cbf',
 
@@ -618,6 +621,12 @@ export class BeatPanel {
   /* ---------------------------------------- */
   /*  Utilities                               */
   /* ---------------------------------------- */
+
+  #isVideoSource(src) {
+    if (!src) return false;
+    const ext = src.split('.').pop()?.toLowerCase()?.split('?')[0];
+    return ['mp4', 'webm', 'm4v'].includes(ext);
+  }
 
   #escapeHtml(str) {
     const div = document.createElement('div');

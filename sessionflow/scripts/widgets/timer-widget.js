@@ -50,9 +50,48 @@ export class TimerWidget extends Widget {
   /** @type {boolean} Whether the custom duration input is visible */
   #showCustomInput = false;
 
+  /** @type {boolean} Whether initial state restoration has been done */
+  #restored = false;
+
   /* ---------------------------------------- */
   /*  Helpers                                 */
   /* ---------------------------------------- */
+
+  /**
+   * Restore timer state from persisted config.
+   * If the timer was running when saved, resume it using wall-clock reference.
+   */
+  #restoreState() {
+    if (this.config.isRunning && this.config.runEffectiveStart) {
+      // Timer was running — resume with wall-clock reference
+      this.#baseElapsedMs = 0;
+      this.#startTimestamp = this.config.runEffectiveStart;
+      this.#isRunning = true;
+      this.#tickIntervalId = setInterval(() => this.#onTick(), 100);
+
+      // Check if countdown already ended during the off-screen time
+      if ((this.config.mode ?? 'countdown') === 'countdown') {
+        const displaySec = this.#getDisplaySeconds();
+        if (displaySec <= 0) {
+          this.#alertFired = true;
+          this.#pauseTimer();
+          return;
+        }
+      }
+    } else if (this.config.elapsedAtPause) {
+      // Timer was paused — restore elapsed position
+      this.#baseElapsedMs = (this.config.elapsedAtPause ?? 0) * 1000;
+    }
+
+    // Restore broadcast state
+    if (this.config.isBroadcasting) {
+      this.#isBroadcasting = true;
+      // Re-emit broadcast state so players get current info
+      if (this.#isRunning) {
+        requestAnimationFrame(() => this.#emitTimerState('startTimer'));
+      }
+    }
+  }
 
   /**
    * Get current display time in seconds.
@@ -101,9 +140,10 @@ export class TimerWidget extends Widget {
   renderBody(bodyEl) {
     bodyEl.innerHTML = '';
 
-    // Restore elapsed from persisted config
-    if (!this.#isRunning && this.config.elapsedAtPause) {
-      this.#baseElapsedMs = (this.config.elapsedAtPause ?? 0) * 1000;
+    // Restore state from persisted config (only once on first render)
+    if (!this.#restored) {
+      this.#restored = true;
+      this.#restoreState();
     }
 
     const container = document.createElement('div');
@@ -608,7 +648,17 @@ export class TimerWidget extends Widget {
     if (this.#isRunning && this.#startTimestamp) {
       elapsedMs += Date.now() - this.#startTimestamp;
     }
-    this.updateConfig({ elapsedAtPause: elapsedMs / 1000 });
+
+    // Compute effective start: the wall-clock timestamp such that
+    // Date.now() - effectiveStart = totalElapsedMs (for seamless resume)
+    const runEffectiveStart = this.#isRunning ? (Date.now() - elapsedMs) : null;
+
+    this.updateConfig({
+      elapsedAtPause: elapsedMs / 1000,
+      isRunning: this.#isRunning,
+      runEffectiveStart,
+      isBroadcasting: this.#isBroadcasting
+    });
   }
 
   /** @override */
@@ -617,11 +667,8 @@ export class TimerWidget extends Widget {
       clearInterval(this.#tickIntervalId);
       this.#tickIntervalId = null;
     }
-    // Stop broadcast if active
-    if (this.#isBroadcasting) {
-      this.#isBroadcasting = false;
-      this.#emitTimerState('stopTimer');
-    }
+    // Don't stop broadcast — timer state is persisted and will auto-resume
+    // when the panel reopens. Only clear the local interval.
     super.destroy();
   }
 }

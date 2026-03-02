@@ -34,9 +34,15 @@
 
       {{!-- Hero Image with Parallax --}}
       {{#if hasBeatImage}}
-        <div class="sessionflow-beat-panel__hero"
-             style="background-image: url('{{ beatImage }}');">
-        </div>
+        {{#if isBeatImageVideo}}
+          <div class="sessionflow-beat-panel__hero">
+            <video src="{{ beatImage }}" autoplay loop muted playsinline></video>
+          </div>
+        {{else}}
+          <div class="sessionflow-beat-panel__hero"
+               style="background-image: url('{{ beatImage }}');">
+          </div>
+        {{/if}}
       {{/if}}
 
       {{!-- Beat Details --}}
@@ -68,7 +74,11 @@
 
                   <div class="sessionflow-scene-card__image">
                     {{#if this.hasBackground}}
-                      <img src="{{this.background}}" alt="{{this.title}}" />
+                      {{#if this.isVideo}}
+                        <video src="{{this.background}}" autoplay loop muted playsinline></video>
+                      {{else}}
+                        <img src="{{this.background}}" alt="{{this.title}}" />
+                      {{/if}}
                     {{else}}
                       <div class="sessionflow-scene-card__placeholder">
                         <i class="fas fa-image"></i>

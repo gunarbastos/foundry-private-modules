@@ -170,6 +170,7 @@ export class StorylinePanel {
         ...b,
         isEditing: b.id === this.#editingBeatId,
         hasImage: !!b.image,
+        isVideo: this.#isVideoSource(b.image),
         displayNumber: i + 1,
         index: i
       }))
@@ -426,8 +427,13 @@ export class StorylinePanel {
     card.classList.add('is-editing');
 
     // Build image button HTML
+    const imagePreview = beat.image
+      ? (this.#isVideoSource(beat.image)
+          ? `<video src="${beat.image}" autoplay loop muted playsinline></video>`
+          : `<img src="${beat.image}" />`)
+      : '';
     const imageHtml = beat.image
-      ? `<img src="${beat.image}" /><span class="sessionflow-beat-edit__image-overlay"><i class="fas fa-camera"></i></span>`
+      ? `${imagePreview}<span class="sessionflow-beat-edit__image-overlay"><i class="fas fa-camera"></i></span>`
       : `<i class="fas fa-image"></i> <span>${game.i18n.localize('SESSIONFLOW.Storyline.BeatImageLabel')}</span>`;
 
     // Get session color for default
@@ -556,8 +562,11 @@ export class StorylinePanel {
       callback: (path) => {
         // Update the button preview
         imageButton.dataset.imagePath = path;
+        const preview = this.#isVideoSource(path)
+          ? `<video src="${path}" autoplay loop muted playsinline></video>`
+          : `<img src="${path}" />`;
         imageButton.innerHTML = `
-          <img src="${path}" />
+          ${preview}
           <span class="sessionflow-beat-edit__image-overlay"><i class="fas fa-camera"></i></span>
         `;
       }
@@ -580,6 +589,12 @@ export class StorylinePanel {
   /* ---------------------------------------- */
   /*  Utilities                               */
   /* ---------------------------------------- */
+
+  #isVideoSource(src) {
+    if (!src) return false;
+    const ext = src.split('.').pop()?.toLowerCase()?.split('?')[0];
+    return ['mp4', 'webm', 'm4v'].includes(ext);
+  }
 
   #escapeHtml(str) {
     const div = document.createElement('div');

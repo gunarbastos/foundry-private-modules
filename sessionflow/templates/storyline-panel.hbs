@@ -43,7 +43,11 @@
               {{!-- Image area (16:9) --}}
               <div class="sessionflow-beat-card__image">
                 {{#if this.hasImage}}
-                  <img src="{{this.image}}" alt="{{this.title}}" />
+                  {{#if this.isVideo}}
+                    <video src="{{this.image}}" autoplay loop muted playsinline></video>
+                  {{else}}
+                    <img src="{{this.image}}" alt="{{this.title}}" />
+                  {{/if}}
                 {{else}}
                   <div class="sessionflow-beat-card__placeholder">
                     <i class="fas fa-image"></i>

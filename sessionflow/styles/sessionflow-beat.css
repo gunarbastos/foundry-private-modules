@@ -212,6 +212,13 @@
   background-attachment: fixed;
   position: relative;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sessionflow-beat-panel__hero video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .sessionflow-beat-panel__hero::after {
@@ -348,14 +355,16 @@
   flex-shrink: 0;
 }
 
-.sessionflow-scene-card__image img {
+.sessionflow-scene-card__image img,
+.sessionflow-scene-card__image video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.sessionflow-scene-card:hover .sessionflow-scene-card__image img {
+.sessionflow-scene-card:hover .sessionflow-scene-card__image img,
+.sessionflow-scene-card:hover .sessionflow-scene-card__image video {
   transform: scale(1.05);
 }
 

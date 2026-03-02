@@ -9,6 +9,19 @@ import { Widget, registerWidgetType } from '../widget.js';
 
 const MODULE_ID = 'sessionflow';
 
+/** Curated color palette for progress clocks */
+const CLOCK_COLORS = [
+  { filled: '#7c5cbf', name: 'Purple' },
+  { filled: '#dc3545', name: 'Red' },
+  { filled: '#f97316', name: 'Orange' },
+  { filled: '#eab308', name: 'Gold' },
+  { filled: '#10b981', name: 'Green' },
+  { filled: '#3b82f6', name: 'Blue' },
+  { filled: '#06b6d4', name: 'Cyan' },
+  { filled: '#ec4899', name: 'Pink' },
+  { filled: '#94a3b8', name: 'Silver' },
+];
+
 export class ProgressClockWidget extends Widget {
 
   static TYPE = 'progress-clock';
@@ -32,6 +45,12 @@ export class ProgressClockWidget extends Widget {
   /** @type {Set<string>} Clock IDs currently broadcasting */
   #broadcastingClocks = new Set();
 
+  /** @type {boolean} Whether initial state restoration has been done */
+  #restored = false;
+
+  /** @type {number|null} Hook ID for dock clock update listener */
+  #dockUpdateHookId = null;
+
   /* ---------------------------------------- */
   /*  Rendering                               */
   /* ---------------------------------------- */
@@ -45,6 +64,26 @@ export class ProgressClockWidget extends Widget {
    */
   renderBody(bodyEl) {
     bodyEl.innerHTML = '';
+
+    // Restore broadcast state and register dock sync hook (only once on first render)
+    if (!this.#restored) {
+      this.#restored = true;
+      const savedIds = this.config.broadcastingClockIds ?? [];
+      if (savedIds.length > 0) {
+        for (const id of savedIds) this.#broadcastingClocks.add(id);
+        // Re-emit showClock for each broadcasting clock so players get current info
+        requestAnimationFrame(() => {
+          for (const clockId of this.#broadcastingClocks) {
+            this.#emitClockAction('showClock', clockId);
+          }
+        });
+      }
+
+      // Listen for dock edits (GM clicking segments in the HUD dock)
+      this.#dockUpdateHookId = Hooks.on('sessionflow:dockClockUpdate', (data) => {
+        this.#onDockClockUpdate(data);
+      });
+    }
 
     const clocks = this.config.clocks ?? [];
 
@@ -102,13 +141,15 @@ export class ProgressClockWidget extends Widget {
     wrapper.className = 'sessionflow-widget-clock__item';
     wrapper.dataset.clockId = clock.id;
 
-    const filledColor = clock.filledColor || ProgressClockWidget.DEFAULT_FILLED;
-    const emptyColor = clock.emptyColor || ProgressClockWidget.DEFAULT_EMPTY;
-
     // Visual: pie or dots
     const style = clock.style || 'pie';
     const visual = style === 'dots' ? this.#buildDotsVisual(clock) : this.#buildPieVisual(clock);
     wrapper.appendChild(visual);
+
+    // Color preset dots (GM only, between visual and title)
+    if (game.user.isGM) {
+      wrapper.appendChild(this.#buildColorDots(clock));
+    }
 
     // Title (editable)
     const title = document.createElement('span');
@@ -131,7 +172,7 @@ export class ProgressClockWidget extends Widget {
     progress.textContent = `${clock.filled}/${clock.segments}`;
     wrapper.appendChild(progress);
 
-    // Controls row (GM only)
+    // Controls row (GM only) — compact: segments + style + action buttons
     if (game.user.isGM) {
       const controls = document.createElement('div');
       controls.className = 'sessionflow-widget-clock__controls';
@@ -152,30 +193,6 @@ export class ProgressClockWidget extends Widget {
         this.#changeSegments(clock.id, parseInt(e.target.value));
       });
       controls.appendChild(segSelect);
-
-      // Filled color picker
-      const filledInput = document.createElement('input');
-      filledInput.type = 'color';
-      filledInput.className = 'sessionflow-widget-clock__color-input';
-      filledInput.value = filledColor;
-      filledInput.title = game.i18n.localize('SESSIONFLOW.Canvas.ClockFilledColor');
-      filledInput.addEventListener('input', (e) => {
-        e.stopPropagation();
-        this.#updateClockProp(clock.id, 'filledColor', e.target.value);
-      });
-      controls.appendChild(filledInput);
-
-      // Empty color picker
-      const emptyInput = document.createElement('input');
-      emptyInput.type = 'color';
-      emptyInput.className = 'sessionflow-widget-clock__color-input';
-      emptyInput.value = emptyColor;
-      emptyInput.title = game.i18n.localize('SESSIONFLOW.Canvas.ClockEmptyColor');
-      emptyInput.addEventListener('input', (e) => {
-        e.stopPropagation();
-        this.#updateClockProp(clock.id, 'emptyColor', e.target.value);
-      });
-      controls.appendChild(emptyInput);
 
       // Style selector (Pie / Dots)
       const styleSelect = document.createElement('select');
@@ -238,6 +255,58 @@ export class ProgressClockWidget extends Widget {
     }
 
     return wrapper;
+  }
+
+  /* ---------------------------------------- */
+  /*  Color Preset Dots                       */
+  /* ---------------------------------------- */
+
+  /**
+   * Build color preset dot row for a clock.
+   * @param {object} clock
+   * @returns {HTMLElement}
+   */
+  #buildColorDots(clock) {
+    const row = document.createElement('div');
+    row.className = 'sessionflow-widget-clock__colors';
+
+    const currentColor = (clock.filledColor || ProgressClockWidget.DEFAULT_FILLED).toLowerCase();
+
+    for (const preset of CLOCK_COLORS) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'sessionflow-widget-clock__color-dot';
+      if (currentColor === preset.filled.toLowerCase()) dot.classList.add('is-active');
+      dot.style.background = preset.filled;
+      dot.title = preset.name;
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#setClockColor(clock.id, preset.filled);
+      });
+      row.appendChild(dot);
+    }
+
+    return row;
+  }
+
+  /**
+   * Set a clock's filled color from a preset.
+   * @param {string} clockId
+   * @param {string} color
+   */
+  #setClockColor(clockId, color) {
+    const clocks = this.config.clocks ?? [];
+    const clock = clocks.find(c => c.id === clockId);
+    if (!clock) return;
+
+    clock.filledColor = color;
+    this.updateConfig({ clocks });
+    this.engine.scheduleSave();
+    this.refreshBody();
+
+    if (this.#broadcastingClocks.has(clockId)) {
+      this.#emitClockAction('updateClock', clockId);
+    }
   }
 
   /* ---------------------------------------- */
@@ -616,16 +685,46 @@ export class ProgressClockWidget extends Widget {
   }
 
   /* ---------------------------------------- */
-  /*  Lifecycle                               */
+  /*  Dock Sync                               */
   /* ---------------------------------------- */
 
   /**
-   * Cleanup: stop all active broadcasts on destroy.
+   * Handle a clock update from the dock (GM clicked a segment in the HUD).
+   * Sync the widget's internal config without re-broadcasting.
+   * @param {{ clockId: string, filled: number }} data
    */
+  #onDockClockUpdate(data) {
+    const clocks = this.config.clocks ?? [];
+    const clock = clocks.find(c => c.id === data.clockId);
+    if (!clock) return;
+
+    clock.filled = data.filled;
+    this.updateConfig({ clocks });
+    this.engine.scheduleSave();
+    this.refreshBody();
+  }
+
+  /* ---------------------------------------- */
+  /*  Lifecycle                               */
+  /* ---------------------------------------- */
+
+  /** @override */
+  beforeSave() {
+    // Persist which clocks are currently broadcasting
+    this.updateConfig({
+      broadcastingClockIds: [...this.#broadcastingClocks]
+    });
+  }
+
+  /** @override */
   destroy() {
-    for (const clockId of this.#broadcastingClocks) {
-      this.#emitClockAction('hideClock', clockId);
+    // Clean up dock update hook
+    if (this.#dockUpdateHookId !== null) {
+      Hooks.off('sessionflow:dockClockUpdate', this.#dockUpdateHookId);
+      this.#dockUpdateHookId = null;
     }
+    // Don't emit hideClock — broadcast state is persisted and will auto-restore
+    // when the panel reopens. Only clear the local set.
     this.#broadcastingClocks.clear();
     super.destroy();
   }
