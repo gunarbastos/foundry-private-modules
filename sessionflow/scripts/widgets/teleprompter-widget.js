@@ -6,6 +6,12 @@
  */
 
 import { Widget, registerWidgetType } from '../widget.js';
+import {
+  getRichTextClasses,
+  getRichTextEditorOptions,
+  renderRichTextHTML,
+  serializeRichTextEditor
+} from '../rich-text-utils.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -47,6 +53,9 @@ export class TeleprompterWidget extends Widget {
 
   /** @type {object|null} ProseMirror editor instance */
   #proseMirrorEditor = null;
+
+  /** @type {{ x: number, y: number }|null} */
+  #pendingFocusCoords = null;
 
   /** @type {number|null} requestAnimationFrame ID */
   #scrollAnimId = null;
@@ -372,16 +381,24 @@ export class TeleprompterWidget extends Widget {
       const contentEl = document.createElement('div');
       contentEl.className = 'sessionflow-teleprompter-popover__content';
       contentEl.style.fontSize = `${this.config.fontSize ?? DEFAULT_FONT_SIZE}px`;
-      contentEl.innerHTML = content;
       body.appendChild(contentEl);
 
-      // Enrich HTML asynchronously (v13 namespaced API)
-      const TE = foundry.applications.ux?.TextEditor?.implementation ?? TextEditor;
-      TE.enrichHTML(content, { async: true }).then(enriched => {
-        if (this.#popoverEl && !this.#isEditing) {
-          contentEl.innerHTML = enriched;
-        }
-      }).catch(() => { /* keep raw */ });
+      renderRichTextHTML(contentEl, content, this.context, {
+        isStale: () => !this.#popoverEl || this.#isEditing
+      });
+    }
+
+    if (game.user.isGM) {
+      body.classList.add('is-editable');
+      body.addEventListener('click', (event) => {
+        if (this.#isEditing || this.#isScrolling) return;
+        if (event.target.closest('a, button, input, select, textarea')) return;
+
+        const selection = window.getSelection?.();
+        if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+
+        this.#enterEditMode({ x: event.clientX, y: event.clientY });
+      });
     }
 
     this.#popoverEl.appendChild(body);
@@ -394,13 +411,14 @@ export class TeleprompterWidget extends Widget {
   /*  Edit Mode                               */
   /* ---------------------------------------- */
 
-  #enterEditMode() {
+  #enterEditMode(focusCoords = null) {
     if (this.#isEditing || !this.#popoverEl) return;
 
     // Stop auto-scroll
     this.#stopAutoScroll();
 
     this.#isEditing = true;
+    this.#pendingFocusCoords = focusCoords;
     this.#popoverEl.classList.add('is-editing');
 
     // Replace body with editor
@@ -409,6 +427,7 @@ export class TeleprompterWidget extends Widget {
 
     const body = document.createElement('div');
     body.className = 'sessionflow-teleprompter-popover__body';
+    body.addEventListener('pointerdown', (event) => this.#onEditorBodyPointerDown(event));
 
     const editorWrapper = document.createElement('div');
     editorWrapper.className = 'sessionflow-teleprompter-popover__editor editor';
@@ -449,11 +468,9 @@ export class TeleprompterWidget extends Widget {
   async #initProseMirror(targetEl) {
     if (!targetEl || !document.body.contains(targetEl)) return;
 
-    const PMEditor = foundry.applications.ux?.ProseMirrorEditor;
-    const PMMenu = foundry.prosemirror?.ProseMirrorMenu;
-    const PMSchema = foundry.prosemirror?.defaultSchema;
+    const { PMEditor, PMMenu, schema } = getRichTextClasses();
 
-    if (!PMEditor || !PMMenu || !PMSchema) {
+    if (!PMEditor || !PMMenu || !schema) {
       console.warn(`[${MODULE_ID}] ProseMirror not available, falling back to textarea`);
       this.#buildTextareaFallback(targetEl);
       return;
@@ -462,16 +479,16 @@ export class TeleprompterWidget extends Widget {
     const content = this.config.content ?? '';
 
     try {
-      this.#proseMirrorEditor = await PMEditor.create(targetEl, content, {
-        plugins: {
-          menu: PMMenu.build(PMSchema, {
-            destroyOnSave: false,
-            onSave: () => this.#exitEditMode()
-          })
-        }
-      });
+      this.#proseMirrorEditor = await PMEditor.create(
+        targetEl,
+        content,
+        getRichTextEditorOptions(this.context, {
+          onSave: () => this.#exitEditMode(),
+          uuid: `SessionFlow.Teleprompter.${this.id}`
+        })
+      );
 
-      this.#proseMirrorEditor.view?.focus();
+      this.#focusEditor();
     } catch (err) {
       console.warn(`[${MODULE_ID}] Failed to create ProseMirror editor:`, err);
       this.#buildTextareaFallback(targetEl);
@@ -498,7 +515,7 @@ export class TeleprompterWidget extends Widget {
   #serializeEditor() {
     if (this.#proseMirrorEditor?.view) {
       try {
-        const html = foundry.prosemirror.dom.serializeString(this.#proseMirrorEditor.view.state.doc);
+        const html = serializeRichTextEditor(this.#proseMirrorEditor);
         this.updateConfig({ content: html });
       } catch (err) {
         console.warn(`[${MODULE_ID}] Failed to serialize ProseMirror content:`, err);
@@ -515,6 +532,8 @@ export class TeleprompterWidget extends Widget {
       }
       this.#proseMirrorEditor = null;
     }
+
+    this.#pendingFocusCoords = null;
   }
 
   /**
@@ -524,11 +543,51 @@ export class TeleprompterWidget extends Widget {
   #updateEditButton(editing) {
     const editBtn = this.#popoverEl?.querySelector('.sessionflow-teleprompter-popover__edit-btn');
     if (!editBtn) return;
+    editBtn.classList.toggle('is-active', editing);
     const icon = editBtn.querySelector('i');
     if (icon) {
       icon.className = editing ? 'fas fa-check' : 'fas fa-pen';
     }
     editBtn.title = editing ? 'Save' : game.i18n.localize('SESSIONFLOW.Canvas.TeleprompterEdit');
+  }
+
+  #onEditorBodyPointerDown(event) {
+    if (!this.#isEditing) return;
+    if (event.target.closest('.editor-menu, .ProseMirror, textarea, button, a, input, select')) return;
+
+    requestAnimationFrame(() => this.#focusEditorAt({
+      x: event.clientX,
+      y: event.clientY
+    }));
+  }
+
+  #focusEditor() {
+    this.#focusEditorAt(this.#pendingFocusCoords);
+    this.#pendingFocusCoords = null;
+  }
+
+  #focusEditorAt(coords = null) {
+    const view = this.#proseMirrorEditor?.view;
+    if (!view) return;
+
+    view.focus();
+
+    if (!coords) return;
+
+    const pos = view.posAtCoords({
+      left: coords.x,
+      top: coords.y
+    });
+
+    const TextSelection = globalThis.ProseMirror?.prosemirrorState?.TextSelection
+      ?? foundry.prosemirror?.state?.TextSelection
+      ?? foundry.prosemirror?.TextSelection;
+
+    if (pos?.pos != null && TextSelection) {
+      const clampedPos = Math.max(0, Math.min(pos.pos, view.state.doc.content.size));
+      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, clampedPos)));
+      view.focus();
+    }
   }
 
   /* ---------------------------------------- */

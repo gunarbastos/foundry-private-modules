@@ -47,7 +47,7 @@ export class CanvasEngine {
 
   /* -- Drag state -- */
 
-  /** @type {{ widgetId: string, startX: number, startY: number, originX: number, originY: number, hasMoved: boolean }|null} */
+  /** @type {{ widgetId: string, startX: number, startY: number, originX: number, originY: number, hasMoved: boolean, topOverflow: number }|null} */
   #dragState = null;
 
   /* -- Resize state -- */
@@ -100,9 +100,8 @@ export class CanvasEngine {
     // Apply canvas height
     this.#panelContentEl.style.setProperty('--sf-scene-panel-height', `${this.#canvasHeight}px`);
 
-    // Create widget instances (rescue any stuck at negative positions)
+    // Create widget instances (rescue obviously off-canvas positions first)
     for (const state of widgetStates) {
-      // Rescue: clamp position so header is always accessible
       if (state.y < 0) state.y = 0;
       if (state.x < 0) state.x = 0;
 
@@ -112,6 +111,7 @@ export class CanvasEngine {
       this.#widgets.set(widget.id, widget);
       const el = widget.render();
       this.#canvasEl.appendChild(el);
+      this.#normalizeWidgetPosition(widget);
     }
 
     // Show empty state if needed
@@ -150,7 +150,7 @@ export class CanvasEngine {
   /**
    * Destroy the engine, removing all listeners and widgets.
    */
-  destroy() {
+  destroy({ persist = true } = {}) {
     this.#abortController?.abort();
     this.#abortController = null;
 
@@ -160,10 +160,10 @@ export class CanvasEngine {
     }
 
     // Persist final widget state before destruction (e.g. running timer elapsed time)
-    this.#persistNow();
+    if (persist) this.#persistNow();
 
     for (const widget of this.#widgets.values()) {
-      widget.destroy();
+      widget.destroy('engine-destroy');
     }
     this.#widgets.clear();
 
@@ -224,6 +224,7 @@ export class CanvasEngine {
     this.#widgets.set(widget.id, widget);
     const el = widget.render();
     this.#canvasEl.appendChild(el);
+    this.#normalizeWidgetPosition(widget);
 
     this.#selectWidget(widget.id);
     this.#updateEmptyState();
@@ -256,7 +257,7 @@ export class CanvasEngine {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    widget.destroy();
+    widget.destroy('remove');
     this.#widgets.delete(widgetId);
 
     if (this.#selectedWidgetId === widgetId) {
@@ -323,7 +324,7 @@ export class CanvasEngine {
 
     // Don't initiate drag on interactive elements
     if (INTERACTIVE_TAGS.has(target.tagName)) return;
-    if (target.closest('button, a, input, select, textarea, .ProseMirror, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card, .sessionflow-widget-macropad__tile, .sessionflow-widget-macropad__dropdown, .sessionflow-widget-macropad__grid, .sessionflow-widget-scenelink__dropdown, .sessionflow-widget-scenelink__activate-btn, .sessionflow-widget-scenelink__change-btn, .sessionflow-widget-scenelink__empty, .sessionflow-widget-daynight__advance-btn, .sessionflow-widget-daynight__set-btn, .sessionflow-widget-daynight__set-popover, .sessionflow-widget-daynight__set-input, .sessionflow-widget-daynight__set-confirm, .sessionflow-widget-daynight__format-btn, .sessionflow-widget-daynight__broadcast-btn, .sessionflow-widget-daynight__flash-btn, .sessionflow-widget-daynight__label, .sessionflow-widget-daynight__label-input, .sessionflow-widget-sequence__filmstrip-track, .sessionflow-widget-sequence__dropdown, .sessionflow-widget-sequence__empty, .sessionflow-widget-slideshow__controls, .sessionflow-widget-slideshow__dropdown, .sessionflow-widget-slideshow__empty, .sessionflow-widget-slideshow__now-playing')) return;
+    if (target.closest('button, a, input, select, textarea, .ProseMirror, .editor-content, .sessionflow-widget-paragraph__content, .sessionflow-widget-paragraph__editor, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__library-panel, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-faction__library-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card, .sessionflow-widget-macropad__tile, .sessionflow-widget-macropad__dropdown, .sessionflow-widget-macropad__grid, .sessionflow-widget-scenelink__dropdown, .sessionflow-widget-scenelink__activate-btn, .sessionflow-widget-scenelink__change-btn, .sessionflow-widget-scenelink__empty, .sessionflow-widget-daynight__advance-btn, .sessionflow-widget-daynight__set-btn, .sessionflow-widget-daynight__set-popover, .sessionflow-widget-daynight__set-input, .sessionflow-widget-daynight__set-confirm, .sessionflow-widget-daynight__format-btn, .sessionflow-widget-daynight__broadcast-btn, .sessionflow-widget-daynight__flash-btn, .sessionflow-widget-daynight__label, .sessionflow-widget-daynight__label-input, .sessionflow-widget-sequence__filmstrip-track, .sessionflow-widget-sequence__dropdown, .sessionflow-widget-sequence__empty, .sessionflow-widget-slideshow__controls, .sessionflow-widget-slideshow__dropdown, .sessionflow-widget-slideshow__empty, .sessionflow-widget-slideshow__now-playing')) return;
 
     // Find the widget element
     const widgetEl = target.closest('.sessionflow-widget');
@@ -390,7 +391,8 @@ export class CanvasEngine {
       startY: event.clientY,
       originX: widget.x,
       originY: widget.y,
-      hasMoved: false
+      hasMoved: false,
+      topOverflow: this.#getWidgetTopOverflow(widget)
     };
 
     // Capture pointer for reliable tracking outside canvas
@@ -424,14 +426,9 @@ export class CanvasEngine {
       newY = this.#snapToGrid(newY);
     }
 
-    // Clamp: ensure header (drag handle) stays accessible
     const widget = this.#widgets.get(this.#dragState.widgetId);
-    if (widget && this.#canvasEl) {
-      const canvasRect = this.#canvasEl.getBoundingClientRect();
-      const maxX = canvasRect.width - WIDGET_VISIBLE_MIN;
-      const maxY = this.#canvasEl.scrollHeight - WIDGET_VISIBLE_MIN;
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
+    if (widget) {
+      ({ x: newX, y: newY } = this.#clampWidgetPosition(widget, newX, newY, this.#dragState.topOverflow));
     }
 
     // Set position directly during drag
@@ -444,7 +441,7 @@ export class CanvasEngine {
   #onDragEnd(event) {
     if (!this.#dragState) return;
 
-    const { widgetId, hasMoved, originX, originY, startX, startY } = this.#dragState;
+    const { widgetId, hasMoved, originX, originY, startX, startY, topOverflow } = this.#dragState;
     const widget = this.#widgets.get(widgetId);
 
     if (widget) {
@@ -462,13 +459,8 @@ export class CanvasEngine {
           newY = this.#snapToGrid(newY);
         }
 
-        // Clamp: ensure header stays accessible
-        if (this.#canvasEl) {
-          const canvasRect = this.#canvasEl.getBoundingClientRect();
-          const maxX = canvasRect.width - WIDGET_VISIBLE_MIN;
-          const maxY = this.#canvasEl.scrollHeight - WIDGET_VISIBLE_MIN;
-          newX = Math.max(0, Math.min(newX, maxX));
-          newY = Math.max(0, Math.min(newY, maxY));
+        if (widget) {
+          ({ x: newX, y: newY } = this.#clampWidgetPosition(widget, newX, newY, topOverflow));
         }
 
         widget.updatePosition(newX, newY);
@@ -619,6 +611,41 @@ export class CanvasEngine {
 
   #snapToGrid(value) {
     return Math.round(value / GRID_SIZE) * GRID_SIZE;
+  }
+
+  #getWidgetTopOverflow(widget) {
+    const element = widget?.element;
+    const header = element?.querySelector('.sessionflow-widget__header');
+    if (!element || !header) return 0;
+
+    const elementRect = element.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    return Math.max(0, Math.ceil(elementRect.top - headerRect.top));
+  }
+
+  #clampWidgetPosition(widget, x, y, topOverflow = this.#getWidgetTopOverflow(widget)) {
+    if (!this.#canvasEl) return { x, y };
+
+    const canvasRect = this.#canvasEl.getBoundingClientRect();
+    const minX = 0;
+    const minY = Math.max(0, topOverflow);
+    const maxX = Math.max(minX, canvasRect.width - WIDGET_VISIBLE_MIN);
+    const maxY = Math.max(minY, this.#canvasEl.scrollHeight - WIDGET_VISIBLE_MIN);
+
+    return {
+      x: Math.max(minX, Math.min(x, maxX)),
+      y: Math.max(minY, Math.min(y, maxY))
+    };
+  }
+
+  #normalizeWidgetPosition(widget) {
+    if (!widget) return false;
+
+    const { x, y } = this.#clampWidgetPosition(widget, widget.x, widget.y);
+    if (x === widget.x && y === widget.y) return false;
+
+    widget.updatePosition(x, y);
+    return true;
   }
 
   /* ---------------------------------------- */

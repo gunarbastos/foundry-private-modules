@@ -1,13 +1,20 @@
 /**
  * SessionFlow - Divider Widget
  * Decorative line separator for visually organizing the canvas.
- * Supports horizontal/vertical orientation, 4 line styles, and custom color.
+ * Supports horizontal/vertical orientation, multiple line styles, and custom color.
  * @module widgets/divider-widget
  */
 
 import { Widget, registerWidgetType } from '../widget.js';
 
-const STYLES = ['solid', 'dotted', 'ornamental', 'fade'];
+const STYLE_OPTIONS = [
+  { id: 'solid', label: 'Solid' },
+  { id: 'dashed', label: 'Dashed' },
+  { id: 'dotted', label: 'Dotted' },
+  { id: 'double', label: 'Double' },
+  { id: 'ornamental', label: 'Ornamental' },
+  { id: 'fade', label: 'Fade' }
+];
 
 export class DividerWidget extends Widget {
 
@@ -81,25 +88,36 @@ export class DividerWidget extends Widget {
   #buildControls(currentStyle, currentOrientation, currentColor) {
     const controls = document.createElement('div');
     controls.className = 'sessionflow-widget-divider__controls';
+    controls.style.setProperty(
+      '--sf-divider-preview-color',
+      currentColor || 'var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)))'
+    );
 
-    // Cycle style button
-    const styleBtn = document.createElement('button');
-    styleBtn.className = 'sessionflow-widget-divider__style-btn';
-    styleBtn.type = 'button';
-    styleBtn.title = 'Change style';
-    styleBtn.innerHTML = '<i class="fas fa-palette"></i>';
-    styleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.#cycleStyle();
-    });
-    controls.appendChild(styleBtn);
+    const styleGroup = document.createElement('div');
+    styleGroup.className = 'sessionflow-widget-divider__style-group';
+
+    for (const option of STYLE_OPTIONS) {
+      const styleBtn = document.createElement('button');
+      styleBtn.className = 'sessionflow-widget-divider__style-option';
+      styleBtn.type = 'button';
+      styleBtn.title = option.label;
+      if (option.id === currentStyle) styleBtn.classList.add('is-active');
+      styleBtn.innerHTML = `<span class="sessionflow-widget-divider__style-preview sessionflow-widget-divider__style-preview--${option.id}"></span>`;
+      styleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#setStyle(option.id);
+      });
+      styleGroup.appendChild(styleBtn);
+    }
+
+    controls.appendChild(styleGroup);
 
     // Toggle orientation button
     const orientBtn = document.createElement('button');
     orientBtn.className = 'sessionflow-widget-divider__orient-btn';
     orientBtn.type = 'button';
-    orientBtn.title = 'Toggle orientation';
-    orientBtn.innerHTML = '<i class="fas fa-arrows-rotate"></i>';
+    orientBtn.title = currentOrientation === 'horizontal' ? 'Switch to vertical' : 'Switch to horizontal';
+    orientBtn.innerHTML = `<i class="fas ${currentOrientation === 'horizontal' ? 'fa-arrows-up-down' : 'fa-arrows-left-right'}"></i>`;
     orientBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.#toggleOrientation();
@@ -107,17 +125,21 @@ export class DividerWidget extends Widget {
     controls.appendChild(orientBtn);
 
     // Color picker
-    const colorWrapper = document.createElement('div');
+    const colorWrapper = document.createElement('label');
     colorWrapper.className = 'sessionflow-widget-divider__color-wrapper';
+    colorWrapper.title = 'Divider color';
 
     const colorInput = document.createElement('input');
     colorInput.type = 'color';
     colorInput.className = 'sessionflow-widget-divider__color-input';
     colorInput.value = currentColor || '#888888';
     colorInput.addEventListener('input', (e) => {
-      this.updateConfig({ color: e.target.value });
-      this.engine.scheduleSave();
-      this.#rerender();
+      e.stopPropagation();
+      this.#applyColor(e.target.value, colorDot, controls);
+    });
+    colorInput.addEventListener('change', (e) => {
+      e.stopPropagation();
+      this.#applyColor(e.target.value, colorDot, controls);
     });
 
     const colorDot = document.createElement('span');
@@ -135,11 +157,9 @@ export class DividerWidget extends Widget {
   /*  Actions                                 */
   /* ---------------------------------------- */
 
-  #cycleStyle() {
-    const current = this.#getStyle();
-    const idx = STYLES.indexOf(current);
-    const next = STYLES[(idx + 1) % STYLES.length];
-    this.updateConfig({ style: next });
+  #setStyle(style) {
+    if (style === this.#getStyle()) return;
+    this.updateConfig({ style });
     this.engine.scheduleSave();
     this.#rerender();
   }
@@ -156,6 +176,19 @@ export class DividerWidget extends Widget {
     this.updateConfig({ orientation: next });
     this.engine.scheduleSave();
     this.#rerender();
+  }
+
+  #applyColor(color, dotEl, controlsEl) {
+    this.updateConfig({ color });
+    this.engine.scheduleSave();
+
+    dotEl.style.background = color;
+    controlsEl.style.setProperty('--sf-divider-preview-color', color);
+
+    const container = this.element?.querySelector('.sessionflow-widget-divider');
+    if (container) {
+      container.style.setProperty('--sf-divider-color', color);
+    }
   }
 
   /* ---------------------------------------- */

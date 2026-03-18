@@ -403,8 +403,9 @@ export class Widget {
 
   /**
    * Remove the widget from the DOM and clean up.
+   * @param {string} [reason='dispose'] - Destruction cause ('remove', 'engine-destroy', etc.).
    */
-  destroy() {
+  destroy(reason = 'dispose') {
     this.#element?.remove();
     this.#element = null;
   }

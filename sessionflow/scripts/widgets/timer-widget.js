@@ -22,10 +22,10 @@ export class TimerWidget extends Widget {
   static TYPE = 'timer';
   static LABEL = 'SESSIONFLOW.Canvas.Timer';
   static ICON = 'fas fa-hourglass-half';
-  static MIN_WIDTH = 200;
-  static MIN_HEIGHT = 140;
-  static DEFAULT_WIDTH = 280;
-  static DEFAULT_HEIGHT = 200;
+  static MIN_WIDTH = 240;
+  static MIN_HEIGHT = 260;
+  static DEFAULT_WIDTH = 300;
+  static DEFAULT_HEIGHT = 260;
 
   /* -- Private fields -- */
 
@@ -146,8 +146,13 @@ export class TimerWidget extends Widget {
       this.#restoreState();
     }
 
+    this.#ensureMinimumSize();
+
     const container = document.createElement('div');
     container.className = 'sessionflow-widget-timer';
+    container.dataset.mode = this.config.mode ?? 'countdown';
+    container.classList.toggle('is-running', this.#isRunning);
+    container.classList.toggle('is-broadcasting', this.#isBroadcasting);
     if (this.config.color) {
       container.style.setProperty('--sf-timer-custom-color', this.config.color);
     }
@@ -182,14 +187,22 @@ export class TimerWidget extends Widget {
     countdownBtn.type = 'button';
     countdownBtn.className = 'sessionflow-widget-timer__mode-btn';
     if (mode === 'countdown') countdownBtn.classList.add('is-active');
-    countdownBtn.textContent = game.i18n.localize('SESSIONFLOW.Canvas.TimerCountdown');
+    countdownBtn.setAttribute('aria-pressed', String(mode === 'countdown'));
+    countdownBtn.innerHTML = `
+      <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+      <span>${game.i18n.localize('SESSIONFLOW.Canvas.TimerCountdown')}</span>
+    `;
     countdownBtn.addEventListener('click', (e) => { e.stopPropagation(); this.#setMode('countdown'); });
 
     const stopwatchBtn = document.createElement('button');
     stopwatchBtn.type = 'button';
     stopwatchBtn.className = 'sessionflow-widget-timer__mode-btn';
     if (mode === 'stopwatch') stopwatchBtn.classList.add('is-active');
-    stopwatchBtn.textContent = game.i18n.localize('SESSIONFLOW.Canvas.TimerStopwatch');
+    stopwatchBtn.setAttribute('aria-pressed', String(mode === 'stopwatch'));
+    stopwatchBtn.innerHTML = `
+      <i class="fas fa-stopwatch" aria-hidden="true"></i>
+      <span>${game.i18n.localize('SESSIONFLOW.Canvas.TimerStopwatch')}</span>
+    `;
     stopwatchBtn.addEventListener('click', (e) => { e.stopPropagation(); this.#setMode('stopwatch'); });
 
     toggle.appendChild(countdownBtn);
@@ -205,16 +218,29 @@ export class TimerWidget extends Widget {
     const display = document.createElement('div');
     display.className = 'sessionflow-widget-timer__display';
 
+    const core = document.createElement('div');
+    core.className = 'sessionflow-widget-timer__display-core';
+
     // Progress ring (countdown only)
     if ((this.config.mode ?? 'countdown') === 'countdown') {
-      display.appendChild(this.#buildProgressRing());
+      core.appendChild(this.#buildProgressRing());
     }
 
-    // Time text
+    const labelEl = document.createElement('span');
+    labelEl.className = 'sessionflow-widget-timer__display-label';
+    labelEl.textContent = game.i18n.localize(
+      (this.config.mode ?? 'countdown') === 'countdown'
+        ? 'SESSIONFLOW.Canvas.TimerCountdown'
+        : 'SESSIONFLOW.Canvas.TimerStopwatch'
+    );
+    core.appendChild(labelEl);
+
     const timeEl = document.createElement('span');
     timeEl.className = 'sessionflow-widget-timer__time';
     timeEl.textContent = this.#formatTime(this.#getDisplaySeconds());
-    display.appendChild(timeEl);
+    core.appendChild(timeEl);
+
+    display.appendChild(core);
 
     container.appendChild(display);
   }
@@ -535,6 +561,8 @@ export class TimerWidget extends Widget {
       if (icon) icon.className = `fas ${this.#isRunning ? 'fa-pause' : 'fa-play'}`;
       playBtn.title = game.i18n.localize(this.#isRunning ? 'SESSIONFLOW.Canvas.TimerPause' : 'SESSIONFLOW.Canvas.TimerPlay');
     }
+
+    this.#syncVisualState();
   }
 
   /* ---------------------------------------- */
@@ -599,6 +627,8 @@ export class TimerWidget extends Widget {
       btn.classList.toggle('is-active', this.#isBroadcasting);
       btn.title = game.i18n.localize(this.#isBroadcasting ? 'SESSIONFLOW.Canvas.TimerStopBroadcast' : 'SESSIONFLOW.Canvas.TimerStartBroadcast');
     }
+
+    this.#syncVisualState();
   }
 
   /**
@@ -635,6 +665,27 @@ export class TimerWidget extends Widget {
   #rerender() {
     const body = this.element?.querySelector('.sessionflow-widget__body');
     if (body) this.renderBody(body);
+  }
+
+  #ensureMinimumSize() {
+    const minWidth = this.constructor.MIN_WIDTH ?? 120;
+    const minHeight = this.constructor.MIN_HEIGHT ?? 80;
+    const nextWidth = Math.max(this.width, minWidth);
+    const nextHeight = Math.max(this.height, minHeight);
+
+    if (nextWidth === this.width && nextHeight === this.height) return;
+
+    this.updateSize(nextWidth, nextHeight);
+    this.engine.scheduleSave();
+  }
+
+  #syncVisualState() {
+    const container = this.element?.querySelector('.sessionflow-widget-timer');
+    if (!container) return;
+
+    container.dataset.mode = this.config.mode ?? 'countdown';
+    container.classList.toggle('is-running', this.#isRunning);
+    container.classList.toggle('is-broadcasting', this.#isBroadcasting);
   }
 
   /* ---------------------------------------- */

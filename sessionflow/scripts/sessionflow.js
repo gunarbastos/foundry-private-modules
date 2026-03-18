@@ -316,6 +316,15 @@ function _registerSettings() {
     type: Array,
     default: []
   });
+
+  // Reusable saved factions for the Faction widget
+  game.settings.register(MODULE_ID, 'factionLibrary', {
+    name: 'Faction Library',
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: []
+  });
 }
 
 /* ---------------------------------------- */
@@ -368,7 +377,7 @@ function _registerSocketHandler() {
         _updateSkyHud(data);
         break;
       case 'hideSky':
-        _removeSkyHud();
+        _removeSkyHud(data.widgetId);
         break;
       case 'flashSky':
         _flashSkyPopup(data);
@@ -404,7 +413,7 @@ function _registerSocketHandler() {
   // Sky broadcast hooks (local GM delivery)
   Hooks.on('sessionflow:showSky', (data) => _showSkyHud(data));
   Hooks.on('sessionflow:updateSky', (data) => _updateSkyHud(data));
-  Hooks.on('sessionflow:hideSky', () => _removeSkyHud());
+  Hooks.on('sessionflow:hideSky', (data) => _removeSkyHud(data?.widgetId));
   Hooks.on('sessionflow:flashSky', (data) => _flashSkyPopup(data));
   Hooks.on('sessionflow:animateSky', (data) => _animateSkyHud(data));
 
@@ -412,7 +421,13 @@ function _registerSocketHandler() {
   Hooks.on('updateWorldTime', () => {
     if (!_activeSkyHud || !_skyHudState) return;
     const { hour, minute } = getWorldTimeHM();
-    _updateSkyHud({ hour, minute, format: _skyHudState.format, label: _skyHudState.label });
+    _updateSkyHud({
+      hour,
+      minute,
+      format: _skyHudState.format,
+      label: _skyHudState.label,
+      widgetId: _skyHudState.widgetId
+    });
   });
 }
 
@@ -1096,7 +1111,7 @@ function _flashClockPopup(data) {
 /** @type {HTMLElement|null} Active sky HUD element */
 let _activeSkyHud = null;
 
-/** @type {{ format: string, label: string }|null} Last known sky HUD settings for auto-sync */
+/** @type {{ format: string, label: string, widgetId: string|null }|null} Last known sky HUD settings for auto-sync */
 let _skyHudState = null;
 
 /** @type {Function|null} Cancel function for running sky HUD animation */
@@ -1106,14 +1121,19 @@ let _skyHudAnimCancel = null;
  * Show persistent sky HUD.
  */
 function _showSkyHud(data) {
-  _removeSkyHud();
+  _removeSkyHud(null, { immediate: true });
 
   // Store last known HUD settings for updateWorldTime auto-sync
-  _skyHudState = { format: data.format || '24h', label: data.label || '' };
+  _skyHudState = {
+    format: data.format || '24h',
+    label: data.label || '',
+    widgetId: data.widgetId || null
+  };
 
   const el = document.createElement('div');
   el.className = 'sessionflow-sky-hud';
   el.dataset.senderId = data.senderId;
+  if (data.widgetId) el.dataset.widgetId = data.widgetId;
 
   // Mini sky bar (shared builder, full detail for rich visuals)
   const miniSky = buildMiniSkyElement(data, 80, 24, 'sf-sky-hud', 'full');
@@ -1157,6 +1177,10 @@ function _showSkyHud(data) {
  * Update existing sky HUD with new time data.
  */
 function _updateSkyHud(data) {
+  if (data.widgetId && _skyHudState?.widgetId && data.widgetId !== _skyHudState.widgetId) {
+    return;
+  }
+
   // Cancel any running animation (e.g. from animateSky completing before updateWorldTime)
   if (_skyHudAnimCancel) {
     _skyHudAnimCancel();
@@ -1169,7 +1193,13 @@ function _updateSkyHud(data) {
   }
 
   // Keep HUD state in sync
-  if (data.format) _skyHudState = { format: data.format, label: data.label || '' };
+  if (data.format || Object.prototype.hasOwnProperty.call(data, 'label') || data.widgetId) {
+    _skyHudState = {
+      format: data.format || _skyHudState?.format || '24h',
+      label: data.label ?? _skyHudState?.label ?? '',
+      widgetId: data.widgetId || _skyHudState?.widgetId || null
+    };
+  }
 
   // In-place mini sky update (gradient + celestial positions, no DOM replacement)
   const miniSky = _activeSkyHud.querySelector('.sessionflow-sky-hud__mini-sky');
@@ -1178,8 +1208,9 @@ function _updateSkyHud(data) {
   }
 
   // Update time
+  const format = data.format || _skyHudState?.format || '24h';
   const timeEl = _activeSkyHud.querySelector('.sessionflow-sky-hud__time');
-  if (timeEl) timeEl.textContent = formatGameTime(data.hour, data.minute, data.format);
+  if (timeEl) timeEl.textContent = formatGameTime(data.hour, data.minute, format);
 
   // Update label
   let labelEl = _activeSkyHud.querySelector('.sessionflow-sky-hud__label');
@@ -1202,6 +1233,10 @@ function _updateSkyHud(data) {
  * Called when GM advances time with broadcast active.
  */
 function _animateSkyHud(data) {
+  if (data.widgetId && _skyHudState?.widgetId && data.widgetId !== _skyHudState.widgetId) {
+    return;
+  }
+
   if (!_activeSkyHud) return;
 
   // Cancel any running animation
@@ -1211,7 +1246,13 @@ function _animateSkyHud(data) {
   }
 
   // Keep HUD state in sync
-  if (data.format) _skyHudState = { format: data.format, label: data.label || '' };
+  if (data.format || Object.prototype.hasOwnProperty.call(data, 'label') || data.widgetId) {
+    _skyHudState = {
+      format: data.format || _skyHudState?.format || '24h',
+      label: data.label ?? _skyHudState?.label ?? '',
+      widgetId: data.widgetId || _skyHudState?.widgetId || null
+    };
+  }
 
   const miniSky = _activeSkyHud.querySelector('.sessionflow-sky-hud__mini-sky');
   if (!miniSky) return;
@@ -1234,16 +1275,31 @@ function _animateSkyHud(data) {
 /**
  * Remove the sky HUD.
  */
-function _removeSkyHud() {
+function _removeSkyHud(widgetId = null, { immediate = false } = {}) {
+  if (widgetId && _skyHudState?.widgetId && widgetId !== _skyHudState.widgetId) {
+    return;
+  }
+
   if (_skyHudAnimCancel) {
     _skyHudAnimCancel();
     _skyHudAnimCancel = null;
   }
-  if (!_activeSkyHud) return;
-  _activeSkyHud.classList.add('is-leaving');
+
+  if (!_activeSkyHud) {
+    _skyHudState = null;
+    return;
+  }
+
   const el = _activeSkyHud;
   _activeSkyHud = null;
   _skyHudState = null;
+
+  if (immediate) {
+    el.remove();
+    return;
+  }
+
+  el.classList.add('is-leaving');
   setTimeout(() => el.remove(), 300);
 }
 

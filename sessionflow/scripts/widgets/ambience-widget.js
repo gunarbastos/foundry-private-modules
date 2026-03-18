@@ -1,12 +1,13 @@
 /**
  * SessionFlow - Ambience Widget
- * Minimalist circular ambience layer button on canvas with Narrator Jukebox integration.
- * Two states: selector (pick a track) → player (circle with play/pause).
- * Each widget represents ONE ambience layer. Multiple widgets = multiple simultaneous layers.
+ * Minimalist ambience controller for Narrator Jukebox tracks and saved presets.
+ * Two states: selector (pick a track/preset) -> player (circle with play/pause).
  * @module widgets/ambience-widget
  */
 
 import { Widget, registerWidgetType } from '../widget.js';
+
+const SOURCE_TYPES = new Set(['track', 'preset']);
 
 export class AmbienceWidget extends Widget {
 
@@ -20,6 +21,9 @@ export class AmbienceWidget extends Widget {
 
   /** @type {Record<string, number>} Hook IDs for Hooks.off cleanup */
   #hookIds = {};
+
+  /** @type {'tracks'|'presets'} Active tab in source selector */
+  #activeTab = 'tracks';
 
   /** @type {string} Current search filter text */
   #searchFilter = '';
@@ -42,9 +46,205 @@ export class AmbienceWidget extends Widget {
     return this.#getApi() !== null;
   }
 
-  /** @returns {boolean} Whether a track has been selected */
+  /**
+   * @returns {{
+   *   sourceType: 'track'|'preset',
+   *   sourceId: string,
+   *   sourceName: string,
+   *   sourceLayerCount: number|null,
+   *   sourceTrackIds: string[]
+   * }|null}
+   */
+  #getConfiguredSource() {
+    const sourceType = SOURCE_TYPES.has(this.config.sourceType) ? this.config.sourceType : null;
+    const sourceId = typeof this.config.sourceId === 'string' && this.config.sourceId ? this.config.sourceId : '';
+
+    if (sourceType && sourceId) {
+      return {
+        sourceType,
+        sourceId,
+        sourceName: typeof this.config.sourceName === 'string' ? this.config.sourceName : '',
+        sourceLayerCount: Number.isFinite(this.config.sourceLayerCount) ? this.config.sourceLayerCount : null,
+        sourceTrackIds: Array.isArray(this.config.sourceTrackIds)
+          ? this.config.sourceTrackIds.filter((id) => typeof id === 'string' && id)
+          : []
+      };
+    }
+
+    const legacyTrackId = typeof this.config.trackId === 'string' && this.config.trackId ? this.config.trackId : '';
+    if (!legacyTrackId) return null;
+
+    return {
+      sourceType: 'track',
+      sourceId: legacyTrackId,
+      sourceName: typeof this.config.trackName === 'string' ? this.config.trackName : '',
+      sourceLayerCount: 1,
+      sourceTrackIds: [legacyTrackId]
+    };
+  }
+
+  /** @returns {boolean} Whether a source has been selected */
   #isConfigured() {
-    return !!this.config.trackId;
+    return this.#getConfiguredSource() !== null;
+  }
+
+  /**
+   * @param {string} trackId
+   * @returns {object|null}
+   */
+  #getTrack(trackId) {
+    if (!trackId) return null;
+    const api = this.#getApi();
+    const tracks = api?.getAllAmbience?.() ?? [];
+    return tracks.find((track) => track.id === trackId) ?? null;
+  }
+
+  /**
+   * @param {string} presetId
+   * @returns {object|null}
+   */
+  #getPreset(presetId) {
+    if (!presetId) return null;
+    return this.#getApi()?.getAmbiencePreset?.(presetId) ?? null;
+  }
+
+  /**
+   * @param {object|null} preset
+   * @returns {{ trackId: string, volume?: number }[]}
+   */
+  #getPresetLayers(preset) {
+    const layers = preset?.layersState?.layers ?? preset?.layers ?? [];
+    if (!Array.isArray(layers)) return [];
+    return layers.filter((layer) => typeof layer?.trackId === 'string' && layer.trackId);
+  }
+
+  /**
+   * @param {ReturnType<AmbienceWidget['#getConfiguredSource']>} source
+   * @returns {string[]}
+   */
+  #getSourceTrackIds(source) {
+    if (!source) return [];
+    if (source.sourceType === 'track') return [source.sourceId];
+
+    const livePreset = this.#getPreset(source.sourceId);
+    const liveTrackIds = this.#getPresetLayers(livePreset).map((layer) => layer.trackId);
+    if (liveTrackIds.length > 0) return liveTrackIds;
+
+    return source.sourceTrackIds;
+  }
+
+  /**
+   * @param {ReturnType<AmbienceWidget['#getConfiguredSource']>} source
+   * @returns {number}
+   */
+  #getSourceLayerCount(source) {
+    if (!source) return 0;
+    if (source.sourceType === 'track') return 1;
+
+    const livePreset = this.#getPreset(source.sourceId);
+    const liveCount = this.#getPresetLayers(livePreset).length;
+    if (liveCount > 0) return liveCount;
+
+    return source.sourceLayerCount ?? source.sourceTrackIds.length ?? 0;
+  }
+
+  /**
+   * @param {ReturnType<AmbienceWidget['#getConfiguredSource']>} source
+   * @returns {{ title: string, subtitle: string, isMissing: boolean }}
+   */
+  #describeSource(source) {
+    if (!source) {
+      return {
+        title: game.i18n.localize('SESSIONFLOW.Canvas.AmbienceNothingPlaying'),
+        subtitle: '',
+        isMissing: false
+      };
+    }
+
+    if (source.sourceType === 'track') {
+      const track = this.#getTrack(source.sourceId);
+      if (track) {
+        return {
+          title: track.name,
+          subtitle: game.i18n.localize('SESSIONFLOW.Canvas.AmbienceTrackLabel'),
+          isMissing: false
+        };
+      }
+
+      return {
+        title: source.sourceName || game.i18n.localize('SESSIONFLOW.Canvas.AmbienceMissingTrack'),
+        subtitle: game.i18n.localize('SESSIONFLOW.Canvas.AmbienceMissingTrack'),
+        isMissing: true
+      };
+    }
+
+    const preset = this.#getPreset(source.sourceId);
+    const layerCount = this.#getSourceLayerCount(source);
+    if (preset) {
+      return {
+        title: preset.name,
+        subtitle: game.i18n.format('SESSIONFLOW.Canvas.AmbiencePresetLayers', { count: layerCount }),
+        isMissing: false
+      };
+    }
+
+    return {
+      title: source.sourceName || game.i18n.localize('SESSIONFLOW.Canvas.AmbienceMissingPreset'),
+      subtitle: game.i18n.localize('SESSIONFLOW.Canvas.AmbienceMissingPreset'),
+      isMissing: true
+    };
+  }
+
+  /**
+   * @param {{ name: string }[]} items
+   * @returns {{ name: string }[]}
+   */
+  #filterItems(items) {
+    if (!this.#searchFilter) return items;
+    const query = this.#searchFilter.toLowerCase();
+    return items.filter((item) => item.name.toLowerCase().includes(query));
+  }
+
+  /** @returns {string} */
+  #getSearchPlaceholder() {
+    return game.i18n.localize(
+      this.#activeTab === 'presets'
+        ? 'SESSIONFLOW.Canvas.AmbienceSearchPresetsPlaceholder'
+        : 'SESSIONFLOW.Canvas.AmbienceSearchTracksPlaceholder'
+    );
+  }
+
+  /**
+   * @param {ReturnType<AmbienceWidget['#getConfiguredSource']>} source
+   * @returns {object}
+   */
+  #buildSourceSnapshot(source) {
+    if (!source) return {};
+
+    if (source.sourceType === 'track') {
+      const track = this.#getTrack(source.sourceId);
+      return {
+        sourceType: 'track',
+        sourceId: source.sourceId,
+        sourceName: track?.name ?? source.sourceName,
+        sourceLayerCount: 1,
+        sourceTrackIds: [source.sourceId],
+        trackId: source.sourceId,
+        trackName: track?.name ?? source.sourceName
+      };
+    }
+
+    const preset = this.#getPreset(source.sourceId);
+    const trackIds = this.#getSourceTrackIds(source);
+    return {
+      sourceType: 'preset',
+      sourceId: source.sourceId,
+      sourceName: preset?.name ?? source.sourceName,
+      sourceLayerCount: this.#getSourceLayerCount(source),
+      sourceTrackIds: trackIds,
+      trackId: null,
+      trackName: null
+    };
   }
 
   /* ---------------------------------------- */
@@ -104,14 +304,38 @@ export class AmbienceWidget extends Widget {
   }
 
   /* ---------------------------------------- */
-  /*  Selector State (pick an ambience track) */
+  /*  Selector State                          */
   /* ---------------------------------------- */
 
   #buildSelector(container) {
     const api = this.#getApi();
 
-    // Max layers warning
-    if (api?.canAddAmbienceLayer && !api.canAddAmbienceLayer()) {
+    const tabs = document.createElement('div');
+    tabs.className = 'sessionflow-widget-ambience__selector-tabs';
+
+    const tracksTab = document.createElement('button');
+    tracksTab.type = 'button';
+    tracksTab.textContent = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceTabTracks');
+    if (this.#activeTab === 'tracks') tracksTab.classList.add('is-active');
+    tracksTab.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.#switchTab('tracks');
+    });
+    tabs.appendChild(tracksTab);
+
+    const presetsTab = document.createElement('button');
+    presetsTab.type = 'button';
+    presetsTab.textContent = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceTabPresets');
+    if (this.#activeTab === 'presets') presetsTab.classList.add('is-active');
+    presetsTab.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.#switchTab('presets');
+    });
+    tabs.appendChild(presetsTab);
+
+    container.appendChild(tabs);
+
+    if (this.#activeTab === 'tracks' && api?.canAddAmbienceLayer && !api.canAddAmbienceLayer()) {
       const warning = document.createElement('div');
       warning.className = 'sessionflow-widget-ambience__max-layers';
 
@@ -126,46 +350,58 @@ export class AmbienceWidget extends Widget {
       container.appendChild(warning);
     }
 
-    // Search
     const searchWrap = document.createElement('div');
     searchWrap.className = 'sessionflow-widget-ambience__selector-search';
+
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceSearchPlaceholder');
+    searchInput.placeholder = this.#getSearchPlaceholder();
     searchInput.value = this.#searchFilter;
-    searchInput.addEventListener('input', (e) => {
-      e.stopPropagation();
-      this.#searchFilter = e.target.value;
+    searchInput.addEventListener('input', (event) => {
+      event.stopPropagation();
+      this.#searchFilter = event.target.value;
       this.#rebuildList();
     });
     searchWrap.appendChild(searchInput);
     container.appendChild(searchWrap);
 
-    // List
     this.#buildList(container);
   }
 
   #buildList(container) {
     const api = this.#getApi();
 
-    // Remove existing list if present
     const oldList = container.querySelector('.sessionflow-widget-ambience__selector-list');
     if (oldList) oldList.remove();
 
     const list = document.createElement('div');
     list.className = 'sessionflow-widget-ambience__selector-list';
 
-    const tracks = api?.getAllAmbience?.() ?? [];
-    const filtered = this.#filterItems(tracks);
-
-    if (filtered.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'sessionflow-widget-ambience__selector-empty';
-      empty.textContent = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceNoTracks');
-      list.appendChild(empty);
+    if (this.#activeTab === 'presets') {
+      const presets = api?.getAmbiencePresets?.() ?? [];
+      const filtered = this.#filterItems(presets);
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'sessionflow-widget-ambience__selector-empty';
+        empty.textContent = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceNoPresets');
+        list.appendChild(empty);
+      } else {
+        for (const preset of filtered) {
+          list.appendChild(this.#buildSelectorItem(preset, 'preset'));
+        }
+      }
     } else {
-      for (const track of filtered) {
-        list.appendChild(this.#buildSelectorItem(track));
+      const tracks = api?.getAllAmbience?.() ?? [];
+      const filtered = this.#filterItems(tracks);
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'sessionflow-widget-ambience__selector-empty';
+        empty.textContent = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceNoTracks');
+        list.appendChild(empty);
+      } else {
+        for (const track of filtered) {
+          list.appendChild(this.#buildSelectorItem(track, 'track'));
+        }
       }
     }
 
@@ -174,37 +410,65 @@ export class AmbienceWidget extends Widget {
 
   /**
    * @param {{ id: string, name: string }} item
+   * @param {'track'|'preset'} type
    * @returns {HTMLElement}
    */
-  #buildSelectorItem(item) {
+  #buildSelectorItem(item, type) {
     const el = document.createElement('div');
     el.className = 'sessionflow-widget-ambience__selector-item';
 
     const iconEl = document.createElement('i');
-    iconEl.className = 'fas fa-wind';
+    iconEl.className = type === 'preset' ? 'fas fa-layer-group' : 'fas fa-wind';
     el.appendChild(iconEl);
+
+    const copy = document.createElement('div');
+    copy.className = 'sessionflow-widget-ambience__selector-item-copy';
 
     const name = document.createElement('span');
     name.className = 'sessionflow-widget-ambience__selector-item-name';
     name.textContent = item.name;
-    el.appendChild(name);
+    copy.appendChild(name);
 
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.#selectTrack(item.id, item.name);
+    if (type === 'preset') {
+      const layerCount = this.#getPresetLayers(item).length;
+      const meta = document.createElement('span');
+      meta.className = 'sessionflow-widget-ambience__selector-item-meta';
+      meta.textContent = game.i18n.format('SESSIONFLOW.Canvas.AmbiencePresetLayers', { count: layerCount });
+      copy.appendChild(meta);
+    }
+
+    el.appendChild(copy);
+
+    el.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.#selectSource(type, item);
     });
 
     return el;
   }
 
   /**
-   * @param {{ name: string }[]} items
-   * @returns {{ name: string }[]}
+   * @param {'tracks'|'presets'} tab
    */
-  #filterItems(items) {
-    if (!this.#searchFilter) return items;
-    const q = this.#searchFilter.toLowerCase();
-    return items.filter(item => item.name.toLowerCase().includes(q));
+  #switchTab(tab) {
+    this.#activeTab = tab;
+    this.#searchFilter = '';
+
+    const container = this.element?.querySelector('.sessionflow-widget-ambience');
+    if (!container) return;
+
+    const tabs = container.querySelectorAll('.sessionflow-widget-ambience__selector-tabs button');
+    tabs.forEach((btn, index) => {
+      btn.classList.toggle('is-active', (index === 0 && tab === 'tracks') || (index === 1 && tab === 'presets'));
+    });
+
+    const input = container.querySelector('.sessionflow-widget-ambience__selector-search input');
+    if (input) {
+      input.value = '';
+      input.placeholder = this.#getSearchPlaceholder();
+    }
+
+    this.refreshBody();
   }
 
   #rebuildList() {
@@ -212,7 +476,6 @@ export class AmbienceWidget extends Widget {
     if (!container) return;
     this.#buildList(container);
 
-    // Restore focus to search input
     const input = container.querySelector('.sessionflow-widget-ambience__selector-search input');
     if (input && this.#searchFilter) {
       input.focus();
@@ -220,8 +483,20 @@ export class AmbienceWidget extends Widget {
     }
   }
 
-  #selectTrack(id, name) {
-    this.updateConfig({ trackId: id, trackName: name });
+  /**
+   * @param {'track'|'preset'} type
+   * @param {{ id: string, name: string }} item
+   */
+  #selectSource(type, item) {
+    const source = {
+      sourceType: type,
+      sourceId: item.id,
+      sourceName: item.name,
+      sourceLayerCount: type === 'preset' ? this.#getPresetLayers(item).length : 1,
+      sourceTrackIds: type === 'preset' ? this.#getPresetLayers(item).map((layer) => layer.trackId) : [item.id]
+    };
+
+    this.updateConfig(this.#buildSourceSnapshot(source));
     this.#searchFilter = '';
     this.#registerHooks();
     this.engine.scheduleSave();
@@ -229,15 +504,22 @@ export class AmbienceWidget extends Widget {
   }
 
   /* ---------------------------------------- */
-  /*  Player State (circle + name + volume)   */
+  /*  Player State                            */
   /* ---------------------------------------- */
 
   #buildPlayer(container) {
-    const api = this.#getApi();
-    const isPlaying = this.#isThisLayerActive();
-    const volume = api?.getAmbienceLayerVolume?.(this.config.trackId) ?? this.config.volume ?? 0.5;
+    const source = this.#getConfiguredSource();
+    const details = this.#describeSource(source);
+    const isPlaying = this.#isThisSourceActive();
+    const liveVolume = source?.sourceType === 'track' && isPlaying
+      ? this.#getApi()?.getAmbienceLayerVolume?.(source.sourceId)
+      : null;
+    const volume = source?.sourceType === 'track'
+      ? (liveVolume ?? this.config.volume ?? 0.5)
+      : null;
 
-    // Circle button
+    if (details.isMissing) container.classList.add('is-missing');
+
     const circle = document.createElement('button');
     circle.type = 'button';
     circle.className = 'sessionflow-widget-ambience__circle';
@@ -248,74 +530,113 @@ export class AmbienceWidget extends Widget {
     icon.className = `fas ${isPlaying ? 'fa-pause' : 'fa-play'}`;
     circle.appendChild(icon);
 
-    circle.addEventListener('click', (e) => { e.stopPropagation(); this.#onToggle(); });
+    circle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      void this.#onToggle();
+    });
     container.appendChild(circle);
 
-    // Track name
     const trackName = document.createElement('div');
     trackName.className = 'sessionflow-widget-ambience__track-name';
-    trackName.textContent = this.config.trackName || game.i18n.localize('SESSIONFLOW.Canvas.AmbienceNothingPlaying');
+    trackName.textContent = details.title;
     container.appendChild(trackName);
 
-    // Volume slider (per-layer)
-    const volumeWrap = document.createElement('div');
-    volumeWrap.className = 'sessionflow-widget-ambience__volume';
+    const trackMeta = document.createElement('div');
+    trackMeta.className = 'sessionflow-widget-ambience__track-meta';
+    trackMeta.textContent = details.subtitle;
+    container.appendChild(trackMeta);
 
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.className = 'sessionflow-widget-ambience__volume-slider';
-    slider.min = '0';
-    slider.max = '1';
-    slider.step = '0.01';
-    slider.value = String(volume);
-    slider.title = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceVolume');
-    slider.addEventListener('input', (e) => {
-      e.stopPropagation();
-      this.#onVolumeInput(parseFloat(e.target.value));
-    });
-    slider.addEventListener('change', (e) => {
-      e.stopPropagation();
-      this.#onVolumeChange(parseFloat(e.target.value));
-    });
-    volumeWrap.appendChild(slider);
+    if (source?.sourceType === 'track') {
+      const volumeWrap = document.createElement('div');
+      volumeWrap.className = 'sessionflow-widget-ambience__volume';
 
-    container.appendChild(volumeWrap);
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'sessionflow-widget-ambience__volume-slider';
+      slider.min = '0';
+      slider.max = '1';
+      slider.step = '0.01';
+      slider.value = String(volume ?? 0.5);
+      slider.title = game.i18n.localize('SESSIONFLOW.Canvas.AmbienceVolume');
+      slider.addEventListener('input', (event) => {
+        event.stopPropagation();
+        this.#onVolumeInput(parseFloat(event.target.value));
+      });
+      slider.addEventListener('change', (event) => {
+        event.stopPropagation();
+        this.#onVolumeChange(parseFloat(event.target.value));
+      });
+      volumeWrap.appendChild(slider);
+
+      container.appendChild(volumeWrap);
+    }
   }
 
   /**
-   * Check if THIS widget's track is currently an active ambience layer.
+   * Check if THIS widget's source is currently active.
    * @returns {boolean}
    */
-  #isThisLayerActive() {
+  #isThisSourceActive() {
     const api = this.#getApi();
-    if (!api) return false;
+    const source = this.#getConfiguredSource();
+    if (!api || !source) return false;
+
     const activeLayers = api.getActiveAmbienceLayers?.() ?? [];
-    return activeLayers.some(layer =>
-      layer.id === this.config.trackId || layer.trackId === this.config.trackId
-    );
+    if (source.sourceType === 'track') {
+      return activeLayers.some((layer) => layer.id === source.sourceId || layer.trackId === source.sourceId);
+    }
+
+    const expectedTrackIds = this.#getSourceTrackIds(source);
+    if (expectedTrackIds.length === 0 || activeLayers.length !== expectedTrackIds.length) return false;
+
+    const activeTrackIds = new Set(activeLayers.map((layer) => layer.trackId ?? layer.id).filter(Boolean));
+    return expectedTrackIds.every((trackId) => activeTrackIds.has(trackId));
   }
 
   /* ---------------------------------------- */
   /*  Actions                                 */
   /* ---------------------------------------- */
 
-  #onToggle() {
+  async #onToggle() {
     const api = this.#getApi();
-    if (!api) return;
+    const source = this.#getConfiguredSource();
+    if (!api || !source) return;
 
-    if (this.#isThisLayerActive()) {
-      api.stopAmbienceLayer(this.config.trackId);
+    if (source.sourceType === 'track') {
+      if (this.#isThisSourceActive()) {
+        api.stopAmbienceLayer(source.sourceId);
+      } else {
+        await api.playAmbienceLayer(source.sourceId);
+        const savedVolume = Number.isFinite(this.config.volume) ? this.config.volume : null;
+        if (savedVolume != null) {
+          api.setAmbienceLayerVolume?.(source.sourceId, savedVolume);
+        }
+      }
+      return;
+    }
+
+    const preset = this.#getPreset(source.sourceId);
+    if (!preset) {
+      ui.notifications.warn(game.i18n.localize('SESSIONFLOW.Canvas.AmbienceMissingPresetAction'));
+      return;
+    }
+
+    if (this.#isThisSourceActive()) {
+      api.stopAllAmbienceLayers();
     } else {
-      api.playAmbienceLayer(this.config.trackId);
+      await api.loadAmbiencePreset(source.sourceId);
     }
   }
 
   #onVolumeInput(value) {
-    const api = this.#getApi();
-    api?.setAmbienceLayerVolume?.(this.config.trackId, value);
+    const source = this.#getConfiguredSource();
+    if (source?.sourceType !== 'track') return;
+    this.#getApi()?.setAmbienceLayerVolume?.(source.sourceId, value);
   }
 
   #onVolumeChange(value) {
+    const source = this.#getConfiguredSource();
+    if (source?.sourceType !== 'track') return;
     this.updateConfig({ volume: value });
     this.engine.scheduleSave();
   }
@@ -327,13 +648,28 @@ export class AmbienceWidget extends Widget {
   #updatePlayIcon() {
     const circle = this.element?.querySelector('.sessionflow-widget-ambience__circle');
     if (!circle) return;
-    const isPlaying = this.#isThisLayerActive();
+
+    const isPlaying = this.#isThisSourceActive();
     const icon = circle.querySelector('i');
     if (icon) {
       icon.className = `fas ${isPlaying ? 'fa-pause' : 'fa-play'}`;
     }
     circle.classList.toggle('is-playing', isPlaying);
     circle.title = game.i18n.localize(isPlaying ? 'SESSIONFLOW.Canvas.AmbiencePause' : 'SESSIONFLOW.Canvas.AmbiencePlay');
+  }
+
+  #updatePlayerDetails() {
+    const container = this.element?.querySelector('.sessionflow-widget-ambience--player');
+    if (!container) return;
+
+    const details = this.#describeSource(this.#getConfiguredSource());
+    const nameEl = container.querySelector('.sessionflow-widget-ambience__track-name');
+    if (nameEl) nameEl.textContent = details.title;
+
+    const metaEl = container.querySelector('.sessionflow-widget-ambience__track-meta');
+    if (metaEl) metaEl.textContent = details.subtitle;
+
+    container.classList.toggle('is-missing', details.isMissing);
   }
 
   #updateVolumeSlider(volume) {
@@ -346,37 +682,25 @@ export class AmbienceWidget extends Widget {
   /* ---------------------------------------- */
 
   #registerHooks() {
-    // Avoid double-registration
     if (Object.keys(this.#hookIds).length > 0) return;
 
-    this.#hookIds.layerPlay = Hooks.on('narratorJukebox.ambienceLayer.play', (data) => {
-      if (data.trackId === this.config.trackId) {
-        this.#updatePlayIcon();
-      }
-    });
-
-    this.#hookIds.layerStop = Hooks.on('narratorJukebox.ambienceLayer.stop', (data) => {
-      if (data.trackId === this.config.trackId) {
-        this.#updatePlayIcon();
-      }
+    this.#hookIds.stateChanged = Hooks.on('narratorJukeboxStateChanged', () => {
+      this.#updatePlayIcon();
+      this.#updatePlayerDetails();
     });
 
     this.#hookIds.volumeChanged = Hooks.on('narratorJukebox.ambienceLayer.volumeChanged', (data) => {
-      if (data.trackId === this.config.trackId) {
+      const source = this.#getConfiguredSource();
+      if (source?.sourceType !== 'track') return;
+      if (data.trackId === source.sourceId) {
         this.#updateVolumeSlider(data.volume);
       }
-    });
-
-    this.#hookIds.stopAll = Hooks.on('narratorJukebox.ambienceLayer.stopAll', () => {
-      this.#updatePlayIcon();
     });
   }
 
   #unregisterHooks() {
-    if (this.#hookIds.layerPlay != null) Hooks.off('narratorJukebox.ambienceLayer.play', this.#hookIds.layerPlay);
-    if (this.#hookIds.layerStop != null) Hooks.off('narratorJukebox.ambienceLayer.stop', this.#hookIds.layerStop);
+    if (this.#hookIds.stateChanged != null) Hooks.off('narratorJukeboxStateChanged', this.#hookIds.stateChanged);
     if (this.#hookIds.volumeChanged != null) Hooks.off('narratorJukebox.ambienceLayer.volumeChanged', this.#hookIds.volumeChanged);
-    if (this.#hookIds.stopAll != null) Hooks.off('narratorJukebox.ambienceLayer.stopAll', this.#hookIds.stopAll);
     this.#hookIds = {};
   }
 
@@ -387,9 +711,19 @@ export class AmbienceWidget extends Widget {
   /** @override */
   beforeSave() {
     const api = this.#getApi();
-    if (!api || !this.config.trackId) return;
-    const vol = api.getAmbienceLayerVolume?.(this.config.trackId);
-    if (vol != null) this.updateConfig({ volume: vol });
+    const source = this.#getConfiguredSource();
+    if (!api || !source) return;
+
+    if (source.sourceType === 'track') {
+      const vol = this.#isThisSourceActive()
+        ? api.getAmbienceLayerVolume?.(source.sourceId)
+        : this.config.volume;
+      if (vol != null) this.updateConfig({ volume: vol });
+      this.updateConfig(this.#buildSourceSnapshot(source));
+      return;
+    }
+
+    this.updateConfig(this.#buildSourceSnapshot(source));
   }
 
   /** @override */
@@ -399,5 +733,4 @@ export class AmbienceWidget extends Widget {
   }
 }
 
-// Self-register
 registerWidgetType('ambience', AmbienceWidget);

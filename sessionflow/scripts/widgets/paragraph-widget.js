@@ -6,6 +6,12 @@
  */
 
 import { Widget, registerWidgetType } from '../widget.js';
+import {
+  getRichTextClasses,
+  getRichTextEditorOptions,
+  renderRichTextHTML,
+  serializeRichTextEditor
+} from '../rich-text-utils.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -30,6 +36,9 @@ export class ParagraphWidget extends Widget {
 
   /** @type {Function|null} Bound escape key handler */
   #escapeHandler = null;
+
+  /** @type {{ x: number, y: number }|null} */
+  #pendingFocusCoords = null;
 
   /* ---------------------------------------- */
   /*  Rendering                               */
@@ -78,19 +87,10 @@ export class ParagraphWidget extends Widget {
       // Enriched HTML content
       const contentEl = document.createElement('div');
       contentEl.className = 'sessionflow-widget-paragraph__content';
-
-      // Show raw content first, then enrich asynchronously
-      contentEl.innerHTML = content;
       container.appendChild(contentEl);
 
-      const TE = foundry.applications.ux?.TextEditor?.implementation ?? TextEditor;
-      TE.enrichHTML(content, { async: true }).then(enriched => {
-        // Guard: widget may have been destroyed or mode changed
-        if (this.element && !this.#isEditing) {
-          contentEl.innerHTML = enriched;
-        }
-      }).catch(() => {
-        // Keep raw content on failure
+      renderRichTextHTML(contentEl, content, this.context, {
+        isStale: () => !this.element || this.#isEditing
       });
     }
 
@@ -100,7 +100,11 @@ export class ParagraphWidget extends Widget {
       container.addEventListener('click', (e) => {
         // Don't enter edit mode if user clicked a link inside enriched content
         if (e.target.closest('a')) return;
-        this.#enterEditMode();
+
+        const selection = window.getSelection?.();
+        if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+
+        this.#enterEditMode({ x: e.clientX, y: e.clientY });
       });
     }
   }
@@ -127,11 +131,9 @@ export class ParagraphWidget extends Widget {
   async #initProseMirror(targetEl) {
     if (!targetEl || !document.body.contains(targetEl)) return;
 
-    const PMEditor = foundry.applications.ux?.ProseMirrorEditor;
-    const PMMenu = foundry.prosemirror?.ProseMirrorMenu;
-    const PMSchema = foundry.prosemirror?.defaultSchema;
+    const { PMEditor, PMMenu, schema } = getRichTextClasses();
 
-    if (!PMEditor || !PMMenu || !PMSchema) {
+    if (!PMEditor || !PMMenu || !schema) {
       console.warn(`[${MODULE_ID}] ProseMirror not available, falling back to textarea`);
       this.#buildTextareaFallback(targetEl);
       return;
@@ -140,17 +142,16 @@ export class ParagraphWidget extends Widget {
     const content = this.config.content ?? '';
 
     try {
-      this.#proseMirrorEditor = await PMEditor.create(targetEl, content, {
-        plugins: {
-          menu: PMMenu.build(PMSchema, {
-            destroyOnSave: false,
-            onSave: () => this.#exitEditMode()
-          })
-        }
-      });
+      this.#proseMirrorEditor = await PMEditor.create(
+        targetEl,
+        content,
+        getRichTextEditorOptions(this.context, {
+          onSave: () => this.#exitEditMode(),
+          uuid: `SessionFlow.Paragraph.${this.id}`
+        })
+      );
 
-      // Focus the editor
-      this.#proseMirrorEditor.view?.focus();
+      this.#focusEditor();
     } catch (err) {
       console.warn(`[${MODULE_ID}] Failed to create ProseMirror editor:`, err);
       this.#buildTextareaFallback(targetEl);
@@ -195,9 +196,10 @@ export class ParagraphWidget extends Widget {
   /*  Mode Transitions                        */
   /* ---------------------------------------- */
 
-  #enterEditMode() {
+  #enterEditMode(focusCoords = null) {
     if (this.#isEditing) return;
     this.#isEditing = true;
+    this.#pendingFocusCoords = focusCoords;
 
     // Mark widget element for transparent-frame editing state
     const widgetEl = this.element?.closest('.sessionflow-widget');
@@ -214,7 +216,7 @@ export class ParagraphWidget extends Widget {
     // Serialize content from ProseMirror
     if (this.#proseMirrorEditor?.view) {
       try {
-        const html = foundry.prosemirror.dom.serializeString(this.#proseMirrorEditor.view.state.doc);
+        const html = serializeRichTextEditor(this.#proseMirrorEditor);
         this.updateConfig({ content: html });
       } catch (err) {
         console.warn(`[${MODULE_ID}] Failed to serialize ProseMirror content:`, err);
@@ -278,6 +280,34 @@ export class ParagraphWidget extends Widget {
       }
       this.#proseMirrorEditor = null;
     }
+
+    this.#pendingFocusCoords = null;
+  }
+
+  #focusEditor() {
+    const view = this.#proseMirrorEditor?.view;
+    if (!view) return;
+
+    view.focus();
+
+    if (!this.#pendingFocusCoords) return;
+
+    const coords = view.posAtCoords({
+      left: this.#pendingFocusCoords.x,
+      top: this.#pendingFocusCoords.y
+    });
+
+    const TextSelection = globalThis.ProseMirror?.prosemirrorState?.TextSelection
+      ?? foundry.prosemirror?.state?.TextSelection
+      ?? foundry.prosemirror?.TextSelection;
+
+    if (coords?.pos != null && TextSelection) {
+      const pos = Math.max(0, Math.min(coords.pos, view.state.doc.content.size));
+      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, pos)));
+      view.focus();
+    }
+
+    this.#pendingFocusCoords = null;
   }
 
   /**
@@ -286,7 +316,7 @@ export class ParagraphWidget extends Widget {
   beforeSave() {
     if (this.#isEditing && this.#proseMirrorEditor?.view) {
       try {
-        const html = foundry.prosemirror.dom.serializeString(this.#proseMirrorEditor.view.state.doc);
+        const html = serializeRichTextEditor(this.#proseMirrorEditor);
         this.updateConfig({ content: html });
       } catch {
         // Best effort

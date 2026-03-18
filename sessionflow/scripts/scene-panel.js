@@ -86,6 +86,34 @@ function widgetsFromTemplate(defs) {
   }));
 }
 
+function serializeWidgetForTemplate(widgetState) {
+  return {
+    type: widgetState.type,
+    x: widgetState.x,
+    y: widgetState.y,
+    width: widgetState.width,
+    height: widgetState.height,
+    zIndex: widgetState.zIndex ?? 0,
+    collapsed: widgetState.collapsed ?? false,
+    config: foundry.utils.deepClone(widgetState.config ?? {})
+  };
+}
+
+function instantiateTemplateWidgets(widgetStates) {
+  const ordered = [...(widgetStates ?? [])].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+  return ordered.map((widgetState, index) => ({
+    id: foundry.utils.randomID(),
+    type: widgetState.type,
+    x: widgetState.x,
+    y: widgetState.y,
+    width: widgetState.width,
+    height: widgetState.height,
+    zIndex: index,
+    collapsed: widgetState.collapsed ?? false,
+    config: foundry.utils.deepClone(widgetState.config ?? {})
+  }));
+}
+
 const BUILTIN_TEMPLATES = [
   {
     id: '_classic',
@@ -231,8 +259,8 @@ export class ScenePanel {
 
     // If open for a different scene, tear down the old engine
     if (this.#engine) {
-      this.#engine.flushPendingSave();
-      this.#engine.destroy();
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
       this.#engine = null;
     }
 
@@ -284,7 +312,7 @@ export class ScenePanel {
     this.#toolbarAbort?.abort();
     this.#toolbarAbort = null;
     this.#engine?.flushPendingSave();
-    this.#engine?.destroy();
+    this.#engine?.destroy({ persist: false });
     this.#engine = null;
     this.#element?.remove();
     this.#element = null;
@@ -335,8 +363,8 @@ export class ScenePanel {
 
     // Destroy old canvas engine
     if (this.#engine) {
-      this.#engine.flushPendingSave();
-      this.#engine.destroy();
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
       this.#engine = null;
     }
 
@@ -537,15 +565,24 @@ export class ScenePanel {
     const list = document.createElement('div');
     list.className = 'sessionflow-template-picker__list';
 
+    let closeHandler = null;
+    const closePicker = () => {
+      picker.remove();
+      if (closeHandler) {
+        document.removeEventListener('mousedown', closeHandler);
+        closeHandler = null;
+      }
+    };
+
     for (const template of BUILTIN_TEMPLATES) {
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'sessionflow-template-picker__item';
       item.innerHTML = `<i class="${template.icon}"></i><span>${game.i18n.localize(template.name)}</span>`;
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', async (e) => {
         e.stopPropagation();
-        this.#applyTemplate(template);
-        picker.remove();
+        closePicker();
+        await this.#applyTemplate(template);
       });
       list.appendChild(item);
     }
@@ -557,7 +594,7 @@ export class ScenePanel {
     saveBtn.innerHTML = `<i class="fas fa-floppy-disk"></i><span>${game.i18n.localize('SESSIONFLOW.Canvas.TemplateSaveCurrent')}</span>`;
     saveBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      picker.remove();
+      closePicker();
       await this.#saveCurrentAsTemplate();
     });
 
@@ -570,28 +607,32 @@ export class ScenePanel {
       list.appendChild(customHeader);
 
       for (const ct of customs) {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'sessionflow-template-picker__item';
-        item.innerHTML = `<i class="fas fa-bookmark"></i><span>${ct.name}</span>`;
+        const item = document.createElement('div');
+        item.className = 'sessionflow-template-picker__item sessionflow-template-picker__item--custom';
+
+        const loadBtn = document.createElement('button');
+        loadBtn.type = 'button';
+        loadBtn.className = 'sessionflow-template-picker__item-main';
+        loadBtn.innerHTML = `<i class="fas fa-bookmark"></i><span>${ct.name}</span>`;
+        loadBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          closePicker();
+          await this.#applyCustomTemplate(ct);
+        });
+        item.appendChild(loadBtn);
 
         // Delete button
-        const delBtn = document.createElement('span');
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
         delBtn.className = 'sessionflow-template-picker__item-delete';
         delBtn.innerHTML = '<i class="fas fa-trash-can"></i>';
-        delBtn.addEventListener('click', (ev) => {
+        delBtn.addEventListener('click', async (ev) => {
+          ev.preventDefault();
           ev.stopPropagation();
-          this.#deleteCustomTemplate(ct.id);
-          picker.remove();
+          await this.#deleteCustomTemplate(ct.id);
+          closePicker();
         });
         item.appendChild(delBtn);
-
-        item.addEventListener('click', (e) => {
-          if (e.target.closest('.sessionflow-template-picker__item-delete')) return;
-          e.stopPropagation();
-          this.#applyCustomTemplate(ct);
-          picker.remove();
-        });
         list.appendChild(item);
       }
     }
@@ -607,10 +648,9 @@ export class ScenePanel {
     }
 
     // Close on outside click
-    const closeHandler = (e) => {
+    closeHandler = (e) => {
       if (!picker.contains(e.target) && e.target !== anchorBtn) {
-        picker.remove();
-        document.removeEventListener('mousedown', closeHandler);
+        closePicker();
       }
     };
     setTimeout(() => document.addEventListener('mousedown', closeHandler), 0);
@@ -620,17 +660,17 @@ export class ScenePanel {
    * Apply a built-in template to the current scene.
    * @param {{ widgets: () => object[] }} template
    */
-  #applyTemplate(template) {
+  async #applyTemplate(template) {
     if (!this.#engine) return;
 
     const newWidgets = template.widgets();
 
     // Destroy current engine, save new widgets, re-initialize
-    this.#engine.flushPendingSave();
-    this.#engine.destroy();
+    await this.#engine.flushPendingSave();
+    this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
+    await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
       widgets: newWidgets,
       nextZIndex: newWidgets.length
     });
@@ -642,28 +682,19 @@ export class ScenePanel {
    * Apply a custom template.
    * @param {{ widgets: object[] }} ct
    */
-  #applyCustomTemplate(ct) {
+  async #applyCustomTemplate(ct) {
     if (!this.#engine) return;
 
-    // Generate fresh IDs for widgets, preserving config for dividers
-    const newWidgets = ct.widgets.map((w, i) => ({
-      id: foundry.utils.randomID(),
-      type: w.type,
-      x: w.x,
-      y: w.y,
-      width: w.width,
-      height: w.height,
-      zIndex: i,
-      collapsed: false,
-      config: w.config ? { ...w.config } : {}
-    }));
+    const newWidgets = instantiateTemplateWidgets(ct.widgets);
+    const canvasHeight = ct.canvasHeight ?? 420;
 
-    this.#engine.flushPendingSave();
-    this.#engine.destroy();
+    await this.#engine.flushPendingSave();
+    this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
+    await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
       widgets: newWidgets,
+      canvasHeight,
       nextZIndex: newWidgets.length
     });
 
@@ -687,20 +718,16 @@ export class ScenePanel {
     const scenes = getScenes(this.#sessionId, this.#beatId);
     const scene = scenes.find(sc => sc.id === this.#sceneId);
     const currentWidgets = scene?.widgets ?? [];
+    const canvasHeight = scene?.canvasHeight ?? 420;
 
-    // Extract layout-only data (strip content, keep structure)
-    const layoutWidgets = currentWidgets.map(w => {
-      const base = { type: w.type, x: w.x, y: w.y, width: w.width, height: w.height };
-      // Preserve config for dividers (orientation/style/color are layout properties)
-      if (w.type === 'divider' && w.config) base.config = { ...w.config };
-      return base;
-    });
+    const templateWidgets = currentWidgets.map(serializeWidgetForTemplate);
 
     const customs = this.#getCustomTemplates();
     customs.push({
       id: foundry.utils.randomID(),
       name: name,
-      widgets: layoutWidgets
+      canvasHeight,
+      widgets: templateWidgets
     });
 
     await game.settings.set(MODULE_ID, 'sceneTemplates', customs);

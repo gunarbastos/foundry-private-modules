@@ -53,25 +53,31 @@ export class StickyWidget extends Widget {
     bodyEl.innerHTML = '';
 
     const color = this.#getColor();
+    this.element?.style.setProperty('--sf-sticky-bg', color.bg);
+    this.element?.style.setProperty('--sf-sticky-border', color.border);
 
     const container = document.createElement('div');
     container.className = 'sessionflow-widget-sticky';
-    container.style.setProperty('--sf-sticky-bg', color.bg);
-    container.style.setProperty('--sf-sticky-border', color.border);
-
-    // Color dots row
-    this.#buildColorDots(container);
 
     // Textarea
     const textarea = document.createElement('textarea');
     textarea.className = 'sessionflow-widget-sticky__text';
     textarea.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.Sticky') + '...';
+    textarea.setAttribute('aria-label', game.i18n.localize('SESSIONFLOW.Canvas.Sticky'));
+    textarea.setAttribute('spellcheck', 'false');
+    textarea.setAttribute('autocorrect', 'off');
+    textarea.setAttribute('autocomplete', 'off');
+    textarea.setAttribute('autocapitalize', 'off');
+    textarea.setAttribute('data-gramm', 'false');
+    textarea.setAttribute('data-enable-grammarly', 'false');
+    textarea.spellcheck = false;
     textarea.value = this.config.text ?? '';
     textarea.addEventListener('input', (e) => {
       e.stopPropagation();
       this.#onTextInput(e.target.value);
     });
     container.appendChild(textarea);
+    container.appendChild(this.#buildColorFooter());
 
     bodyEl.appendChild(container);
   }
@@ -80,7 +86,10 @@ export class StickyWidget extends Widget {
   /*  Color Dots                              */
   /* ---------------------------------------- */
 
-  #buildColorDots(container) {
+  #buildColorFooter() {
+    const footer = document.createElement('div');
+    footer.className = 'sessionflow-widget-sticky__footer';
+
     const dots = document.createElement('div');
     dots.className = 'sessionflow-widget-sticky__colors';
 
@@ -91,6 +100,8 @@ export class StickyWidget extends Widget {
       dot.type = 'button';
       dot.className = 'sessionflow-widget-sticky__color-dot';
       if (idx === currentIdx) dot.classList.add('is-active');
+      dot.setAttribute('aria-label', color.name);
+      dot.setAttribute('aria-pressed', idx === currentIdx ? 'true' : 'false');
       dot.style.background = color.border;
       dot.title = color.name;
       dot.addEventListener('click', (e) => {
@@ -100,7 +111,8 @@ export class StickyWidget extends Widget {
       dots.appendChild(dot);
     });
 
-    container.appendChild(dots);
+    footer.appendChild(dots);
+    return footer;
   }
 
   /* ---------------------------------------- */
@@ -124,6 +136,8 @@ export class StickyWidget extends Widget {
 
     // Update CSS vars without full re-render (preserve textarea focus/selection)
     const color = STICKY_COLORS[idx] ?? STICKY_COLORS[0];
+    this.element?.style.setProperty('--sf-sticky-bg', color.bg);
+    this.element?.style.setProperty('--sf-sticky-border', color.border);
     const container = this.element?.querySelector('.sessionflow-widget-sticky');
     if (container) {
       container.style.setProperty('--sf-sticky-bg', color.bg);
@@ -132,7 +146,10 @@ export class StickyWidget extends Widget {
 
     // Update active dot
     const dots = this.element?.querySelectorAll('.sessionflow-widget-sticky__color-dot');
-    dots?.forEach((dot, i) => dot.classList.toggle('is-active', i === idx));
+    dots?.forEach((dot, i) => {
+      dot.classList.toggle('is-active', i === idx);
+      dot.setAttribute('aria-pressed', i === idx ? 'true' : 'false');
+    });
   }
 
   /* ---------------------------------------- */
