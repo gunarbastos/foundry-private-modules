@@ -29,6 +29,7 @@ class AmbienceLayerManager {
   constructor() {
     /** @type {Map<string, AmbienceLayer>} */
     this.layers = new Map();
+    this.layerIssues = new Map();
 
     /** @type {number} Master volume multiplier for all layers (0-1) */
     this.masterVolume = 0.8;
@@ -124,8 +125,21 @@ class AmbienceLayerManager {
     // Create each layer
     for (const layerState of (state.layers || [])) {
       try {
-        await this._createLayer(layerState.trackId, layerState.volume ?? 0.8);
+        const layer = await this._createLayer(layerState.trackId, layerState.volume ?? 0.8);
+        if (!layer) {
+          const track = this.dataService.findTrack(layerState.trackId, 'ambience');
+          this._recordLayerIssue(layerState.trackId, track, new Error('Ambience track unavailable on this client.'));
+          debugWarn(` Failed to create deferred layer ${layerState.trackId}: track unavailable on this client`);
+        }
       } catch (err) {
+        const track = this.dataService.findTrack(layerState.trackId, 'ambience');
+        this._recordLayerIssue(layerState.trackId, track, err);
+        if (this._isAutoplayError(err)) {
+          this._pendingLayers.push({
+            trackId: layerState.trackId,
+            volume: layerState.volume ?? 0.8
+          });
+        }
         debugWarn(` Failed to create deferred layer ${layerState.trackId}:`, err);
       }
     }
@@ -199,6 +213,7 @@ class AmbienceLayerManager {
 
     // Store the layer
     this.layers.set(trackId, layer);
+    this.clearLayerIssue(trackId);
 
     debugLog(`Added ambience layer: ${track.name} (${this.layerCount}/${MAX_AMBIENCE_LAYERS})`);
 
@@ -225,7 +240,7 @@ class AmbienceLayerManager {
 
       // Broadcast incrementally if not in preview mode
       if (game.user.isGM && !this.isPreviewMode && this.syncService) {
-        this.syncService.broadcastAmbienceLayerAdd(trackId, initialVolume);
+        this.syncService.broadcastAmbienceLayerAdd(trackId, initialVolume, layer.track);
         ui.notifications.info(`Broadcasting ambience: ${layer.track.name}`);
       }
 
@@ -235,6 +250,8 @@ class AmbienceLayerManager {
 
       return layer;
     } catch (err) {
+      const track = this.dataService.findTrack(trackId, 'ambience');
+      this._recordLayerIssue(trackId, track, err);
       debugError(` Failed to add ambience layer:`, err);
       throw err;
     }
@@ -280,9 +297,14 @@ class AmbienceLayerManager {
       const layer = await this._createLayer(trackId, initialVolume);
       if (layer) {
         Hooks.call('narratorJukeboxAmbienceLayerAdded', { trackId, track: layer.track });
+      } else if (this._userHasInteracted) {
+        const track = this.dataService.findTrack(trackId, 'ambience');
+        this._recordLayerIssue(trackId, track, new Error('Ambience track unavailable on this client.'));
       }
       return layer;
     } catch (err) {
+      const track = this.dataService.findTrack(trackId, 'ambience');
+      this._recordLayerIssue(trackId, track, err);
       debugError(` Failed to add synced layer:`, err);
       return null;
     }
@@ -601,30 +623,29 @@ class AmbienceLayerManager {
 
     // Restore each layer without individual broadcasts
     for (const layerState of (state.layers || [])) {
+      const volume = layerState.volume ?? 0.8;
       try {
-        const volume = layerState.volume ?? 0.8;
-        await this._createLayer(layerState.trackId, volume);
+        const layer = await this._createLayer(layerState.trackId, volume);
+        if (!layer) {
+          const track = this.dataService.findTrack(layerState.trackId, 'ambience');
+          this._recordLayerIssue(layerState.trackId, track, new Error('Ambience track unavailable on this client.'));
+          debugWarn(` Failed to restore layer ${layerState.trackId}: track unavailable on this client`);
+        }
       } catch (err) {
-        // Check if it's an autoplay policy error (various names for this error)
-        const isAutoplayError = err.name === 'NotAllowedError' ||
-                                err.message?.includes('play()') ||
-                                err.message?.includes('user gesture') ||
-                                err.message?.includes('autoplay');
-
-        if (isAutoplayError) {
+        const track = this.dataService.findTrack(layerState.trackId, 'ambience');
+        this._recordLayerIssue(layerState.trackId, track, err);
+        if (this._isAutoplayError(err)) {
           debugWarn(` Autoplay blocked for layer ${layerState.trackId}:`, err.message);
           this._pendingLayers.push({ trackId: layerState.trackId, volume });
         } else {
           debugWarn(` Failed to restore layer ${layerState.trackId}:`, err);
-          // Also add to pending in case it's a silent autoplay failure
-          this._pendingLayers.push({ trackId: layerState.trackId, volume });
         }
       }
     }
 
-    // Notify if there are pending layers (autoplay blocked) or if we have fewer layers than expected
+    // Notify only when we actually detected autoplay-blocked layers.
     const actualLayers = this.layers.size;
-    if (this._pendingLayers.length > 0 || (expectedLayers > 0 && actualLayers < expectedLayers)) {
+    if (this._pendingLayers.length > 0) {
       debugLog(`Autoplay detection: expected ${expectedLayers}, got ${actualLayers}, pending ${this._pendingLayers.length}`);
       Hooks.call('narratorJukeboxAutoplayBlocked', {
         count: this._pendingLayers.length,
@@ -678,6 +699,47 @@ class AmbienceLayerManager {
    */
   getActiveTrackIds() {
     return Array.from(this.layers.keys());
+  }
+
+  getLayerIssue(trackId) {
+    return this.layerIssues.get(trackId) || null;
+  }
+
+  getAllLayerIssues() {
+    return Array.from(this.layerIssues.values());
+  }
+
+  clearLayerIssue(trackId) {
+    if (!this.layerIssues.has(trackId)) return false;
+    this.layerIssues.delete(trackId);
+    Hooks.call('narratorJukeboxAmbienceLayerIssueCleared', { trackId });
+    return true;
+  }
+
+  _isAutoplayError(err) {
+    return err?.name === 'NotAllowedError' ||
+      err?.message?.includes('play()') ||
+      err?.message?.includes('user gesture') ||
+      err?.message?.includes('autoplay');
+  }
+
+  _recordLayerIssue(trackId, track, err) {
+    if (!trackId) return null;
+
+    const issue = {
+      trackId,
+      trackName: track?.name || null,
+      code: err?.code ?? null,
+      reason: err?.reason || (this._isAutoplayError(err) ? 'autoplay_blocked' : 'unknown'),
+      message: err?.message || 'Ambience layer failed to start.',
+      permanent: !!err?.isPermanent,
+      timestamp: Date.now()
+    };
+
+    this.layerIssues.set(trackId, issue);
+    Hooks.call('narratorJukeboxAmbienceLayerIssue', issue);
+    Hooks.call('narratorJukeboxStateChanged');
+    return issue;
   }
 }
 

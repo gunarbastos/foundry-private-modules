@@ -5,7 +5,7 @@
 
 import { JUKEBOX, SOUNDBOARD_END_CHECK } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
-import { extractYouTubeVideoId } from '../utils/youtube-utils.js';
+import { extractYouTubeVideoId, styleHiddenYouTubeContainer } from '../utils/youtube-utils.js';
 import { ambienceLayerManager } from '../core/ambience-layer-manager.js';
 import { debugLog, debugError } from '../utils/debug.js';
 
@@ -84,8 +84,14 @@ class PlaybackService {
       // Broadcast if not in preview mode
       if (game.user.isGM && !this.isPreviewMode && this.syncService) {
         const volume = this.channels[channel].volume;
-        this.syncService.broadcastPlay(id, channel, volume);
+        this.syncService.broadcastPlay(id, channel, volume, track);
         ui.notifications.info(`Broadcasting: ${track.name}`);
+
+        // Safety net: also broadcast full state after a delay
+        // Ensures players get the track even if broadcastPlay was missed
+        setTimeout(() => {
+          if (this.syncService) this.syncService.broadcastState();
+        }, 2000);
       }
 
       return track;
@@ -199,7 +205,9 @@ class PlaybackService {
         const currentIndex = this.currentPlaylist.musicIds.indexOf(currentId);
         nextIndex = currentIndex + 1;
         if (nextIndex >= this.currentPlaylist.musicIds.length) {
-          if (this.musicLoop || wrap) {
+          // Use playlist-level loop if available, fall back to global musicLoop
+          const playlistLoop = this.currentPlaylist.loop ?? false;
+          if (playlistLoop || this.musicLoop || wrap) {
             nextIndex = 0;
           } else {
             debugLog(" Playlist ended, no loop");
@@ -268,7 +276,8 @@ class PlaybackService {
       let prevIndex = currentIndex - 1;
 
       if (prevIndex < 0) {
-        if (this.musicLoop) prevIndex = this.currentPlaylist.musicIds.length - 1;
+        const playlistLoop = this.currentPlaylist.loop ?? false;
+        if (playlistLoop || this.musicLoop) prevIndex = this.currentPlaylist.musicIds.length - 1;
         else prevIndex = 0;
       }
 
@@ -538,10 +547,13 @@ class PlaybackService {
   async _playSoundboardYouTube(id, sound, loop, preview, startTime, endTime) {
     const containerId = `jukebox-sb-yt-${id}`;
     let container = document.getElementById(containerId);
+    if (container) {
+      styleHiddenYouTubeContainer(container);
+    }
     if (!container) {
       container = document.createElement('div');
       container.id = containerId;
-      container.style.display = 'none';
+      styleHiddenYouTubeContainer(container);
       document.body.appendChild(container);
     }
 
@@ -553,18 +565,21 @@ class PlaybackService {
     const volume = (sound.volume || 0.8) * 100;
     const shouldManualLoop = loop && (startTime > 0 || endTime !== null);
 
+    // Note: Do NOT use host: 'youtube-nocookie.com' — causes error 150 on HTTP pages
+    // `origin` is intentionally omitted here for the same reason as the
+    // main music player: remote player clients can fail with YouTube error 150.
+    const sbPlayerVars = {
+      autoplay: 1,
+      controls: 0,
+      start: Math.floor(startTime),
+      end: endTime ? Math.floor(endTime) : undefined,
+      loop: (loop && !shouldManualLoop) ? 1 : 0,
+      playlist: (loop && !shouldManualLoop) ? videoId : undefined
+    };
     const player = new YT.Player(containerId, {
-      height: '1', width: '1',
-      host: 'https://www.youtube-nocookie.com',
+      height: '200', width: '200',
       videoId: videoId,
-      playerVars: {
-        autoplay: 1,
-        controls: 0,
-        start: Math.floor(startTime),
-        end: endTime ? Math.floor(endTime) : undefined,
-        loop: (loop && !shouldManualLoop) ? 1 : 0,
-        playlist: (loop && !shouldManualLoop) ? videoId : undefined
-      },
+      playerVars: sbPlayerVars,
       events: {
         'onReady': (e) => {
           e.target.setVolume(volume);
@@ -778,6 +793,23 @@ class PlaybackService {
    */
   getAmbienceLayerCount() {
     return ambienceLayerManager.layerCount;
+  }
+
+  /**
+   * Get the last recorded issue for a specific ambience track, if any.
+   * @param {string} trackId - Track ID
+   * @returns {object|null}
+   */
+  getAmbienceLayerIssue(trackId) {
+    return ambienceLayerManager.getLayerIssue(trackId);
+  }
+
+  /**
+   * Get all recorded ambience layer issues.
+   * @returns {Array<object>}
+   */
+  getAmbienceLayerIssues() {
+    return ambienceLayerManager.getAllLayerIssues();
   }
 
   /**

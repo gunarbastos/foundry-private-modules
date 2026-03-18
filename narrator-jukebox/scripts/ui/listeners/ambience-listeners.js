@@ -84,6 +84,16 @@ function updateLayerLimitState(html, jukebox) {
     });
 }
 
+async function toggleAmbienceLayerWithFeedback(jukebox, card, id) {
+    try {
+        await jukebox.toggleAmbienceLayer(id);
+    } catch (err) {
+        card.removeClass('layer-activating layer-deactivating');
+        ui.notifications.error(`Narrator Jukebox: ${err?.message || 'Failed to toggle ambience layer.'}`);
+        debugLog('Ambience layer toggle failed:', id, err);
+    }
+}
+
 /**
  * Activate ambience layer mixer listeners
  * @param {NarratorsJukeboxApp} app - The application instance
@@ -111,8 +121,13 @@ export function activateAmbienceListeners(app, html) {
 
     // ========== TOGGLE AMBIENCE LAYER (Card Click) ==========
     html.on('click', '.ambience-card', e => {
-        // Don't trigger if clicking on controls
-        if ($(e.target).closest('.amb-card-controls, .amb-volume-control, .amb-edit-btn, .amb-delete-btn').length) {
+        // Don't trigger if clicking on controls or selection overlay
+        if ($(e.target).closest('.amb-card-controls, .amb-volume-control, .amb-edit-btn, .amb-delete-btn, .card-select-overlay').length) {
+            return;
+        }
+
+        // Don't trigger play/stop when in selection mode (selection-listeners handles it)
+        if (app.selectionMode) {
             return;
         }
 
@@ -136,7 +151,7 @@ export function activateAmbienceListeners(app, html) {
             animateLayerActivation(card);
         }
 
-        jukebox.toggleAmbienceLayer(id);
+        void toggleAmbienceLayerWithFeedback(jukebox, card, id);
     });
 
     // ========== KEYBOARD NAVIGATION FOR CARDS ==========
@@ -169,7 +184,7 @@ export function activateAmbienceListeners(app, html) {
                 animateLayerActivation(card);
             }
 
-            jukebox.toggleAmbienceLayer(id);
+            void toggleAmbienceLayerWithFeedback(jukebox, card, id);
         }
 
         // Arrow key navigation
@@ -226,7 +241,7 @@ export function activateAmbienceListeners(app, html) {
             animateLayerActivation(card);
         }
 
-        jukebox.toggleAmbienceLayer(id);
+        void toggleAmbienceLayerWithFeedback(jukebox, card, id);
     });
 
     // ========== LAYER VOLUME SLIDER ==========

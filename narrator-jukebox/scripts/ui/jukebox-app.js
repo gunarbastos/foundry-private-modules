@@ -29,6 +29,20 @@ import * as PartialUpdates from './partial-updates.js';
 // Duration loader
 import { loadAndDisplayDurations } from '../utils/duration-loader.js';
 
+function normalizeSuggestedTrack(suggestion) {
+  if (!suggestion) return null;
+
+  const url = suggestion.url || suggestion.path || '';
+  const source = suggestion.source || (/youtu\.be|youtube\.com|music\.youtube\.com/i.test(url) ? 'youtube' : 'local');
+
+  return {
+    ...suggestion,
+    url,
+    source,
+    tags: Array.isArray(suggestion.tags) ? suggestion.tags : []
+  };
+}
+
 /**
  * Main Jukebox Application Window
  * @extends Application
@@ -52,6 +66,11 @@ export class NarratorsJukeboxApp extends Application {
     // Multi-selection state
     this.selectionMode = false;
     this.selectedMusicIds = new Set();
+    this.selectedAmbienceIds = new Set();
+    this.selectedSoundboardIds = new Set();
+
+    // Folder collapse state (in-memory only)
+    this.collapsedFolders = new Set();
 
     // Pagination state for large libraries
     this._musicDisplayLimit = 50;
@@ -380,6 +399,14 @@ export class NarratorsJukeboxApp extends Application {
     });
   }
 
+  async showEditPlaylistDialog(playlistId) {
+    Dialogs.showEditPlaylistDialog({
+      playlistId,
+      jukebox: this.jukebox,
+      onSuccess: () => this.render()
+    });
+  }
+
   async showAddToPlaylistDialog(musicId) {
     Dialogs.showAddToPlaylistDialog({
       musicId,
@@ -427,14 +454,19 @@ export class NarratorsJukeboxApp extends Application {
 
   async approveSuggestion(index) {
     const suggestions = game.settings.get(JUKEBOX.ID, "suggestions") || [];
-    const suggestion = suggestions[index];
+    const suggestion = normalizeSuggestedTrack(suggestions[index]);
     if (!suggestion) return;
+
+    if (!suggestion.url) {
+      ui.notifications.error(`Cannot approve "${suggestion.name || 'suggestion'}": missing track URL.`);
+      return;
+    }
 
     await this.jukebox.addMusic({
       name: suggestion.name,
       url: suggestion.url,
-      source: suggestion.source || 'local',
-      tags: suggestion.tags || [],
+      source: suggestion.source,
+      tags: suggestion.tags,
       thumbnail: suggestion.thumbnail
     });
 
@@ -456,67 +488,80 @@ export class NarratorsJukeboxApp extends Application {
   // ==========================================
 
   /**
+   * Get the active selection Set for the current view
+   * @returns {Set} The selection Set for the current view
+   * @private
+   */
+  _getActiveSelectionSet() {
+    if (this.view === 'ambience') return this.selectedAmbienceIds;
+    if (this.view === 'soundboard') return this.selectedSoundboardIds;
+    return this.selectedMusicIds;
+  }
+
+  /**
    * Toggle selection mode on/off
    */
   toggleSelectionMode() {
     this.selectionMode = !this.selectionMode;
     if (!this.selectionMode) {
-      this.selectedMusicIds.clear();
+      this._getActiveSelectionSet().clear();
     }
     this.render();
   }
 
   /**
-   * Exit selection mode and clear selection
+   * Exit selection mode and clear all selections
    */
   exitSelectionMode() {
     this.selectionMode = false;
     this.selectedMusicIds.clear();
+    this.selectedAmbienceIds.clear();
+    this.selectedSoundboardIds.clear();
     this.render();
   }
 
   /**
-   * Toggle selection of a single track
-   * @param {string} id - Music track ID
+   * Toggle selection of a single item
+   * @param {string} id - Item ID
    */
   toggleTrackSelection(id) {
-    if (this.selectedMusicIds.has(id)) {
-      this.selectedMusicIds.delete(id);
+    const set = this._getActiveSelectionSet();
+    if (set.has(id)) {
+      set.delete(id);
     } else {
-      this.selectedMusicIds.add(id);
+      set.add(id);
     }
-    // Don't re-render, just update UI directly for performance
     this._updateSelectionUI();
   }
 
   /**
-   * Select a single track (for Ctrl+Click when not in selection mode)
-   * @param {string} id - Music track ID
+   * Select a single item (for Ctrl+Click when not in selection mode)
+   * @param {string} id - Item ID
    */
   selectTrack(id) {
     if (!this.selectionMode) {
       this.selectionMode = true;
     }
-    this.selectedMusicIds.add(id);
+    this._getActiveSelectionSet().add(id);
     this.render();
   }
 
   /**
-   * Select a range of tracks (for Shift+Click)
-   * @param {string} id - Target track ID
-   * @param {string[]} visibleIds - Array of currently visible track IDs in order
+   * Select a range of items (for Shift+Click)
+   * @param {string} id - Target item ID
+   * @param {string[]} visibleIds - Array of currently visible item IDs in order
    */
   selectRange(id, visibleIds) {
-    if (this.selectedMusicIds.size === 0) {
-      this.selectedMusicIds.add(id);
+    const set = this._getActiveSelectionSet();
+    if (set.size === 0) {
+      set.add(id);
       this._updateSelectionUI();
       return;
     }
 
-    // Find the last selected ID that's visible
-    const lastSelectedId = [...this.selectedMusicIds].reverse().find(sid => visibleIds.includes(sid));
+    const lastSelectedId = [...set].reverse().find(sid => visibleIds.includes(sid));
     if (!lastSelectedId) {
-      this.selectedMusicIds.add(id);
+      set.add(id);
       this._updateSelectionUI();
       return;
     }
@@ -529,44 +574,45 @@ export class NarratorsJukeboxApp extends Application {
     const [from, to] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
 
     for (let i = from; i <= to; i++) {
-      this.selectedMusicIds.add(visibleIds[i]);
+      set.add(visibleIds[i]);
     }
 
     this._updateSelectionUI();
   }
 
   /**
-   * Select all currently visible tracks
-   * @param {string[]} visibleIds - Array of visible track IDs
+   * Select all currently visible items
+   * @param {string[]} visibleIds - Array of visible item IDs
    */
   selectAllVisible(visibleIds) {
-    visibleIds.forEach(id => this.selectedMusicIds.add(id));
+    const set = this._getActiveSelectionSet();
+    visibleIds.forEach(id => set.add(id));
     this._updateSelectionUI();
   }
 
   /**
-   * Deselect all tracks
+   * Deselect all items in the current view
    */
   deselectAll() {
-    this.selectedMusicIds.clear();
+    this._getActiveSelectionSet().clear();
     this._updateSelectionUI();
   }
 
   /**
-   * Check if a track is selected
-   * @param {string} id - Track ID
+   * Check if an item is selected
+   * @param {string} id - Item ID
    * @returns {boolean}
    */
   isTrackSelected(id) {
-    return this.selectedMusicIds.has(id);
+    return this._getActiveSelectionSet().has(id);
   }
 
   /**
-   * Get array of selected track IDs
+   * Get array of selected item IDs for the current view
    * @returns {string[]}
    */
   getSelectedTrackIds() {
-    return [...this.selectedMusicIds];
+    return [...this._getActiveSelectionSet()];
   }
 
   /**
@@ -576,35 +622,55 @@ export class NarratorsJukeboxApp extends Application {
   _updateSelectionUI() {
     if (!this.element || !this.element.length) return;
 
-    const count = this.selectedMusicIds.size;
+    const set = this._getActiveSelectionSet();
+    const count = set.size;
 
-    // Update checkboxes
-    this.element.find('.track-select-checkbox').each((i, el) => {
-      const id = $(el).closest('.track-row').data('musicId');
-      el.checked = this.selectedMusicIds.has(id);
-    });
+    if (this.view === 'library') {
+      // Music: update checkboxes and row highlights
+      this.element.find('.track-select-checkbox').each((i, el) => {
+        const id = $(el).closest('.track-row').data('musicId');
+        el.checked = set.has(id);
+      });
+      this.element.find('.track-row').each((i, el) => {
+        const id = $(el).data('musicId');
+        $(el).toggleClass('selected', set.has(id));
+      });
+      // Update select all checkbox
+      const visibleCount = this.element.find('.track-row[data-music-id]').length;
+      const selectAllCheckbox = this.element.find('.select-all-checkbox');
+      if (selectAllCheckbox.length) {
+        selectAllCheckbox.prop('checked', count > 0 && count === visibleCount);
+        selectAllCheckbox.prop('indeterminate', count > 0 && count < visibleCount);
+      }
+    } else if (this.view === 'ambience') {
+      // Ambience: update card checkboxes and highlights
+      this.element.find('.amb-select-checkbox').each((i, el) => {
+        const id = $(el).closest('.ambience-card').data('ambienceId');
+        el.checked = set.has(id);
+      });
+      this.element.find('.ambience-card').each((i, el) => {
+        const id = $(el).data('ambienceId');
+        $(el).toggleClass('selected', set.has(id));
+      });
+    } else if (this.view === 'soundboard') {
+      // Soundboard: update card checkboxes and highlights
+      this.element.find('.sb-select-checkbox').each((i, el) => {
+        const id = $(el).closest('.soundboard-card').data('soundId');
+        el.checked = set.has(id);
+      });
+      this.element.find('.soundboard-card').each((i, el) => {
+        const id = $(el).data('soundId');
+        $(el).toggleClass('selected', set.has(id));
+      });
+    }
 
-    // Update row highlights
-    this.element.find('.track-row').each((i, el) => {
-      const id = $(el).data('musicId');
-      $(el).toggleClass('selected', this.selectedMusicIds.has(id));
-    });
-
-    // Update toolbar
+    // Update toolbar (shared)
     const toolbar = this.element.find('.selection-toolbar');
     if (count > 0) {
       toolbar.addClass('visible');
       toolbar.find('.selection-count').text(`${count} selected`);
     } else {
       toolbar.removeClass('visible');
-    }
-
-    // Update select all checkbox
-    const visibleCount = this.element.find('.track-row[data-music-id]').length;
-    const selectAllCheckbox = this.element.find('.select-all-checkbox');
-    if (selectAllCheckbox.length) {
-      selectAllCheckbox.prop('checked', count > 0 && count === visibleCount);
-      selectAllCheckbox.prop('indeterminate', count > 0 && count < visibleCount);
     }
   }
 
@@ -712,6 +778,21 @@ export class NarratorsJukeboxApp extends Application {
     });
   }
 
+  _summarizeAmbienceIssue(issue) {
+    if (!issue) return null;
+
+    switch (issue.reason) {
+      case 'embed_not_allowed':
+        return 'YouTube embed blocked';
+      case 'autoplay_blocked':
+        return 'Waiting for audio unlock';
+      case 'video_not_found':
+        return 'Video unavailable';
+      default:
+        return issue.message || 'Playback issue detected';
+    }
+  }
+
   _getMiniFilteredSoundboard(soundboard) {
     const query = this._miniSearchQuery?.toLowerCase()?.trim() || '';
 
@@ -765,6 +846,30 @@ export class NarratorsJukeboxApp extends Application {
         isPlayed: originalIndex < currentIndex
       };
     });
+  }
+
+  // ==========================================
+  // Folder Grouping Helper
+  // ==========================================
+
+  _groupByFolders(tracks, folders, hasActiveFilter) {
+    const folderMap = new Map(folders.map(f => [f.id, { folder: f, tracks: [], collapsed: this.collapsedFolders.has(f.id) }]));
+    const unfiled = [];
+
+    for (const track of tracks) {
+      if (track.folderId && folderMap.has(track.folderId)) {
+        folderMap.get(track.folderId).tracks.push(track);
+      } else {
+        unfiled.push(track);
+      }
+    }
+
+    // When filtering, hide empty folders; when not filtering, show all folders
+    const groups = [...folderMap.values()]
+      .sort((a, b) => a.folder.order - b.folder.order)
+      .filter(g => hasActiveFilter ? g.tracks.length > 0 : true);
+
+    return { unfiled, groups };
   }
 
   // ==========================================
@@ -826,12 +931,15 @@ export class NarratorsJukeboxApp extends Application {
     const totalAmbienceCount = filteredAmbience.length;
     const paginatedAmbience = filteredAmbience.slice(0, this._ambienceDisplayLimit);
     const hasMoreAmbience = totalAmbienceCount > this._ambienceDisplayLimit;
+    const ambienceLayerIssues = this.jukebox.getAmbienceLayerIssues?.() || [];
 
     // Enrich ambience with layer state
     const enrichedAmbience = paginatedAmbience.map(a => ({
       ...a,
       isLayerActive: this.jukebox.isAmbienceLayerActive(a.id),
-      layerVolume: Math.round((this.jukebox.getAmbienceLayerVolume(a.id) || 0.8) * 100)
+      layerVolume: Math.round((this.jukebox.getAmbienceLayerVolume(a.id) || 0.8) * 100),
+      layerIssue: this.jukebox.getAmbienceLayerIssue?.(a.id) || null,
+      layerIssueSummary: this._summarizeAmbienceIssue(this.jukebox.getAmbienceLayerIssue?.(a.id) || null)
     }));
 
     const totalMusicCount = filteredMusic.length;
@@ -859,10 +967,18 @@ export class NarratorsJukeboxApp extends Application {
     if (this.selectedPlaylistId) {
       const selectedPl = playlists.find(p => p.id === this.selectedPlaylistId);
       if (selectedPl) {
+        // Build a trackId → loop boolean map for Handlebars lookup
+        const trackLoopMap = {};
+        if (selectedPl.trackSettings) {
+          for (const [musicId, settings] of Object.entries(selectedPl.trackSettings)) {
+            if (settings.loop) trackLoopMap[musicId] = true;
+          }
+        }
         selectedPlaylistData = {
           ...selectedPl,
           tracks: selectedPl.musicIds.map(id => music.find(m => m.id === id)).filter(m => m),
-          isPlaying: this.jukebox.currentPlaylist?.id === selectedPl.id && this.jukebox.isPlaying
+          isPlaying: this.jukebox.currentPlaylist?.id === selectedPl.id && this.jukebox.isPlaying,
+          trackLoopMap
         };
       }
     }
@@ -898,6 +1014,15 @@ export class NarratorsJukeboxApp extends Application {
       isLooping: this.jukebox.activeSoundboardSounds.get(s.id)?.isLooping || this.jukebox.soundboardLoopState.get(s.id) || false
     }));
 
+    // Group tracks by folders
+    const hasActiveMusicFilter = !!hasActiveFilter;
+    const hasActiveAmbienceFilter = !!(q && this.view === 'ambience') || !!this.ambienceTagFilter;
+    const hasActiveSoundboardFilter = !!(q && this.view === 'soundboard');
+
+    const { unfiled: unfiledMusic, groups: musicFolderGroups } = this._groupByFolders(enrichedMusic, this.jukebox.musicFolders, hasActiveMusicFilter);
+    const { unfiled: unfiledAmbience, groups: ambienceFolderGroups } = this._groupByFolders(enrichedAmbience, this.jukebox.ambienceFolders, hasActiveAmbienceFilter);
+    const { unfiled: unfiledSoundboard, groups: soundboardFolderGroups } = this._groupByFolders(enrichedSoundboard, this.jukebox.soundboardFolders, hasActiveSoundboardFilter);
+
     return {
       view: this.view,
       isGM: game.user.isGM,
@@ -905,6 +1030,7 @@ export class NarratorsJukeboxApp extends Application {
       ambience: enrichedAmbience,
       soundboard: enrichedSoundboard,
       soundboardBroadcastMode: this.jukebox.soundboardBroadcastMode,
+      soundboardSize: game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_SIZE) || 'medium',
       activeSoundboardCount: this.jukebox.activeSoundboardSounds.size,
       recentMusic: recentMusic,
       playlists: playlists,
@@ -921,6 +1047,7 @@ export class NarratorsJukeboxApp extends Application {
       totalAmbienceCount,
       hasMoreAmbience,
       ambienceDisplayLimit: this._ambienceDisplayLimit,
+      ambienceIssueCount: ambienceLayerIssues.length,
       isPlaying: this.jukebox.isPlaying,
       isPreviewMode: this.jukebox.isPreviewMode,
       volume: this.jukebox.channels.music.volume * 100,
@@ -933,6 +1060,7 @@ export class NarratorsJukeboxApp extends Application {
       isAmbienceMuted: this.jukebox.isAmbienceMuted,
       currentTrack: this.jukebox.channels.music.currentTrack,
       currentMusic: this.jukebox.channels.music.currentTrack,
+      nowPlayingHidden: !game.user.isGM && !!this.jukebox.channels.music.currentTrack?.hidden,
       hasTrack: !!this.jukebox.channels.music.currentTrack,
       currentAmbience: this.jukebox.channels.ambience.currentTrack,
       hasAmbience: !!this.jukebox.channels.ambience.currentTrack,
@@ -965,8 +1093,21 @@ export class NarratorsJukeboxApp extends Application {
       // Multi-selection state
       selectionMode: this.selectionMode,
       selectedMusicIds: [...this.selectedMusicIds],
-      selectedCount: this.selectedMusicIds.size,
-      selectedCountText: format('Selection.CountSelected', { count: this.selectedMusicIds.size })
+      selectedAmbienceIds: [...this.selectedAmbienceIds],
+      selectedSoundboardIds: [...this.selectedSoundboardIds],
+      selectedCount: this._getActiveSelectionSet().size,
+      selectedCountText: format('Selection.CountSelected', { count: this._getActiveSelectionSet().size }),
+      // Folder grouping data
+      unfiledMusic,
+      musicFolderGroups,
+      unfiledAmbience,
+      ambienceFolderGroups,
+      unfiledSoundboard,
+      soundboardFolderGroups,
+      collapsedFolders: [...this.collapsedFolders],
+      hasMusicFolders: this.jukebox.musicFolders.length > 0,
+      hasAmbienceFolders: this.jukebox.ambienceFolders.length > 0,
+      hasSoundboardFolders: this.jukebox.soundboardFolders.length > 0
     };
   }
 

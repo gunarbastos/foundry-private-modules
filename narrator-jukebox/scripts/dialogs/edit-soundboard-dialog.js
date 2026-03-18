@@ -151,6 +151,7 @@ export function showEditSoundboardDialog({ soundId, jukebox, onSuccess }) {
     title: localize('Dialog.Soundboard.EditTitle'),
     content: content,
     classes: DIALOG_CLASSES.soundboard,
+    default: 'save',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.soundboard);
       applyDarkTheme(html);

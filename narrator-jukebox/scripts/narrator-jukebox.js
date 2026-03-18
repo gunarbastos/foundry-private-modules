@@ -91,6 +91,31 @@ function registerSettings() {
     default: "[]"
   });
 
+  // Library Folders
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_FOLDERS, {
+    name: "Music Folders",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "[]"
+  });
+
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_FOLDERS, {
+    name: "Ambience Folders",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "[]"
+  });
+
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_FOLDERS, {
+    name: "Soundboard Folders",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "[]"
+  });
+
   // Ambience Presets
   game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_PRESETS, {
     name: "Ambience Presets",
@@ -169,6 +194,30 @@ function registerSettings() {
     config: true,
     type: Boolean,
     default: false
+  });
+
+  // Crossfade Duration (visible in module settings)
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.CROSSFADE_DURATION, {
+    name: "NARRATOR-JUKEBOX.Settings.CrossfadeDuration.Name",
+    hint: "NARRATOR-JUKEBOX.Settings.CrossfadeDuration.Hint",
+    scope: "client",
+    config: true,
+    type: Number,
+    default: 2000,
+    range: {
+      min: 0,
+      max: 5000,
+      step: 250
+    }
+  });
+
+  // Soundboard Card Size (per-client)
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_SIZE, {
+    name: "Soundboard Card Size",
+    scope: "client",
+    config: false,
+    type: String,
+    default: "medium"
   });
 }
 

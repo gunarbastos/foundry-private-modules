@@ -9,6 +9,7 @@ import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialo
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
+import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * Shows the Edit Music dialog
@@ -24,6 +25,7 @@ export function showEditMusicDialog({ trackId, jukebox, onSuccess }) {
     ui.notifications.error(localize('Notifications.TrackNotFound'));
     return null;
   }
+  const effectiveSource = extractYouTubeVideoId(track.url || track.path || '') ? 'youtube' : (track.source || 'local');
 
   const thumbnailPreview = track.thumbnail
     ? `<img src="${track.thumbnail}" alt="Thumbnail">`
@@ -49,10 +51,10 @@ export function showEditMusicDialog({ trackId, jukebox, onSuccess }) {
           </div>
 
           <div class="form-group url-group">
-            <label><i class="fas fa-link"></i> ${track.source === 'youtube' ? localize('Labels.YouTubeURL') : localize('Labels.FilePath')}</label>
+            <label><i class="fas fa-link"></i> ${effectiveSource === 'youtube' ? localize('Labels.YouTubeURL') : localize('Labels.FilePath')}</label>
             <div class="url-input-wrapper">
-              <input type="text" name="url" value="${escapeHtml(track.url)}" placeholder="${track.source === 'youtube' ? localize('Placeholders.PasteYouTubeURL') : localize('Placeholders.SelectFileOrPastePath')}" spellcheck="false">
-              ${track.source !== 'youtube' ? '<button type="button" class="browse-btn file-picker-btn"><i class="fas fa-folder-open"></i></button>' : ''}
+              <input type="text" name="url" value="${escapeHtml(track.url)}" placeholder="${effectiveSource === 'youtube' ? localize('Placeholders.PasteYouTubeURL') : localize('Placeholders.SelectFileOrPastePath')}" spellcheck="false">
+              ${effectiveSource !== 'youtube' ? '<button type="button" class="browse-btn file-picker-btn"><i class="fas fa-folder-open"></i></button>' : ''}
             </div>
           </div>
 
@@ -85,6 +87,7 @@ export function showEditMusicDialog({ trackId, jukebox, onSuccess }) {
     title: localize('Dialog.Music.EditTitle'),
     content: content,
     classes: DIALOG_CLASSES.music,
+    default: 'save',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.music);
       applyDarkTheme(html);
@@ -182,7 +185,8 @@ async function handleEditMusicSubmit(html, trackId, track, jukebox) {
   }
 
   // Validate URL
-  if (!validateUrl(urlInput.value, track.source || 'local')) {
+  const validationSource = isYouTubeUrl(urlInput.value) ? 'youtube' : 'local';
+  if (!validateUrl(urlInput.value, validationSource)) {
     if (!validateField(urlInput, localize('Validation.ValidURLRequired'))) {
       isValid = false;
     }
@@ -194,11 +198,21 @@ async function handleEditMusicSubmit(html, trackId, track, jukebox) {
   }
 
   const data = {
+    source: extractYouTubeVideoId(form.url.value.trim()) ? 'youtube' : 'local',
     name: form.name.value.trim(),
-    url: form.url.value.trim(),
+    url: extractYouTubeVideoId(form.url.value.trim())
+      ? normalizeYouTubeUrl(form.url.value.trim())
+      : form.url.value.trim(),
     tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
     thumbnail: form.thumbnail.value.trim()
   };
+
+  if (data.source === 'youtube' && !data.thumbnail) {
+    const youtubeId = extractYouTubeVideoId(data.url);
+    if (youtubeId) {
+      data.thumbnail = getYouTubeThumbnail(youtubeId, 'high');
+    }
+  }
 
   try {
     await jukebox.updateMusic(trackId, data);

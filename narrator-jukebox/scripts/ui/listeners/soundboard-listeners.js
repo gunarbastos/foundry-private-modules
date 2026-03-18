@@ -5,6 +5,7 @@
  * @module ui/listeners/soundboard-listeners
  */
 
+import { JUKEBOX } from '../../core/constants.js';
 import { localize, format } from '../../utils/i18n.js';
 
 /**
@@ -14,6 +15,15 @@ import { localize, format } from '../../utils/i18n.js';
  */
 export function activateSoundboardListeners(app, html) {
     const jukebox = app.jukebox;
+
+    // ========== SOUNDBOARD CARD SIZE TOGGLE ==========
+    html.on('click', '.sb-size-btn', e => {
+        e.stopPropagation();
+        const size = $(e.currentTarget).data('size');
+        if (!size) return;
+        game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_SIZE, size);
+        app.render(false);
+    });
 
     // ========== STOP ALL SOUNDS BUTTON ==========
     html.find('.stop-all-sounds-btn').click(() => {

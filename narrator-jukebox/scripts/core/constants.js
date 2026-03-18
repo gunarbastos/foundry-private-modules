@@ -23,7 +23,15 @@ export const JUKEBOX = {
     ACTIVE_AMBIENCE_LAYERS: 'activeAmbienceLayers',
     AMBIENCE_MASTER_VOLUME: 'ambienceMasterVolume',
     // Debug
-    DEBUG: 'debug'
+    DEBUG: 'debug',
+    // Crossfade
+    CROSSFADE_DURATION: 'crossfadeDuration',
+    // Soundboard
+    SOUNDBOARD_SIZE: 'soundboardSize',
+    // Folders
+    MUSIC_FOLDERS: 'musicFolders',
+    AMBIENCE_FOLDERS: 'ambienceFolders',
+    SOUNDBOARD_FOLDERS: 'soundboardFolders'
   }
 };
 
@@ -224,6 +232,30 @@ export const MOOD_ICONS = {
     'fas fa-hammer', 'fas fa-wrench', 'fas fa-quill', 'fas fa-pen-fancy'
   ]
 };
+
+// Folder Color Presets
+export const FOLDER_COLORS = [
+  { color: '#1db954', name: 'Green' },
+  { color: '#e74c3c', name: 'Red' },
+  { color: '#9b59b6', name: 'Purple' },
+  { color: '#3498db', name: 'Blue' },
+  { color: '#1abc9c', name: 'Teal' },
+  { color: '#f39c12', name: 'Amber' },
+  { color: '#e91e63', name: 'Pink' },
+  { color: '#607d8b', name: 'Slate' },
+  { color: '#ff6b35', name: 'Orange' },
+  { color: '#00bcd4', name: 'Cyan' }
+];
+
+// Folder Icon Presets (RPG-themed FontAwesome icons)
+export const FOLDER_ICONS = [
+  'fas fa-folder', 'fas fa-music', 'fas fa-shield-alt', 'fas fa-skull',
+  'fas fa-hat-wizard', 'fas fa-dungeon', 'fas fa-campground', 'fas fa-church',
+  'fas fa-crown', 'fas fa-heart', 'fas fa-fire', 'fas fa-leaf',
+  'fas fa-mountain', 'fas fa-water', 'fas fa-moon', 'fas fa-sun',
+  'fas fa-star', 'fas fa-bolt', 'fas fa-ghost', 'fas fa-gem',
+  'fas fa-dice-d20', 'fas fa-compass', 'fas fa-dragon', 'fas fa-fist-raised'
+];
 
 // Default folders for file pickers
 export const DEFAULT_FOLDERS = {

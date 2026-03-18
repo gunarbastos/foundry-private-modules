@@ -10,6 +10,7 @@ import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialo
 import { validateField, validateUrl } from '../services/validation-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
+import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * Shows the Add Music dialog
@@ -97,6 +98,7 @@ export function showAddMusicDialog({ jukebox, onSuccess }) {
     title: dialogTitle,
     content: content,
     classes: DIALOG_CLASSES.music,
+    default: 'add',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.music);
       applyDarkTheme(html);
@@ -253,8 +255,9 @@ async function handleAddMusicSubmit(html, jukebox, isGM) {
   }
 
   // Validate URL
-  if (!validateUrl(urlInput.value, sourceValue)) {
-    const errorMsg = sourceValue === 'youtube'
+  const validationSource = isYouTubeUrl(urlInput.value) ? 'youtube' : sourceValue;
+  if (!validateUrl(urlInput.value, validationSource)) {
+    const errorMsg = validationSource === 'youtube'
       ? localize('Validation.InvalidYouTubeURL')
       : localize('Validation.URLRequired');
     if (!validateField(urlInput, errorMsg)) {
@@ -267,13 +270,20 @@ async function handleAddMusicSubmit(html, jukebox, isGM) {
     return false; // Prevent dialog from closing
   }
 
+  const rawUrl = formElement.url.value.trim();
+  const youtubeId = extractYouTubeVideoId(rawUrl);
+  const source = youtubeId ? 'youtube' : formElement.source.value;
+  const normalizedUrl = source === 'youtube'
+    ? normalizeYouTubeUrl(rawUrl)
+    : rawUrl;
+
   const data = {
     id: foundry.utils.randomID(),
     name: formElement.name.value.trim(),
-    source: formElement.source.value,
-    url: formElement.url.value.trim(),
+    source,
+    url: normalizedUrl,
     tags: formElement.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    thumbnail: formElement.thumbnail.value.trim()
+    thumbnail: formElement.thumbnail.value.trim() || (youtubeId ? getYouTubeThumbnail(youtubeId, 'high') : '')
   };
 
   debugLog("Adding Music Data:", data);

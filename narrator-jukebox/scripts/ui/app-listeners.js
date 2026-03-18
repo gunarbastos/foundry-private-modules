@@ -11,6 +11,7 @@ import { activatePlaylistListeners } from './listeners/playlist-listeners.js';
 import { activateSoundboardListeners } from './listeners/soundboard-listeners.js';
 import { activateAmbienceListeners } from './listeners/ambience-listeners.js';
 import { activateSelectionListeners } from './listeners/selection-listeners.js';
+import { activateFolderListeners } from './listeners/folder-listeners.js';
 import { activateMiniListeners } from './listeners/mini-listeners.js';
 import { activateMicroListeners } from './listeners/micro-listeners.js';
 
@@ -59,6 +60,9 @@ function activateNormalModeListeners(app, html) {
     // Multi-selection listeners
     activateSelectionListeners(app, html);
 
+    // Folder listeners
+    activateFolderListeners(app, html);
+
     // Start progress timers
     app._startProgressTimer();
     app._startAmbienceProgressTimer();
@@ -75,6 +79,7 @@ export {
     activateSoundboardListeners,
     activateAmbienceListeners,
     activateSelectionListeners,
+    activateFolderListeners,
     activateMiniListeners,
     activateMicroListeners
 };

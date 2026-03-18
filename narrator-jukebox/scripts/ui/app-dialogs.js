@@ -22,6 +22,7 @@ export { showEditSoundboardDialog } from '../dialogs/edit-soundboard-dialog.js';
 
 // Playlist dialogs
 export { showAddPlaylistDialog } from '../dialogs/add-playlist-dialog.js';
+export { showEditPlaylistDialog } from '../dialogs/edit-playlist-dialog.js';
 export { showAddToPlaylistDialog } from '../dialogs/add-to-playlist-dialog.js';
 export { showAddSelectedToPlaylistDialog } from '../dialogs/add-selected-to-playlist-dialog.js';
 
@@ -30,6 +31,10 @@ export { showBulkImportDialog } from '../dialogs/bulk-import-dialog.js';
 
 // Mood editor dialog
 export { showEditMoodsDialog } from '../dialogs/edit-moods-dialog.js';
+
+// Folder dialogs
+export { showFolderDialog } from '../dialogs/folder-dialog.js';
+export { showMoveToFolderDialog } from '../dialogs/move-to-folder-dialog.js';
 
 // Base dialog utilities (for custom dialogs)
 export {

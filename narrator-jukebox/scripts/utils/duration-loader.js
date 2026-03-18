@@ -6,7 +6,7 @@
  */
 
 import { formatTime } from './time-format.js';
-import { extractYouTubeVideoId } from './youtube-utils.js';
+import { extractYouTubeVideoId, styleHiddenYouTubeContainer } from './youtube-utils.js';
 import { debugWarn } from './debug.js';
 
 // Cache for YouTube durations (keyed by video ID)
@@ -66,7 +66,7 @@ export function loadYouTubeDuration(url) {
         const containerId = `yt-duration-${videoId}-${Date.now()}`;
         const container = document.createElement('div');
         container.id = containerId;
-        container.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;top:-9999px;';
+        styleHiddenYouTubeContainer(container);
         document.body.appendChild(container);
 
         // Check if YouTube API is available
@@ -79,8 +79,8 @@ export function loadYouTubeDuration(url) {
         // Create player just to get duration
         const player = new YT.Player(containerId, {
             videoId: videoId,
-            width: 1,
-            height: 1,
+            width: 200,
+            height: 200,
             playerVars: {
                 autoplay: 0,
                 controls: 0,

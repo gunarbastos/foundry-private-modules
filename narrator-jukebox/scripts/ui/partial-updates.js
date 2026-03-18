@@ -23,15 +23,23 @@ export function updateNowPlayingInfo(app, track) {
     const tooltipEl = html.find('#music-title-tooltip');
 
     if (track && track.name) {
+        // Hide track info from non-GM players when track is marked as hidden (spoiler protection)
+        const isHidden = track.hidden && !game.user.isGM;
+        const displayName = isHidden ? 'Now Playing' : track.name;
+
         // Update thumbnail
-        if (track.thumbnail) {
+        if (isHidden) {
+            // Replace with mask placeholder
+            const artContainer = html.find('.music-section .now-playing-art');
+            artContainer.html('<div class="art-placeholder"><i class="fas fa-mask"></i></div>');
+        } else if (track.thumbnail) {
             artEl.attr('src', track.thumbnail).removeClass('art-placeholder');
         }
 
         // Update title text and tooltip
-        titleEl.text(track.name);
-        tooltipEl.text(track.name);
-        const tags = track.tags ? track.tags.join(', ') : localize('Player.SelectTrackToBegin');
+        titleEl.text(displayName);
+        tooltipEl.text(displayName);
+        const tags = isHidden ? '' : (track.tags ? track.tags.join(', ') : localize('Player.SelectTrackToBegin'));
         artistEl.text(tags);
     } else {
         titleEl.text(localize('Player.NoMusicPlaying'));

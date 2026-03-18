@@ -5,7 +5,7 @@
  * Enables other modules (like Exalted Scenes) to control music, ambience, and soundboard.
  *
  * @module NarratorJukeboxAPI
- * @version 1.0.0
+ * @version 1.2.0
  *
  * @example
  * // Access the API (recommended pattern)
@@ -29,6 +29,19 @@
  * @property {string} name - Display name
  * @property {string} url - Audio file URL or YouTube URL
  * @property {string} source - 'local' or 'youtube'
+ * @property {string[]} [tags] - Tags for categorization
+ * @property {string} [thumbnail] - Thumbnail image URL
+ * @property {number} [volume] - Track-specific volume (0-1)
+ * @property {number} [startTime] - Start time in seconds
+ * @property {number} [endTime] - End time in seconds
+ */
+
+/**
+ * @typedef {Object} TrackInput
+ * @property {string} name - Display name
+ * @property {string} [url] - Audio file URL or YouTube URL
+ * @property {string} [path] - Legacy alias for url
+ * @property {string} [source] - 'local' or 'youtube'
  * @property {string[]} [tags] - Tags for categorization
  * @property {string} [thumbnail] - Thumbnail image URL
  * @property {number} [volume] - Track-specific volume (0-1)
@@ -76,6 +89,7 @@
  * @property {Object} ambienceProgress - {current, duration, percent}
  * @property {string[]} activeSoundboardSounds - IDs of playing soundboard sounds
  * @property {AmbienceLayer[]} activeAmbienceLayers - Active ambience layers
+ * @property {Object[]} ambienceLayerIssues - Recorded ambience playback diagnostics
  * @property {number} ambienceLayerCount - Number of active ambience layers (0-8)
  * @property {number} ambienceMasterVolume - Master volume for ambience layers (0-1)
  * @property {boolean} isAmbienceMasterMuted - Whether ambience master is muted
@@ -114,6 +128,7 @@
  */
 
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
+import { extractYouTubeVideoId, getYouTubeThumbnail } from '../utils/youtube-utils.js';
 
 /**
  * Public API for Narrator's Jukebox
@@ -126,14 +141,14 @@ export class NarratorJukeboxAPI {
    * @type {string}
    * @readonly
    */
-  static VERSION = '1.1.0';
+  static VERSION = '1.2.0';
 
   /**
    * Minimum compatible module version
    * @type {string}
    * @readonly
    */
-  static MIN_MODULE_VERSION = '3.0.0';
+  static MIN_MODULE_VERSION = '3.1.0';
 
   /** @private */
   _jukebox = null;
@@ -282,6 +297,161 @@ export class NarratorJukeboxAPI {
       throw new Error(`${name} is required and must be a non-empty string.`);
     }
     return value;
+  }
+
+  /**
+   * Require GM permission for mutating operations.
+   * @private
+   * @param {string} action
+   */
+  _requireGM(action) {
+    if (!this.isGM()) {
+      throw new Error(`Only the GM can ${action}.`);
+    }
+  }
+
+  /**
+   * Normalize a URL for storage and duplicate detection.
+   * YouTube URLs are canonicalized to a stable watch URL.
+   * @private
+   * @param {string} url
+   * @param {string|null} [source=null]
+   * @returns {string}
+   */
+  _normalizeTrackUrl(url, source = null) {
+    const trimmed = this._requireString(url, 'Track URL').trim();
+    const youtubeId = extractYouTubeVideoId(trimmed);
+    if (source === 'youtube' || youtubeId) {
+      return youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : trimmed;
+    }
+    return trimmed;
+  }
+
+  /**
+   * Normalize tags input into a clean string array.
+   * @private
+   * @param {string[]|string|null|undefined} tags
+   * @returns {string[]}
+   */
+  _normalizeTags(tags) {
+    if (tags == null || tags === '') return [];
+
+    const values = Array.isArray(tags)
+      ? tags
+      : String(tags).split(',');
+
+    return [...new Set(
+      values
+        .map(tag => String(tag).trim())
+        .filter(Boolean)
+    )];
+  }
+
+  /**
+   * Normalize track data for public API writes.
+   * Supports legacy `path` payloads and infers YouTube metadata.
+   * @private
+   * @param {TrackInput} trackData
+   * @param {Object} [options={}]
+   * @param {boolean} [options.partial=false] - Allow partial updates
+   * @returns {TrackInput}
+   */
+  _normalizeTrackData(trackData, options = {}) {
+    const { partial = false } = options;
+
+    if (!trackData || typeof trackData !== 'object' || Array.isArray(trackData)) {
+      throw new Error('Track data must be an object.');
+    }
+
+    const normalized = { ...trackData };
+
+    if (normalized.path && !normalized.url) {
+      normalized.url = normalized.path;
+    }
+
+    if (!partial || Object.hasOwn(normalized, 'name')) {
+      normalized.name = this._requireString(normalized.name, 'Track name').trim();
+    }
+
+    const hasUrlInput = Object.hasOwn(normalized, 'url') || Object.hasOwn(normalized, 'path');
+    if (!partial || hasUrlInput) {
+      normalized.url = this._normalizeTrackUrl(normalized.url, normalized.source ?? null);
+    }
+    const youtubeId = normalized.url ? extractYouTubeVideoId(normalized.url) : null;
+
+    if (Object.hasOwn(normalized, 'source') && normalized.source != null && normalized.source !== '') {
+      normalized.source = String(normalized.source).toLowerCase().trim();
+      if (!['local', 'youtube'].includes(normalized.source)) {
+        throw new Error(`Invalid track source: "${normalized.source}". Must be 'local' or 'youtube'.`);
+      }
+    } else if (normalized.url) {
+      normalized.source = youtubeId ? 'youtube' : 'local';
+    } else if (!partial) {
+      normalized.source = 'local';
+    }
+
+    if (youtubeId) {
+      normalized.source = 'youtube';
+    }
+
+    if (!partial || Object.hasOwn(normalized, 'tags')) {
+      normalized.tags = this._normalizeTags(normalized.tags);
+    }
+
+    if (Object.hasOwn(normalized, 'thumbnail')) {
+      normalized.thumbnail = normalized.thumbnail ? String(normalized.thumbnail).trim() : '';
+    }
+
+    if (normalized.source === 'youtube' && normalized.url && !normalized.thumbnail) {
+      if (youtubeId) {
+        normalized.thumbnail = getYouTubeThumbnail(youtubeId, 'high');
+      }
+    }
+
+    if (Object.hasOwn(normalized, 'volume') && normalized.volume !== '' && normalized.volume != null) {
+      normalized.volume = this._validateVolume(normalized.volume);
+    } else if (Object.hasOwn(normalized, 'volume')) {
+      delete normalized.volume;
+    }
+
+    for (const key of ['startTime', 'endTime']) {
+      if (!Object.hasOwn(normalized, key)) continue;
+      if (normalized[key] === '' || normalized[key] == null) {
+        delete normalized[key];
+        continue;
+      }
+
+      const value = Number(normalized[key]);
+      if (Number.isNaN(value) || value < 0) {
+        throw new Error(`${key} must be a number greater than or equal to 0.`);
+      }
+      normalized[key] = value;
+    }
+
+    if (normalized.startTime != null && normalized.endTime != null && normalized.endTime < normalized.startTime) {
+      throw new Error('endTime must be greater than or equal to startTime.');
+    }
+
+    if (Object.hasOwn(normalized, 'id')) {
+      if (normalized.id === '' || normalized.id == null) {
+        delete normalized.id;
+      } else {
+        normalized.id = String(normalized.id).trim();
+      }
+    }
+
+    delete normalized.path;
+
+    return normalized;
+  }
+
+  /**
+   * Re-render the NJ app if it is open, so external API writes stay visible.
+   * @private
+   */
+  _refreshOpenApp() {
+    const app = Object.values(ui.windows).find(w => w.id === 'narrator-jukebox');
+    app?.render(false);
   }
 
   /**
@@ -1133,6 +1303,33 @@ export class NarratorJukeboxAPI {
   }
 
   /**
+   * Get the last recorded issue for a specific ambience track.
+   * Returns null when the track has no known diagnostics.
+   * @param {string} trackId - Track ID
+   * @returns {object|null}
+   */
+  getAmbienceLayerIssue(trackId) {
+    try {
+      this._requireString(trackId, 'Track ID');
+      return this._jukebox.getAmbienceLayerIssue(trackId) ?? null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get all recorded ambience diagnostics captured during layer playback attempts.
+   * @returns {Array<object>}
+   */
+  getAmbienceLayerIssues() {
+    try {
+      return this._jukebox.getAmbienceLayerIssues() ?? [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
    * Check if a specific track is active as an ambience layer
    * @param {string} trackId - Track ID to check
    * @returns {boolean}
@@ -1367,6 +1564,7 @@ export class NarratorJukeboxAPI {
         activeSoundboardSounds: this.getActiveSoundboardSounds(),
         // Ambience Layer Mixer state
         activeAmbienceLayers: this.getActiveAmbienceLayers(),
+        ambienceLayerIssues: this.getAmbienceLayerIssues(),
         ambienceLayerCount: this.getAmbienceLayerCount(),
         ambienceMasterVolume: this.getAmbienceMasterVolume(),
         isAmbienceMasterMuted: this.isAmbienceMasterMuted()
@@ -1392,6 +1590,7 @@ export class NarratorJukeboxAPI {
         activeSoundboardSounds: [],
         // Ambience Layer Mixer state
         activeAmbienceLayers: [],
+        ambienceLayerIssues: [],
         ambienceLayerCount: 0,
         ambienceMasterVolume: 0.5,
         isAmbienceMasterMuted: false
@@ -1588,6 +1787,46 @@ export class NarratorJukeboxAPI {
   }
 
   /**
+   * Find a track by URL in one or both libraries.
+   * YouTube URLs are matched by canonical video ID, so different URL forms still dedupe.
+   * @param {string} url - Track URL or YouTube URL
+   * @param {Library} [library='both'] - Which library to search
+   * @returns {{track: Track, library: Library}|null}
+   */
+  findTrackByUrl(url, library = 'both') {
+    try {
+      this._requireString(url, 'Track URL');
+      library = this._validateLibrary(library);
+
+      const normalizedUrl = this._normalizeTrackUrl(url);
+      const libraries = [];
+
+      if (library === 'music' || library === 'both') {
+        libraries.push(['music', this._dataService.getAllMusic() ?? []]);
+      }
+      if (library === 'ambience' || library === 'both') {
+        libraries.push(['ambience', this._dataService.getAllAmbience() ?? []]);
+      }
+
+      for (const [libraryName, tracks] of libraries) {
+        const track = tracks.find(entry => {
+          const entryUrl = entry?.url ?? entry?.path;
+          if (!entryUrl) return false;
+          return this._normalizeTrackUrl(entryUrl, entry?.source ?? null) === normalizedUrl;
+        });
+
+        if (track) {
+          return { track, library: libraryName };
+        }
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Get tracks by tag
    * @param {string} tag - Tag to filter by
    * @param {Library} [library='music'] - Which library to search
@@ -1627,6 +1866,102 @@ export class NarratorJukeboxAPI {
     const ambienceTags = this.getAllAmbienceTags();
     const allTags = [...new Set([...musicTags, ...ambienceTags])];
     return allTags.sort();
+  }
+
+  // ==========================================
+  // Data Mutation - Music
+  // ==========================================
+
+  /**
+   * Add a new music track to the library.
+   * GM only.
+   * @param {TrackInput} trackData - Music track data
+   * @returns {Promise<Track>}
+   * @fires narratorJukebox.libraryChanged
+   */
+  async addMusic(trackData) {
+    try {
+      this._requireGM('add music to Narrator Jukebox');
+      const normalized = this._normalizeTrackData(trackData);
+
+      if (normalized.id && this._dataService.getMusic(normalized.id)) {
+        throw new Error(`A music track with ID "${normalized.id}" already exists.`);
+      }
+
+      const track = await this._dataService.addMusic(normalized);
+      Hooks.call('narratorJukebox.libraryChanged', {
+        library: 'music',
+        action: 'created',
+        track
+      });
+      this._refreshOpenApp();
+      return track;
+    } catch (error) {
+      this._handleError(error, 'addMusic', { trackData });
+    }
+  }
+
+  /**
+   * Update an existing music track.
+   * GM only.
+   * @param {string} id - Track ID
+   * @param {Partial<TrackInput>} data - Partial track updates
+   * @returns {Promise<Track>}
+   * @fires narratorJukebox.libraryChanged
+   */
+  async updateMusic(id, data) {
+    try {
+      this._requireGM('update music in Narrator Jukebox');
+      this._requireString(id, 'Track ID');
+
+      const existing = this._dataService.getMusic(id);
+      if (!existing) {
+        throw new Error(`Music track "${id}" not found.`);
+      }
+
+      const normalized = this._normalizeTrackData(data, { partial: true });
+      const track = await this._dataService.updateMusic(id, normalized);
+
+      Hooks.call('narratorJukebox.libraryChanged', {
+        library: 'music',
+        action: 'updated',
+        track,
+        previousTrack: existing
+      });
+      this._refreshOpenApp();
+      return track;
+    } catch (error) {
+      this._handleError(error, 'updateMusic', { id, data });
+    }
+  }
+
+  /**
+   * Delete a music track from the library.
+   * GM only.
+   * @param {string} id - Track ID
+   * @returns {Promise<boolean>} True if deleted
+   * @fires narratorJukebox.libraryChanged
+   */
+  async deleteMusic(id) {
+    try {
+      this._requireGM('delete music from Narrator Jukebox');
+      this._requireString(id, 'Track ID');
+
+      const existing = this._dataService.getMusic(id);
+      if (!existing) return false;
+
+      await this._dataService.deleteMusic(id);
+      Hooks.call('narratorJukebox.libraryChanged', {
+        library: 'music',
+        action: 'deleted',
+        id,
+        track: existing
+      });
+      this._refreshOpenApp();
+      return true;
+    } catch (error) {
+      this._handleError(error, 'deleteMusic', { id });
+    }
   }
 
   // ==========================================
@@ -1675,6 +2010,243 @@ export class NarratorJukeboxAPI {
    */
   getPlaylistWithTracks(id) {
     return this._dataService.getPlaylistWithTracks(id) ?? null;
+  }
+
+  // ==========================================
+  // Data Mutation - Playlists
+  // ==========================================
+
+  /**
+   * Create a new playlist.
+   * GM only.
+   * @param {string} name - Playlist name
+   * @returns {Promise<Playlist>}
+   * @fires narratorJukebox.playlistChanged
+   */
+  async createPlaylist(name) {
+    try {
+      this._requireGM('create playlists in Narrator Jukebox');
+      name = this._requireString(name, 'Playlist name').trim();
+
+      const playlist = await this._dataService.createPlaylist(name);
+      Hooks.call('narratorJukebox.playlistChanged', {
+        action: 'created',
+        playlist
+      });
+      this._refreshOpenApp();
+      return playlist;
+    } catch (error) {
+      this._handleError(error, 'createPlaylist', { name });
+    }
+  }
+
+  /**
+   * Delete a playlist.
+   * GM only.
+   * @param {string} id - Playlist ID
+   * @returns {Promise<boolean>} True if deleted
+   * @fires narratorJukebox.playlistChanged
+   */
+  async deletePlaylist(id) {
+    try {
+      this._requireGM('delete playlists in Narrator Jukebox');
+      this._requireString(id, 'Playlist ID');
+
+      const existing = this._dataService.getPlaylist(id);
+      if (!existing) return false;
+
+      await this._dataService.deletePlaylist(id);
+      Hooks.call('narratorJukebox.playlistChanged', {
+        action: 'deleted',
+        id,
+        playlist: existing
+      });
+      this._refreshOpenApp();
+      return true;
+    } catch (error) {
+      this._handleError(error, 'deletePlaylist', { id });
+    }
+  }
+
+  /**
+   * Add an existing track to a playlist.
+   * GM only.
+   * @param {string} playlistId - Playlist ID
+   * @param {string} trackId - Music track ID
+   * @returns {Promise<Playlist>}
+   * @fires narratorJukebox.playlistChanged
+   */
+  async addToPlaylist(playlistId, trackId) {
+    try {
+      this._requireGM('modify Narrator Jukebox playlists');
+      playlistId = this._requireString(playlistId, 'Playlist ID').trim();
+      trackId = this._requireString(trackId, 'Track ID').trim();
+
+      const playlist = this._dataService.getPlaylist(playlistId);
+      if (!playlist) {
+        throw new Error(`Playlist "${playlistId}" not found.`);
+      }
+
+      const track = this._dataService.getMusic(trackId);
+      if (!track) {
+        throw new Error(`Music track "${trackId}" not found.`);
+      }
+
+      const alreadyPresent = playlist.musicIds.includes(trackId);
+      const result = await this._dataService.addToPlaylist(playlistId, trackId);
+      Hooks.call('narratorJukebox.playlistChanged', {
+        action: 'trackAdded',
+        playlist: result,
+        playlistId,
+        trackId,
+        track,
+        alreadyPresent
+      });
+      this._refreshOpenApp();
+      return result;
+    } catch (error) {
+      this._handleError(error, 'addToPlaylist', { playlistId, trackId });
+    }
+  }
+
+  /**
+   * Add multiple existing tracks to a playlist.
+   * GM only.
+   * @param {string} playlistId - Playlist ID
+   * @param {string[]} trackIds - Music track IDs
+   * @returns {Promise<{added: number, skipped: number, playlist: Playlist|null}>}
+   * @fires narratorJukebox.playlistChanged
+   */
+  async addMultipleToPlaylist(playlistId, trackIds) {
+    try {
+      this._requireGM('modify Narrator Jukebox playlists');
+      playlistId = this._requireString(playlistId, 'Playlist ID').trim();
+
+      if (!Array.isArray(trackIds) || trackIds.length === 0) {
+        throw new Error('trackIds must be a non-empty array.');
+      }
+
+      const normalizedTrackIds = trackIds.map(id => this._requireString(id, 'Track ID').trim());
+      const missingTrackId = normalizedTrackIds.find(id => !this._dataService.getMusic(id));
+      if (missingTrackId) {
+        throw new Error(`Music track "${missingTrackId}" not found.`);
+      }
+
+      const result = await this._dataService.addMultipleToPlaylist(playlistId, normalizedTrackIds);
+      if (!result?.playlist) {
+        throw new Error(`Playlist "${playlistId}" not found.`);
+      }
+
+      Hooks.call('narratorJukebox.playlistChanged', {
+        action: 'tracksAdded',
+        playlist: result.playlist,
+        playlistId,
+        trackIds: normalizedTrackIds,
+        added: result.added,
+        skipped: result.skipped
+      });
+      this._refreshOpenApp();
+      return result;
+    } catch (error) {
+      this._handleError(error, 'addMultipleToPlaylist', { playlistId, trackIds });
+    }
+  }
+
+  /**
+   * Remove a track from a playlist.
+   * GM only.
+   * @param {string} playlistId - Playlist ID
+   * @param {string} trackId - Music track ID
+   * @returns {Promise<Playlist>}
+   * @fires narratorJukebox.playlistChanged
+   */
+  async removeFromPlaylist(playlistId, trackId) {
+    try {
+      this._requireGM('modify Narrator Jukebox playlists');
+      playlistId = this._requireString(playlistId, 'Playlist ID').trim();
+      trackId = this._requireString(trackId, 'Track ID').trim();
+
+      const playlist = this._dataService.getPlaylist(playlistId);
+      if (!playlist) {
+        throw new Error(`Playlist "${playlistId}" not found.`);
+      }
+
+      const wasPresent = playlist.musicIds.includes(trackId);
+      const result = await this._dataService.removeFromPlaylist(playlistId, trackId);
+      Hooks.call('narratorJukebox.playlistChanged', {
+        action: 'trackRemoved',
+        playlist: result,
+        playlistId,
+        trackId,
+        wasPresent
+      });
+      this._refreshOpenApp();
+      return result;
+    } catch (error) {
+      this._handleError(error, 'removeFromPlaylist', { playlistId, trackId });
+    }
+  }
+
+  /**
+   * Convenience helper: add a music track to the library and then attach it to a playlist.
+   * By default it reuses an existing track with the same normalized URL.
+   * GM only.
+   * @param {string} playlistId - Playlist ID
+   * @param {TrackInput} trackData - Music track data
+   * @param {Object} [options={}]
+   * @param {boolean} [options.reuseExisting=true] - Reuse matching music by URL when present
+   * @returns {Promise<{track: Track, playlist: Playlist, created: boolean, reusedExisting: boolean}>}
+   */
+  async addMusicToPlaylist(playlistId, trackData, options = {}) {
+    try {
+      this._requireGM('add music to Narrator Jukebox playlists');
+      playlistId = this._requireString(playlistId, 'Playlist ID').trim();
+
+      const { reuseExisting = true } = options;
+      const normalized = this._normalizeTrackData(trackData);
+
+      let track = null;
+      let created = false;
+      let reusedExisting = false;
+
+      if (reuseExisting && normalized.url) {
+        const match = this.findTrackByUrl(normalized.url, 'music');
+        if (match?.track) {
+          track = match.track;
+          reusedExisting = true;
+
+          // Heal legacy/reused entries so downstream sync payloads always
+          // have a canonical URL/source pair for YouTube playback.
+          const existingUrl = track.url || track.path || '';
+          const existingTags = Array.isArray(track.tags) ? track.tags : [];
+          const needsMigration =
+            existingUrl !== normalized.url ||
+            track.source !== normalized.source ||
+            existingTags.length !== normalized.tags.length ||
+            existingTags.some((tag, index) => tag !== normalized.tags[index]) ||
+            (!track.thumbnail && !!normalized.thumbnail);
+
+          if (needsMigration) {
+            track = await this.updateMusic(track.id, {
+              url: normalized.url,
+              source: normalized.source,
+              tags: normalized.tags,
+              thumbnail: track.thumbnail || normalized.thumbnail
+            });
+          }
+        }
+      }
+
+      if (!track) {
+        track = await this.addMusic(normalized);
+        created = true;
+      }
+
+      const playlist = await this.addToPlaylist(playlistId, track.id);
+      return { track, playlist, created, reusedExisting };
+    } catch (error) {
+      this._handleError(error, 'addMusicToPlaylist', { playlistId, trackData, options });
+    }
   }
 
   // ==========================================

@@ -40,6 +40,11 @@ class JukeboxTester {
             await this.testLoopWithPlaylist();
             await this.testMemoryLeakPrevention();
             await this.testSyncErrorHandling();
+            await this.testSyncTrackDataNormalization();
+            await this.testAmbienceLayerTrackDataSerialization();
+            await this.testYouTubeEmbedErrorClassification();
+            await this.testAmbienceIssueTracking();
+            await this.testPlaylistReuseHealing();
 
             // Performance Optimization Tests (Sprint 2)
             await this.testProgressTimerRAF();
@@ -366,6 +371,235 @@ class JukeboxTester {
             this.jukebox.isPlaying = originalIsPlaying;
         } catch (e) {
             this.results.push({ name: "Sync Error Handling", passed: false, error: e.message });
+        }
+    }
+
+    async testSyncTrackDataNormalization() {
+        console.log("Running: testSyncTrackDataNormalization");
+
+        try {
+            const api = game.modules.get('narrator-jukebox')?.api;
+            const syncService = api?._syncService;
+            if (!syncService?._serializeTrackData) {
+                throw new Error("Sync service serialization helper not available");
+            }
+
+            const serialized = syncService._serializeTrackData({
+                id: 'legacy-yt-track',
+                name: 'Legacy YouTube Track',
+                path: 'https://youtu.be/dSJyuI8PzFE'
+            }, 'music');
+
+            if (!serialized) {
+                throw new Error("Serialized track payload is null");
+            }
+            if (serialized.url !== 'https://www.youtube.com/watch?v=dSJyuI8PzFE') {
+                throw new Error(`Expected canonical YouTube URL, got ${serialized.url}`);
+            }
+            if (serialized.source !== 'youtube') {
+                throw new Error(`Expected source 'youtube', got ${serialized.source}`);
+            }
+
+            this.results.push({ name: "Sync Track Data Normalization", passed: true });
+        } catch (e) {
+            this.results.push({ name: "Sync Track Data Normalization", passed: false, error: e.message });
+        }
+    }
+
+    async testAmbienceLayerTrackDataSerialization() {
+        console.log("Running: testAmbienceLayerTrackDataSerialization");
+
+        try {
+            const api = game.modules.get('narrator-jukebox')?.api;
+            const syncService = api?._syncService;
+            const layerManager = api?._playbackService?.getAmbienceLayerManager?.();
+
+            if (!syncService?._serializeAmbienceLayerTrackData || !layerManager) {
+                throw new Error("Ambience layer sync helpers not available");
+            }
+
+            const originalGetActiveLayers = layerManager.getActiveLayers.bind(layerManager);
+            let trackDataMap;
+
+            try {
+                layerManager.getActiveLayers = () => [{
+                    trackId: 'amb-sync-test',
+                    track: {
+                        id: 'amb-sync-test',
+                        name: 'Rain',
+                        url: 'https://youtu.be/dSJyuI8PzFE',
+                        source: 'youtube'
+                    },
+                    volume: 0.7
+                }];
+
+                trackDataMap = syncService._serializeAmbienceLayerTrackData({
+                    masterVolume: 0.8,
+                    isMasterMuted: false,
+                    layers: [{ trackId: 'amb-sync-test', volume: 0.7 }]
+                });
+            } finally {
+                layerManager.getActiveLayers = originalGetActiveLayers;
+            }
+
+            if (!trackDataMap['amb-sync-test']) {
+                throw new Error("Missing serialized track data for ambience layer");
+            }
+            if (trackDataMap['amb-sync-test'].url !== 'https://www.youtube.com/watch?v=dSJyuI8PzFE') {
+                throw new Error(`Expected canonical ambience YouTube URL, got ${trackDataMap['amb-sync-test'].url}`);
+            }
+            if (trackDataMap['amb-sync-test'].source !== 'youtube') {
+                throw new Error(`Expected ambience source 'youtube', got ${trackDataMap['amb-sync-test'].source}`);
+            }
+
+            this.results.push({ name: "Ambience Layer Track Data Serialization", passed: true });
+        } catch (e) {
+            this.results.push({ name: "Ambience Layer Track Data Serialization", passed: false, error: e.message });
+        }
+    }
+
+    async testYouTubeEmbedErrorClassification() {
+        console.log("Running: testYouTubeEmbedErrorClassification");
+
+        try {
+            const api = game.modules.get('narrator-jukebox')?.api;
+            const layerManager = api?._playbackService?.getAmbienceLayerManager?.();
+            const error = this.jukebox.channels.ambience._createYouTubeError?.(150);
+
+            if (!layerManager || !error) {
+                throw new Error("YouTube error helpers not available");
+            }
+
+            if (!error.isPermanent) {
+                throw new Error("Expected YouTube error 150 to be marked permanent");
+            }
+            if (error.reason !== 'embed_not_allowed') {
+                throw new Error(`Expected reason 'embed_not_allowed', got '${error.reason}'`);
+            }
+            if (layerManager._isAutoplayError(error)) {
+                throw new Error("Embed restriction should not be treated as autoplay block");
+            }
+
+            this.results.push({ name: "YouTube Embed Error Classification", passed: true });
+        } catch (e) {
+            this.results.push({ name: "YouTube Embed Error Classification", passed: false, error: e.message });
+        }
+    }
+
+    async testAmbienceIssueTracking() {
+        console.log("Running: testAmbienceIssueTracking");
+
+        try {
+            const api = game.modules.get('narrator-jukebox')?.api;
+            const layerManager = api?._playbackService?.getAmbienceLayerManager?.();
+
+            if (!api?.getAmbienceLayerIssue || !layerManager?._recordLayerIssue) {
+                throw new Error("Ambience issue tracking helpers not available");
+            }
+
+            layerManager._recordLayerIssue(
+                'amb-issue-test',
+                { name: 'Broken Rain' },
+                { code: 150, reason: 'embed_not_allowed', isPermanent: true, message: 'Embed blocked.' }
+            );
+
+            const issue = api.getAmbienceLayerIssue('amb-issue-test');
+            if (!issue) {
+                throw new Error("Expected issue to be retrievable via public API");
+            }
+            if (issue.reason !== 'embed_not_allowed') {
+                throw new Error(`Expected embed_not_allowed, got ${issue.reason}`);
+            }
+
+            layerManager.clearLayerIssue('amb-issue-test');
+            if (api.getAmbienceLayerIssue('amb-issue-test') !== null) {
+                throw new Error("Expected cleared ambience issue to disappear");
+            }
+
+            this.results.push({ name: "Ambience Issue Tracking", passed: true });
+        } catch (e) {
+            this.results.push({ name: "Ambience Issue Tracking", passed: false, error: e.message });
+        }
+    }
+
+    async testPlaylistReuseHealing() {
+        console.log("Running: testPlaylistReuseHealing");
+
+        const api = game.modules.get('narrator-jukebox')?.api;
+        if (!api) {
+            this.results.push({ name: "Playlist Reuse Healing", passed: false, error: "Narrator Jukebox API not available" });
+            return;
+        }
+
+        const originalFindTrackByUrl = api.findTrackByUrl.bind(api);
+        const originalUpdateMusic = api.updateMusic.bind(api);
+        const originalAddToPlaylist = api.addToPlaylist.bind(api);
+        const originalAddMusic = api.addMusic.bind(api);
+
+        try {
+            if (!game.user?.isGM) {
+                throw new Error("This test must be run as GM");
+            }
+
+            const legacyTrack = {
+                id: 'legacy-track-id',
+                name: 'Legacy Track',
+                path: 'https://youtu.be/dSJyuI8PzFE',
+                source: undefined,
+                tags: null,
+                thumbnail: ''
+            };
+
+            let updatedTrack = null;
+
+            api.findTrackByUrl = () => ({ track: legacyTrack, library: 'music' });
+            api.updateMusic = async (id, data) => {
+                updatedTrack = { id, data };
+                return { ...legacyTrack, ...data, id };
+            };
+            api.addToPlaylist = async (playlistId, trackId) => ({
+                id: playlistId,
+                name: 'Test Playlist',
+                musicIds: [trackId]
+            });
+            api.addMusic = async () => {
+                throw new Error("addMusic should not be called when reusing an existing track");
+            };
+
+            const result = await api.addMusicToPlaylist('test-playlist-id', {
+                name: 'Legacy Track',
+                url: 'https://youtu.be/dSJyuI8PzFE',
+                source: 'youtube',
+                tags: ['healed']
+            });
+
+            if (!result?.reusedExisting) {
+                throw new Error("Expected addMusicToPlaylist to reuse the existing track");
+            }
+            if (!updatedTrack) {
+                throw new Error("Expected reused track to be healed via updateMusic");
+            }
+            if (updatedTrack.data.url !== 'https://www.youtube.com/watch?v=dSJyuI8PzFE') {
+                throw new Error(`Expected healed canonical URL, got ${updatedTrack.data.url}`);
+            }
+            if (updatedTrack.data.source !== 'youtube') {
+                throw new Error(`Expected healed source 'youtube', got ${updatedTrack.data.source}`);
+            }
+            if (!Array.isArray(updatedTrack.data.tags) || updatedTrack.data.tags[0] !== 'healed') {
+                throw new Error("Expected healed tags to be preserved");
+            }
+            if (!updatedTrack.data.thumbnail?.includes('img.youtube.com/vi/dSJyuI8PzFE')) {
+                throw new Error("Expected healed YouTube thumbnail");
+            }
+
+            this.results.push({ name: "Playlist Reuse Healing", passed: true });
+        } catch (e) {
+            this.results.push({ name: "Playlist Reuse Healing", passed: false, error: e.message });
+        } finally {
+            api.findTrackByUrl = originalFindTrackByUrl;
+            api.updateMusic = originalUpdateMusic;
+            api.addToPlaylist = originalAddToPlaylist;
+            api.addMusic = originalAddMusic;
         }
     }
 

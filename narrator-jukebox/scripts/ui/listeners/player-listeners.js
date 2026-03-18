@@ -189,6 +189,16 @@ function activateTrackListListeners(app, html, jukebox) {
         }
     });
 
+    // Toggle track visibility (hide name/thumbnail from players)
+    html.on('click', '.track-visibility-btn', e => {
+        e.stopPropagation();
+        const id = e.currentTarget.dataset.musicId;
+        if (!id) return;
+        const track = jukebox.music.find(m => m.id === id);
+        if (!track) return;
+        jukebox.updateMusic(id, { hidden: !track.hidden });
+    });
+
     // Edit track button
     html.on('click', '.edit-track-btn', e => {
         e.stopPropagation();

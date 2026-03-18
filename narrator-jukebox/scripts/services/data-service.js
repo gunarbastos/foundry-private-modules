@@ -5,6 +5,7 @@
 
 import { JUKEBOX } from '../core/constants.js';
 import { debugLog, debugError } from '../utils/debug.js';
+import { extractYouTubeVideoId, getYouTubeThumbnail, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * DataService - Manages persistent data operations
@@ -17,6 +18,9 @@ class DataService {
     this.soundboard = [];
     this.playlists = [];
     this.ambiencePresets = [];
+    this.musicFolders = [];
+    this.ambienceFolders = [];
+    this.soundboardFolders = [];
     this._initialized = false;
   }
 
@@ -40,8 +44,32 @@ class DataService {
       const presetsData = await game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_PRESETS);
       this.ambiencePresets = presetsData ? JSON.parse(presetsData) : [];
 
+      const musicFoldersData = await game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_FOLDERS);
+      this.musicFolders = musicFoldersData ? JSON.parse(musicFoldersData) : [];
+
+      const ambienceFoldersData = await game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_FOLDERS);
+      this.ambienceFolders = ambienceFoldersData ? JSON.parse(ambienceFoldersData) : [];
+
+      const soundboardFoldersData = await game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_FOLDERS);
+      this.soundboardFolders = soundboardFoldersData ? JSON.parse(soundboardFoldersData) : [];
+
+      const musicMigration = this._normalizeStoredTrackCollection(this.music);
+      const ambienceMigration = this._normalizeStoredTrackCollection(this.ambience);
+      const soundboardMigration = this._normalizeStoredTrackCollection(this.soundboard);
+
+      this.music = musicMigration.tracks;
+      this.ambience = ambienceMigration.tracks;
+      this.soundboard = soundboardMigration.tracks;
+
       this._initialized = true;
       debugLog(' DataService loaded all data');
+
+      if (musicMigration.changed || ambienceMigration.changed || soundboardMigration.changed) {
+        debugLog(' Healed stored track metadata for YouTube entries');
+        if (game.user?.isGM) {
+          await this.saveAllData();
+        }
+      }
     } catch (err) {
       debugError(' DataService failed to load data:', err);
       throw err;
@@ -58,6 +86,9 @@ class DataService {
       await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE, JSON.stringify(this.ambience));
       await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD, JSON.stringify(this.soundboard));
       await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.PLAYLISTS, JSON.stringify(this.playlists));
+      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_FOLDERS, JSON.stringify(this.musicFolders));
+      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_FOLDERS, JSON.stringify(this.ambienceFolders));
+      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_FOLDERS, JSON.stringify(this.soundboardFolders));
       debugLog(" DataService saved all data successfully.");
     } catch (err) {
       debugError("DataService save failed:", err);
@@ -108,8 +139,71 @@ class DataService {
     // Also remove from playlists
     this.playlists.forEach(p => {
       p.musicIds = p.musicIds.filter(mid => mid !== id);
+      if (p.trackSettings) delete p.trackSettings[id];
     });
     await this.saveAllData();
+  }
+
+  /**
+   * Delete multiple music tracks at once
+   * @param {string[]} ids - Array of track IDs to delete
+   * @returns {Promise<number>} Number of tracks deleted
+   */
+  async deleteMultipleMusic(ids) {
+    const idSet = new Set(ids);
+    const before = this.music.length;
+    this.music = this.music.filter(m => !idSet.has(m.id));
+    // Clean playlists
+    this.playlists.forEach(p => {
+      p.musicIds = p.musicIds.filter(mid => !idSet.has(mid));
+      if (p.trackSettings) {
+        for (const id of ids) delete p.trackSettings[id];
+      }
+    });
+    await this.saveAllData();
+    return before - this.music.length;
+  }
+
+  /**
+   * Add a tag to multiple tracks
+   * @param {string[]} ids - Array of track IDs
+   * @param {string} tag - Tag to add
+   * @returns {Promise<number>} Number of tracks that received the tag
+   */
+  async addTagToMultiple(ids, tag) {
+    let count = 0;
+    for (const id of ids) {
+      const track = this.music.find(m => m.id === id);
+      if (!track) continue;
+      if (!track.tags) track.tags = [];
+      if (!track.tags.includes(tag)) {
+        track.tags.push(tag);
+        count++;
+      }
+    }
+    if (count > 0) await this.saveAllData();
+    return count;
+  }
+
+  /**
+   * Remove a tag from multiple tracks
+   * @param {string[]} ids - Array of track IDs
+   * @param {string} tag - Tag to remove
+   * @returns {Promise<number>} Number of tracks that had the tag removed
+   */
+  async removeTagFromMultiple(ids, tag) {
+    let count = 0;
+    for (const id of ids) {
+      const track = this.music.find(m => m.id === id);
+      if (!track?.tags) continue;
+      const idx = track.tags.indexOf(tag);
+      if (idx !== -1) {
+        track.tags.splice(idx, 1);
+        count++;
+      }
+    }
+    if (count > 0) await this.saveAllData();
+    return count;
   }
 
   /**
@@ -125,6 +219,66 @@ class DataService {
    */
   getAllMusic() {
     return [...this.music];
+  }
+
+  /**
+   * Normalize stored track metadata so YouTube URLs always carry the correct source.
+   * @param {Array<object>} tracks
+   * @returns {{tracks: Array<object>, changed: boolean}}
+   */
+  _normalizeStoredTrackCollection(tracks = []) {
+    let changed = false;
+
+    const normalizedTracks = (tracks || []).map(track => {
+      const result = this._normalizeStoredTrack(track);
+      if (result.changed) changed = true;
+      return result.track;
+    });
+
+    return { tracks: normalizedTracks, changed };
+  }
+
+  /**
+   * Heal a stored track object without discarding unknown fields.
+   * @param {object} track
+   * @returns {{track: object, changed: boolean}}
+   */
+  _normalizeStoredTrack(track) {
+    if (!track || typeof track !== 'object') {
+      return { track, changed: false };
+    }
+
+    let changed = false;
+    const normalized = { ...track };
+
+    if (!normalized.url && normalized.path) {
+      normalized.url = normalized.path;
+      changed = true;
+    }
+
+    const rawUrl = normalized.url || '';
+    const youtubeId = rawUrl ? extractYouTubeVideoId(rawUrl) : null;
+
+    if (youtubeId) {
+      const canonicalUrl = normalizeYouTubeUrl(rawUrl);
+      if (normalized.url !== canonicalUrl) {
+        normalized.url = canonicalUrl;
+        changed = true;
+      }
+      if (normalized.source !== 'youtube') {
+        normalized.source = 'youtube';
+        changed = true;
+      }
+      if (!normalized.thumbnail) {
+        normalized.thumbnail = getYouTubeThumbnail(youtubeId, 'high');
+        changed = true;
+      }
+    } else if (!normalized.source) {
+      normalized.source = 'local';
+      changed = true;
+    }
+
+    return { track: changed ? normalized : track, changed };
   }
 
   // ==========================================
@@ -185,6 +339,61 @@ class DataService {
     return [...this.ambience];
   }
 
+  /**
+   * Delete multiple ambience tracks
+   * @param {string[]} ids - Array of track IDs
+   * @returns {Promise<number>} Number of tracks deleted
+   */
+  async deleteMultipleAmbience(ids) {
+    const idSet = new Set(ids);
+    const before = this.ambience.length;
+    this.ambience = this.ambience.filter(a => !idSet.has(a.id));
+    await this.saveAllData();
+    return before - this.ambience.length;
+  }
+
+  /**
+   * Add a tag to multiple ambience tracks
+   * @param {string[]} ids - Array of track IDs
+   * @param {string} tag - Tag to add
+   * @returns {Promise<number>} Number of tracks that received the tag
+   */
+  async addTagToMultipleAmbience(ids, tag) {
+    let count = 0;
+    for (const id of ids) {
+      const track = this.ambience.find(a => a.id === id);
+      if (!track) continue;
+      if (!track.tags) track.tags = [];
+      if (!track.tags.includes(tag)) {
+        track.tags.push(tag);
+        count++;
+      }
+    }
+    if (count > 0) await this.saveAllData();
+    return count;
+  }
+
+  /**
+   * Remove a tag from multiple ambience tracks
+   * @param {string[]} ids - Array of track IDs
+   * @param {string} tag - Tag to remove
+   * @returns {Promise<number>} Number of tracks that had the tag removed
+   */
+  async removeTagFromMultipleAmbience(ids, tag) {
+    let count = 0;
+    for (const id of ids) {
+      const track = this.ambience.find(a => a.id === id);
+      if (!track?.tags) continue;
+      const idx = track.tags.indexOf(tag);
+      if (idx !== -1) {
+        track.tags.splice(idx, 1);
+        count++;
+      }
+    }
+    if (count > 0) await this.saveAllData();
+    return count;
+  }
+
   // ==========================================
   // Soundboard CRUD Operations
   // ==========================================
@@ -229,6 +438,19 @@ class DataService {
   }
 
   /**
+   * Delete multiple soundboard sounds
+   * @param {string[]} ids - Array of sound IDs
+   * @returns {Promise<number>} Number of sounds deleted
+   */
+  async deleteMultipleSoundboard(ids) {
+    const idSet = new Set(ids);
+    const before = this.soundboard.length;
+    this.soundboard = this.soundboard.filter(s => !idSet.has(s.id));
+    await this.saveAllData();
+    return before - this.soundboard.length;
+  }
+
+  /**
    * Get a soundboard sound by ID
    * @param {string} id - Sound ID
    */
@@ -255,9 +477,67 @@ class DataService {
     const playlist = {
       id: foundry.utils.randomID(),
       name: name,
-      musicIds: []
+      musicIds: [],
+      coverImage: '',
+      loop: false,
+      trackSettings: {}
     };
     this.playlists.push(playlist);
+    await this.saveAllData();
+    return playlist;
+  }
+
+  /**
+   * Update an existing playlist
+   * @param {string} id - Playlist ID
+   * @param {object} data - Updated playlist data
+   * @returns {Promise<object|null>}
+   */
+  async updatePlaylist(id, data) {
+    const playlist = this.playlists.find(p => p.id === id);
+    if (!playlist) return null;
+
+    Object.assign(playlist, data);
+    await this.saveAllData();
+    return playlist;
+  }
+
+  /**
+   * Duplicate an existing playlist
+   * @param {string} id - Playlist ID
+   * @param {string} [name] - Optional new playlist name
+   * @returns {Promise<object|null>}
+   */
+  async duplicatePlaylist(id, name = null) {
+    const playlist = this.playlists.find(p => p.id === id);
+    if (!playlist) return null;
+
+    const duplicate = foundry.utils.deepClone(playlist);
+    duplicate.id = foundry.utils.randomID();
+    duplicate.name = name?.trim() || `${playlist.name} Copy`;
+
+    this.playlists.push(duplicate);
+    await this.saveAllData();
+    return duplicate;
+  }
+
+  /**
+   * Move a playlist to a new index in the playlist order
+   * @param {string} id - Playlist ID
+   * @param {number} targetIndex - Target array index
+   * @returns {Promise<object|null>}
+   */
+  async reorderPlaylist(id, targetIndex) {
+    const currentIndex = this.playlists.findIndex(p => p.id === id);
+    if (currentIndex === -1) return null;
+
+    const boundedIndex = Math.max(0, Math.min(targetIndex, this.playlists.length - 1));
+    if (boundedIndex === currentIndex) {
+      return this.playlists[currentIndex];
+    }
+
+    const [playlist] = this.playlists.splice(currentIndex, 1);
+    this.playlists.splice(boundedIndex, 0, playlist);
     await this.saveAllData();
     return playlist;
   }
@@ -326,8 +606,58 @@ class DataService {
     if (!playlist) return null;
 
     playlist.musicIds = playlist.musicIds.filter(id => id !== musicId);
+    // Clean up trackSettings for removed track
+    if (playlist.trackSettings) {
+      delete playlist.trackSettings[musicId];
+    }
     await this.saveAllData();
     return playlist;
+  }
+
+  /**
+   * Toggle per-track loop setting within a playlist
+   * @param {string} playlistId - Playlist ID
+   * @param {string} musicId - Music track ID
+   * @returns {Promise<boolean>} New loop state for the track
+   */
+  async togglePlaylistTrackLoop(playlistId, musicId) {
+    const playlist = this.playlists.find(p => p.id === playlistId);
+    if (!playlist) return false;
+
+    if (!playlist.trackSettings) playlist.trackSettings = {};
+    if (!playlist.trackSettings[musicId]) playlist.trackSettings[musicId] = {};
+
+    const current = playlist.trackSettings[musicId].loop || false;
+    playlist.trackSettings[musicId].loop = !current;
+
+    await this.saveAllData();
+    return !current;
+  }
+
+  /**
+   * Toggle playlist-level loop
+   * @param {string} playlistId - Playlist ID
+   * @returns {Promise<boolean>} New loop state
+   */
+  async togglePlaylistLoop(playlistId) {
+    const playlist = this.playlists.find(p => p.id === playlistId);
+    if (!playlist) return false;
+
+    playlist.loop = !playlist.loop;
+    await this.saveAllData();
+    return playlist.loop;
+  }
+
+  /**
+   * Check if a track has per-track loop enabled in a playlist
+   * @param {string} playlistId - Playlist ID
+   * @param {string} musicId - Music track ID
+   * @returns {boolean}
+   */
+  isTrackLoopEnabled(playlistId, musicId) {
+    const playlist = this.playlists.find(p => p.id === playlistId);
+    if (!playlist?.trackSettings?.[musicId]) return false;
+    return playlist.trackSettings[musicId].loop || false;
   }
 
   /**
@@ -361,6 +691,106 @@ class DataService {
       ...playlist,
       tracks
     };
+  }
+
+  // ==========================================
+  // Folder Operations
+  // ==========================================
+
+  _getFolderArray(library) {
+    switch (library) {
+      case 'music': return this.musicFolders;
+      case 'ambience': return this.ambienceFolders;
+      case 'soundboard': return this.soundboardFolders;
+      default: return [];
+    }
+  }
+
+  _setFolderArray(library, folders) {
+    switch (library) {
+      case 'music': this.musicFolders = folders; break;
+      case 'ambience': this.ambienceFolders = folders; break;
+      case 'soundboard': this.soundboardFolders = folders; break;
+    }
+  }
+
+  _getTrackArray(library) {
+    switch (library) {
+      case 'music': return this.music;
+      case 'ambience': return this.ambience;
+      case 'soundboard': return this.soundboard;
+      default: return [];
+    }
+  }
+
+  async createFolder(library, { name, color, icon }) {
+    const folders = this._getFolderArray(library);
+    const folder = {
+      id: foundry.utils.randomID(),
+      name,
+      color,
+      icon,
+      order: folders.length
+    };
+    folders.push(folder);
+    await this.saveAllData();
+    debugLog(` Created folder "${name}" in ${library}`);
+    return folder;
+  }
+
+  async updateFolder(library, id, data) {
+    const folders = this._getFolderArray(library);
+    const idx = folders.findIndex(f => f.id === id);
+    if (idx === -1) return null;
+    folders[idx] = { ...folders[idx], ...data };
+    await this.saveAllData();
+    return folders[idx];
+  }
+
+  async deleteFolder(library, id) {
+    const folders = this._getFolderArray(library);
+    this._setFolderArray(library, folders.filter(f => f.id !== id));
+    // Unassign all tracks in this folder
+    this._getTrackArray(library).forEach(track => {
+      if (track.folderId === id) delete track.folderId;
+    });
+    await this.saveAllData();
+    debugLog(` Deleted folder ${id} from ${library}`);
+  }
+
+  async moveTracksToFolder(library, trackIds, folderId) {
+    const tracks = this._getTrackArray(library);
+    for (const id of trackIds) {
+      const track = tracks.find(t => t.id === id);
+      if (track) {
+        if (folderId) {
+          track.folderId = folderId;
+        } else {
+          delete track.folderId;
+        }
+      }
+    }
+    await this.saveAllData();
+  }
+
+  async reorderFolders(library, orderedIds) {
+    const folders = this._getFolderArray(library);
+    const folderMap = new Map(folders.map(f => [f.id, f]));
+    const reordered = orderedIds.map((id, i) => {
+      const f = folderMap.get(id);
+      if (f) f.order = i;
+      return f;
+    }).filter(Boolean);
+    this._setFolderArray(library, reordered);
+    await this.saveAllData();
+  }
+
+  getFolders(library) {
+    return [...this._getFolderArray(library)].sort((a, b) => a.order - b.order);
+  }
+
+  getFolder(library, id) {
+    return this._getFolderArray(library).find(f => f.id === id);
   }
 
   // ==========================================

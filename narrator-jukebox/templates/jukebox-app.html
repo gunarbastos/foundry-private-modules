@@ -168,6 +168,9 @@
                     <button class="add-music-btn bulk-import-btn" data-type="music" data-tooltip="Import multiple files from a folder" data-tooltip-position="bottom">
                         <i class="fas fa-folder-open"></i> Bulk Import
                     </button>
+                    <button class="create-folder-btn" data-library="music" data-tooltip="Create a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
                     {{/if}}
                     <button class="add-music-btn">{{#if isGM}}Add Music{{else}}Suggest Music{{/if}}</button>
                 </div>
@@ -183,7 +186,8 @@
                 {{#if isGM}}<div class="col-actions"></div>{{/if}}
             </div>
             <div class="track-list">
-                {{#each music}}
+                {{!-- Unfiled tracks --}}
+                {{#each unfiledMusic}}
                 <div class="track-row play-music-btn {{#if (eq ../currentMusic.id id)}}active{{#if ../isPlaying}} playing{{else}} paused{{/if}}{{/if}} {{#if (eq ../nextMusic.id id)}}up-next{{/if}} {{#if playlists.length}}in-playlist{{/if}} {{#if (njb-includes ../selectedMusicIds id)}}selected{{/if}}" data-music-id="{{id}}">
                     <div class="track-select-col">
                         <input type="checkbox" class="track-select-checkbox" {{#if (njb-includes ../selectedMusicIds id)}}checked{{/if}}>
@@ -205,6 +209,7 @@
                     <div class="col-title">
                         <div class="t-name">
                             <span class="t-name-text">{{name}}</span>{{#if (eq ../nextMusic.id id)}}<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>{{/if}}
+                            {{#if ../isGM}}<button class="track-visibility-btn {{#if hidden}}is-hidden{{/if}}" data-music-id="{{id}}" data-tooltip="{{#if hidden}}Hidden from players — click to show{{else}}Visible to players — click to hide name &amp; thumbnail{{/if}}" data-tooltip-position="top"><i class="fas {{#if hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></button>{{/if}}
                         </div>
                         <div class="t-sub">
                             {{#if (eq source 'youtube')}}YouTube{{else}}Local{{/if}}
@@ -231,6 +236,76 @@
                         <button class="action-btn delete-track-btn" data-music-id="{{id}}" data-tooltip="Delete track" data-tooltip-position="left"><i class="fas fa-trash"></i></button>
                     </div>
                     {{/if}}
+                </div>
+                {{/each}}
+
+                {{!-- Folder sections --}}
+                {{#each musicFolderGroups}}
+                <div class="folder-section" data-folder-id="{{folder.id}}">
+                    <div class="folder-header" style="--folder-color: {{folder.color}};">
+                        <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                        <i class="{{folder.icon}} folder-icon"></i>
+                        <span class="folder-name">{{folder.name}}</span>
+                        <span class="folder-count">{{tracks.length}}</span>
+                        {{#if ../isGM}}
+                        <div class="folder-actions">
+                            <button class="folder-edit-btn" data-folder-id="{{folder.id}}" data-library="music" data-tooltip="Edit folder"><i class="fas fa-edit"></i></button>
+                        </div>
+                        {{/if}}
+                    </div>
+                    <div class="folder-tracks {{#if collapsed}}collapsed{{/if}}">
+                        {{#each tracks}}
+                        <div class="track-row play-music-btn {{#if (eq ../../currentMusic.id id)}}active{{#if ../../isPlaying}} playing{{else}} paused{{/if}}{{/if}} {{#if (eq ../../nextMusic.id id)}}up-next{{/if}} {{#if playlists.length}}in-playlist{{/if}} {{#if (njb-includes ../../selectedMusicIds id)}}selected{{/if}}" data-music-id="{{id}}">
+                            <div class="track-select-col">
+                                <input type="checkbox" class="track-select-checkbox" {{#if (njb-includes ../../selectedMusicIds id)}}checked{{/if}}>
+                            </div>
+                            <div class="col-play">
+                                <span class="track-num">{{njb-add @index 1}}</span>
+                                <i class="fas fa-play play-icon"></i>
+                                <i class="fas fa-pause pause-icon"></i>
+                                <i class="fas fa-volume-up playing-icon"></i>
+                                <i class="fas fa-pause paused-icon"></i>
+                            </div>
+                            <div class="col-thumb">
+                                {{#if thumbnail}}
+                                <img src="{{thumbnail}}" class="list-thumb">
+                                {{else}}
+                                <img src="icons/svg/sound.svg" class="list-thumb" style="filter: invert(1);">
+                                {{/if}}
+                            </div>
+                            <div class="col-title">
+                                <div class="t-name">
+                                    <span class="t-name-text">{{name}}</span>{{#if (eq ../../nextMusic.id id)}}<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>{{/if}}
+                                    {{#if ../../isGM}}<button class="track-visibility-btn {{#if hidden}}is-hidden{{/if}}" data-music-id="{{id}}" data-tooltip="{{#if hidden}}Hidden from players — click to show{{else}}Visible to players — click to hide name &amp; thumbnail{{/if}}" data-tooltip-position="top"><i class="fas {{#if hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></button>{{/if}}
+                                </div>
+                                <div class="t-sub">
+                                    {{#if (eq source 'youtube')}}YouTube{{else}}Local{{/if}}
+                                    {{#if playlists.length}}
+                                    <span class="playlist-indicator" data-tooltip="In {{playlists.length}} playlist{{#if (gt playlists.length 1)}}s{{/if}}: {{#each playlists}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}" data-tooltip-position="top">
+                                        <i class="fas fa-list"></i> {{playlists.length}}
+                                    </span>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <div class="col-tags">
+                                {{#each tags}}<span class="tag-pill">{{this}}</span>{{/each}}
+                            </div>
+                            <div class="col-source">
+                                {{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}
+                            </div>
+                            <div class="col-duration" data-music-id="{{id}}">
+                                {{#if duration}}{{duration}}{{else}}--:--{{/if}}
+                            </div>
+                            {{#if ../../isGM}}
+                            <div class="col-actions">
+                                <button class="action-btn add-to-playlist-btn" data-music-id="{{id}}" data-tooltip="Add to playlist" data-tooltip-position="left"><i class="fas fa-plus-square"></i></button>
+                                <button class="action-btn edit-track-btn" data-music-id="{{id}}" data-tooltip="Edit track details" data-tooltip-position="left"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-track-btn" data-music-id="{{id}}" data-tooltip="Delete track" data-tooltip-position="left"><i class="fas fa-trash"></i></button>
+                            </div>
+                            {{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
                 </div>
                 {{/each}}
             </div>
@@ -260,20 +335,24 @@
                     <div class="playlists-browser-list">
                         {{#each playlists}}
                         <div class="playlist-browser-item {{#if (eq ../selectedPlaylist.id id)}}selected{{/if}} {{#if (eq ../currentPlaylist.id id)}}{{#if ../isPlaying}}playing{{else}}paused{{/if}}{{/if}}" data-playlist-id="{{id}}">
-                            <div class="playlist-browser-cover">
-                                {{#with (lookup ../playlistCovers id)}}
-                                    {{#each this}}
-                                    <div class="cover-cell-mini">
-                                        {{#if this}}
-                                        <img src="{{this}}" alt="">
-                                        {{else}}
-                                        <div class="cover-placeholder-mini"><i class="fas fa-music"></i></div>
-                                        {{/if}}
-                                    </div>
-                                    {{/each}}
+                            <div class="playlist-browser-cover {{#if coverImage}}custom-cover{{/if}}">
+                                {{#if coverImage}}
+                                <img src="{{coverImage}}" alt="{{name}}">
                                 {{else}}
-                                    <div class="cover-cell-mini empty-cover"><i class="fas fa-music"></i></div>
-                                {{/with}}
+                                    {{#with (lookup ../playlistCovers id)}}
+                                        {{#each this}}
+                                        <div class="cover-cell-mini">
+                                            {{#if this}}
+                                            <img src="{{this}}" alt="">
+                                            {{else}}
+                                            <div class="cover-placeholder-mini"><i class="fas fa-music"></i></div>
+                                            {{/if}}
+                                        </div>
+                                        {{/each}}
+                                    {{else}}
+                                        <div class="cover-cell-mini empty-cover"><i class="fas fa-music"></i></div>
+                                    {{/with}}
+                                {{/if}}
                             </div>
                             <div class="playlist-browser-info">
                                 <span class="playlist-browser-name">{{name}}</span>
@@ -314,23 +393,27 @@
                     <div class="playlist-details-v2">
                         <!-- Playlist Header - Spotify style -->
                         <div class="playlist-header">
-                            <div class="playlist-cover">
-                                {{#if selectedPlaylist.tracks.length}}
-                                <div class="playlist-cover-grid">
-                                    {{#each (njb-take selectedPlaylist.tracks 4)}}
-                                    <div class="cover-cell">
-                                        {{#if thumbnail}}
-                                        <img src="{{thumbnail}}" alt="">
-                                        {{else}}
-                                        <div class="cover-placeholder"><i class="fas fa-music"></i></div>
-                                        {{/if}}
-                                    </div>
-                                    {{/each}}
-                                </div>
+                            <div class="playlist-cover {{#if selectedPlaylist.coverImage}}custom-cover{{/if}}">
+                                {{#if selectedPlaylist.coverImage}}
+                                <img src="{{selectedPlaylist.coverImage}}" alt="{{selectedPlaylist.name}}">
                                 {{else}}
-                                <div class="playlist-cover-empty">
-                                    <i class="fas fa-music"></i>
-                                </div>
+                                    {{#if selectedPlaylist.tracks.length}}
+                                    <div class="playlist-cover-grid">
+                                        {{#each (njb-take selectedPlaylist.tracks 4)}}
+                                        <div class="cover-cell">
+                                            {{#if thumbnail}}
+                                            <img src="{{thumbnail}}" alt="">
+                                            {{else}}
+                                            <div class="cover-placeholder"><i class="fas fa-music"></i></div>
+                                            {{/if}}
+                                        </div>
+                                        {{/each}}
+                                    </div>
+                                    {{else}}
+                                    <div class="playlist-cover-empty">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    {{/if}}
                                 {{/if}}
                             </div>
                             <div class="playlist-info">
@@ -355,6 +438,11 @@
                                 <i class="fas fa-random"></i>
                             </button>
                             {{#if isGM}}
+                            <button class="playlist-loop-btn {{#if selectedPlaylist.loop}}active{{/if}}" data-playlist-id="{{selectedPlaylist.id}}" data-tooltip="{{#if selectedPlaylist.loop}}Loop Playlist (On){{else}}Loop Playlist (Off){{/if}}">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                            {{/if}}
+                            {{#if isGM}}
                             <button class="playlist-delete-btn" data-playlist-id="{{selectedPlaylist.id}}" data-tooltip="Delete Playlist">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -366,6 +454,7 @@
                         <div class="playlist-track-list">
                             <div class="track-list-header">
                                 <div class="col-num">#</div>
+                                <div class="col-thumb"></div>
                                 <div class="col-title">TITLE</div>
                                 <div class="col-source">SOURCE</div>
                                 <div class="col-duration"><i class="far fa-clock"></i></div>
@@ -391,6 +480,7 @@
                                     <div class="col-title">
                                         <div class="t-name">
                                             <span class="t-name-text">{{name}}</span>{{#if (eq ../nextMusic.id id)}}<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>{{/if}}
+                                            {{#if ../isGM}}<button class="track-visibility-btn {{#if hidden}}is-hidden{{/if}}" data-music-id="{{id}}" data-tooltip="{{#if hidden}}Hidden from players — click to show{{else}}Visible to players — click to hide name &amp; thumbnail{{/if}}" data-tooltip-position="top"><i class="fas {{#if hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></button>{{/if}}
                                         </div>
                                         <div class="t-sub">{{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</div>
                                     </div>
@@ -400,6 +490,9 @@
                                     </div>
                                     {{#if ../isGM}}
                                     <div class="col-actions">
+                                        <button class="action-btn track-loop-btn {{#if (lookup ../selectedPlaylist.trackLoopMap id)}}active{{/if}}" data-music-id="{{id}}" data-playlist-id="{{../selectedPlaylist.id}}" data-tooltip="{{#if (lookup ../selectedPlaylist.trackLoopMap id)}}Loop Track (On){{else}}Loop Track (Off){{/if}}" data-tooltip-position="left">
+                                            <i class="fas fa-redo-alt"></i>
+                                        </button>
                                         <button class="action-btn remove-from-playlist-btn" data-music-id="{{id}}" data-playlist-id="{{../selectedPlaylist.id}}" data-tooltip="Remove from playlist" data-tooltip-position="left">
                                             <i class="fas fa-minus-circle"></i>
                                         </button>
@@ -476,6 +569,14 @@
                         {{ambienceLayerCount}}/{{maxAmbienceLayers}}
                     </span>
                     {{/if}}
+                    {{#if ambienceIssueCount}}
+                    <span class="ambience-issue-summary"
+                          data-tooltip="{{ambienceIssueCount}} ambience track{{#if (ne ambienceIssueCount 1)}}s{{/if}} with recent playback issues"
+                          data-tooltip-position="right"
+                          aria-label="{{ambienceIssueCount}} ambience tracks with recent playback issues">
+                        <i class="fas fa-triangle-exclamation"></i> {{ambienceIssueCount}} issue{{#if (ne ambienceIssueCount 1)}}s{{/if}}
+                    </span>
+                    {{/if}}
                 </h2>
                 <div class="section-header-actions">
                     {{#if ambienceLayerCount}}
@@ -484,8 +585,15 @@
                     </button>
                     {{/if}}
                     {{#if isGM}}
+                    <button class="selection-mode-btn {{#if selectionMode}}active{{/if}}" data-tooltip="{{#if selectionMode}}Exit selection mode{{else}}Select multiple items{{/if}}" data-tooltip-position="bottom">
+                        <i class="fas {{#if selectionMode}}fa-times{{else}}fa-check-square{{/if}}"></i>
+                        {{#if selectionMode}}Cancel{{else}}Select{{/if}}
+                    </button>
                     <button class="add-music-btn bulk-import-btn" data-type="ambience" data-tooltip="Import multiple ambience files from a folder" data-tooltip-position="bottom">
                         <i class="fas fa-folder-open"></i> Bulk Import
+                    </button>
+                    <button class="create-folder-btn" data-library="ambience" data-tooltip="Create a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-plus"></i> New Folder
                     </button>
                     <button class="add-ambience-btn ambience-accent">Add Ambience</button>
                     {{/if}}
@@ -557,88 +665,72 @@
             </div>
 
             {{#if ambience.length}}
-            <!-- Ambience Layer Grid -->
+            {{!-- Unfiled ambience cards --}}
+            {{#if unfiledAmbience.length}}
             <div class="ambience-layer-grid" role="list" aria-label="Ambience sounds">
-                {{#each ambience}}
-                <div class="ambience-card {{#if isLayerActive}}active playing{{/if}}"
-                     data-ambience-id="{{id}}"
-                     data-tooltip="{{name}}{{#if isLayerActive}} (playing){{/if}}" data-tooltip-position="top"
-                     role="listitem"
-                     tabindex="0"
-                     aria-pressed="{{#if isLayerActive}}true{{else}}false{{/if}}"
-                     aria-label="{{name}}{{#if isLayerActive}}, currently playing{{else}}, click to play{{/if}}">
-
-                    <!-- Card Background/Thumbnail -->
-                    <div class="amb-card-bg" aria-hidden="true">
-                        {{#if thumbnail}}
-                        <img src="{{thumbnail}}" alt="">
-                        {{/if}}
-                    </div>
-
-                    <!-- Card Content -->
+                {{#each unfiledAmbience}}
+                <div class="ambience-card {{#if isLayerActive}}active playing{{/if}} {{#if layerIssue}}has-issue{{/if}} {{#if (njb-includes ../../selectedAmbienceIds id)}}selected{{/if}}" data-ambience-id="{{id}}" data-tooltip="{{name}}{{#if isLayerActive}} (playing){{/if}}{{#if layerIssue}} | {{layerIssueSummary}}{{/if}}" data-tooltip-position="top" role="listitem" tabindex="0" aria-pressed="{{#if isLayerActive}}true{{else}}false{{/if}}" aria-label="{{name}}{{#if isLayerActive}}, currently playing{{else}}, click to play{{/if}}">
+                    {{#if ../../selectionMode}}<div class="card-select-overlay"><input type="checkbox" class="amb-select-checkbox" {{#if (njb-includes ../../selectedAmbienceIds id)}}checked{{/if}}></div>{{/if}}
+                    <div class="amb-card-bg" aria-hidden="true">{{#if thumbnail}}<img src="{{thumbnail}}" alt="">{{/if}}</div>
                     <div class="amb-card-content">
-                        <!-- Toggle Button (main action) -->
-                        <button class="amb-toggle-btn {{#if isLayerActive}}active{{/if}}"
-                                data-tooltip="{{#if isLayerActive}}Stop{{else}}Play{{/if}} layer"
-                                aria-label="{{#if isLayerActive}}Stop{{else}}Play{{/if}} {{name}}"
-                                aria-pressed="{{#if isLayerActive}}true{{else}}false{{/if}}">
-                            <i class="fas {{#if isLayerActive}}fa-stop{{else}}fa-play{{/if}}" aria-hidden="true"></i>
-                        </button>
-
-                        <!-- Name -->
+                        <button class="amb-toggle-btn {{#if isLayerActive}}active{{/if}}" data-tooltip="{{#if isLayerActive}}Stop{{else}}Play{{/if}} layer" aria-label="{{#if isLayerActive}}Stop{{else}}Play{{/if}} {{name}}"><i class="fas {{#if isLayerActive}}fa-stop{{else}}fa-play{{/if}}" aria-hidden="true"></i></button>
                         <div class="amb-name" title="{{name}}">{{name}}</div>
-
-                        <!-- Tags (compact) -->
-                        {{#if tags.length}}
-                        <div class="amb-tags" aria-label="Tags: {{#each tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
-                            {{#each tags}}<span class="amb-tag">{{this}}</span>{{/each}}
-                        </div>
-                        {{/if}}
-
-                        <!-- Source indicator -->
-                        <div class="amb-source" aria-label="Source: {{#if (eq source 'youtube')}}YouTube{{else}}Local file{{/if}}">
-                            {{#if (eq source 'youtube')}}<i class="fab fa-youtube" aria-hidden="true"></i>{{else}}<i class="fas fa-file-audio" aria-hidden="true"></i>{{/if}}
-                        </div>
+                        {{#if tags.length}}<div class="amb-tags">{{#each tags}}<span class="amb-tag">{{this}}</span>{{/each}}</div>{{/if}}
+                        <div class="amb-source">{{#if (eq source 'youtube')}}<i class="fab fa-youtube" aria-hidden="true"></i>{{else}}<i class="fas fa-file-audio" aria-hidden="true"></i>{{/if}}</div>
+                        {{#if layerIssue}}<div class="amb-issue {{#if layerIssue.permanent}}permanent{{/if}}" data-tooltip="{{layerIssue.message}}"><i class="fas fa-triangle-exclamation"></i><span>{{layerIssueSummary}}</span></div>{{/if}}
                     </div>
-
-                    <!-- Volume Slider (visible when active) -->
-                    <div class="amb-volume-control {{#unless isLayerActive}}hidden{{/unless}}" aria-hidden="{{#unless isLayerActive}}true{{/unless}}">
-                        <i class="fas fa-volume-down" aria-hidden="true"></i>
-                        <input type="range"
-                               class="amb-layer-volume"
-                               min="0" max="100"
-                               value="{{layerVolume}}"
-                               data-ambience-id="{{id}}"
-                               aria-label="Volume for {{name}}"
-                               aria-valuemin="0"
-                               aria-valuemax="100"
-                               aria-valuenow="{{layerVolume}}">
-                        <i class="fas fa-volume-up" aria-hidden="true"></i>
+                    <div class="amb-volume-control {{#unless isLayerActive}}hidden{{/unless}}">
+                        <i class="fas fa-volume-down"></i>
+                        <input type="range" class="amb-layer-volume" min="0" max="100" value="{{layerVolume}}" data-ambience-id="{{id}}" aria-label="Volume for {{name}}">
+                        <i class="fas fa-volume-up"></i>
                     </div>
-
-                    <!-- Card Controls (GM only) -->
-                    {{#if ../isGM}}
-                    <div class="amb-card-controls">
-                        <button class="amb-edit-btn" data-tooltip="Edit ambience" data-ambience-id="{{id}}" aria-label="Edit {{name}}">
-                            <i class="fas fa-edit" aria-hidden="true"></i>
-                        </button>
-                        <button class="amb-delete-btn" data-tooltip="Delete ambience" data-ambience-id="{{id}}" aria-label="Delete {{name}}">
-                            <i class="fas fa-trash" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                    {{/if}}
-
-                    <!-- Playing indicator animation -->
-                    {{#if isLayerActive}}
-                    <div class="amb-playing-indicator" aria-hidden="true">
-                        <div class="amb-wave">
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    {{/if}}
+                    {{#if ../../isGM}}<div class="amb-card-controls"><button class="amb-edit-btn" data-tooltip="Edit ambience" data-ambience-id="{{id}}"><i class="fas fa-edit"></i></button><button class="amb-delete-btn" data-tooltip="Delete ambience" data-ambience-id="{{id}}"><i class="fas fa-trash"></i></button></div>{{/if}}
+                    {{#if isLayerActive}}<div class="amb-playing-indicator" aria-hidden="true"><div class="amb-wave"><span></span><span></span><span></span><span></span></div></div>{{/if}}
                 </div>
                 {{/each}}
             </div>
+            {{/if}}
+
+            {{!-- Ambience folder sections --}}
+            {{#each ambienceFolderGroups}}
+            <div class="folder-section" data-folder-id="{{folder.id}}">
+                <div class="folder-header" style="--folder-color: {{folder.color}};">
+                    <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                    <i class="{{folder.icon}} folder-icon"></i>
+                    <span class="folder-name">{{folder.name}}</span>
+                    <span class="folder-count">{{tracks.length}}</span>
+                    {{#if ../../isGM}}
+                    <div class="folder-actions">
+                        <button class="folder-edit-btn" data-folder-id="{{folder.id}}" data-library="ambience" data-tooltip="Edit folder"><i class="fas fa-edit"></i></button>
+                    </div>
+                    {{/if}}
+                </div>
+                <div class="folder-tracks {{#if collapsed}}collapsed{{/if}}">
+                    <div class="ambience-layer-grid" role="list">
+                        {{#each tracks}}
+                        <div class="ambience-card {{#if isLayerActive}}active playing{{/if}} {{#if layerIssue}}has-issue{{/if}} {{#if (njb-includes ../../../selectedAmbienceIds id)}}selected{{/if}}" data-ambience-id="{{id}}" data-tooltip="{{name}}{{#if isLayerActive}} (playing){{/if}}" data-tooltip-position="top" role="listitem" tabindex="0">
+                            {{#if ../../../selectionMode}}<div class="card-select-overlay"><input type="checkbox" class="amb-select-checkbox" {{#if (njb-includes ../../../selectedAmbienceIds id)}}checked{{/if}}></div>{{/if}}
+                            <div class="amb-card-bg" aria-hidden="true">{{#if thumbnail}}<img src="{{thumbnail}}" alt="">{{/if}}</div>
+                            <div class="amb-card-content">
+                                <button class="amb-toggle-btn {{#if isLayerActive}}active{{/if}}" data-tooltip="{{#if isLayerActive}}Stop{{else}}Play{{/if}} layer"><i class="fas {{#if isLayerActive}}fa-stop{{else}}fa-play{{/if}}"></i></button>
+                                <div class="amb-name" title="{{name}}">{{name}}</div>
+                                {{#if tags.length}}<div class="amb-tags">{{#each tags}}<span class="amb-tag">{{this}}</span>{{/each}}</div>{{/if}}
+                                <div class="amb-source">{{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}</div>
+                                {{#if layerIssue}}<div class="amb-issue {{#if layerIssue.permanent}}permanent{{/if}}" data-tooltip="{{layerIssue.message}}"><i class="fas fa-triangle-exclamation"></i><span>{{layerIssueSummary}}</span></div>{{/if}}
+                            </div>
+                            <div class="amb-volume-control {{#unless isLayerActive}}hidden{{/unless}}">
+                                <i class="fas fa-volume-down"></i>
+                                <input type="range" class="amb-layer-volume" min="0" max="100" value="{{layerVolume}}" data-ambience-id="{{id}}" aria-label="Volume for {{name}}">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            {{#if ../../../isGM}}<div class="amb-card-controls"><button class="amb-edit-btn" data-tooltip="Edit ambience" data-ambience-id="{{id}}"><i class="fas fa-edit"></i></button><button class="amb-delete-btn" data-tooltip="Delete ambience" data-ambience-id="{{id}}"><i class="fas fa-trash"></i></button></div>{{/if}}
+                            {{#if isLayerActive}}<div class="amb-playing-indicator" aria-hidden="true"><div class="amb-wave"><span></span><span></span><span></span><span></span></div></div>{{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+            </div>
+            {{/each}}
 
             {{#if hasMoreAmbience}}
             <div class="load-more-container">
@@ -670,6 +762,19 @@
                     <span class="header-text">Soundboard</span>
                 </h2>
                 <div class="soundboard-header-actions">
+                    <!-- Card Size Toggle -->
+                    <div class="sb-size-toggle" data-tooltip="Card size">
+                        <button class="sb-size-btn {{#if (eq soundboardSize 'small')}}active{{/if}}" data-size="small" data-tooltip="Small cards">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="sb-size-btn {{#if (eq soundboardSize 'medium')}}active{{/if}}" data-size="medium" data-tooltip="Medium cards">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="sb-size-btn {{#if (eq soundboardSize 'large')}}active{{/if}}" data-size="large" data-tooltip="Large cards">
+                            <i class="fas fa-square"></i>
+                        </button>
+                    </div>
+
                     <!-- Global Broadcast Toggle -->
                     {{#if isGM}}
                     <div class="broadcast-mode-toggle {{#if soundboardBroadcastMode}}active{{/if}}" data-tooltip="{{#if soundboardBroadcastMode}}Broadcast Mode: Players hear all sounds{{else}}Preview Mode: Only you hear sounds{{/if}}">
@@ -686,8 +791,15 @@
                     </button>
                     {{/if}}
                     {{#if isGM}}
+                    <button class="selection-mode-btn {{#if selectionMode}}active{{/if}}" data-tooltip="{{#if selectionMode}}Exit selection mode{{else}}Select multiple items{{/if}}" data-tooltip-position="bottom">
+                        <i class="fas {{#if selectionMode}}fa-times{{else}}fa-check-square{{/if}}"></i>
+                        {{#if selectionMode}}Cancel{{else}}Select{{/if}}
+                    </button>
                     <button class="add-music-btn bulk-import-btn" data-type="soundboard" data-tooltip="Import multiple sound files from a folder" data-tooltip-position="bottom">
                         <i class="fas fa-folder-open"></i> Bulk Import
+                    </button>
+                    <button class="create-folder-btn" data-library="soundboard" data-tooltip="Create a folder" data-tooltip-position="bottom">
+                        <i class="fas fa-folder-plus"></i> New Folder
                     </button>
                     <button class="add-soundboard-btn soundboard-accent">
                         <i class="fas fa-plus"></i> Add Sound
@@ -704,69 +816,66 @@
             {{/if}}
 
             {{#if soundboard.length}}
-            <div class="soundboard-grid">
-                {{#each soundboard}}
-                <div class="soundboard-card {{#if isPlaying}}playing{{/if}} {{#if isLooping}}looping{{/if}}"
-                     data-sound-id="{{id}}"
-                     style="--card-color: {{#if color}}{{color}}{{else}}#ff6b35{{/if}};">
-
-                    <!-- Card Background/Thumbnail -->
-                    <div class="sb-card-bg">
-                        {{#if thumbnail}}
-                        <img src="{{thumbnail}}" alt="{{name}}">
-                        {{/if}}
-                    </div>
-
-                    <!-- Card Content -->
+            {{!-- Unfiled soundboard cards --}}
+            {{#if unfiledSoundboard.length}}
+            <div class="soundboard-grid sb-size-{{soundboardSize}}">
+                {{#each unfiledSoundboard}}
+                <div class="soundboard-card {{#if isPlaying}}playing{{/if}} {{#if isLooping}}looping{{/if}} {{#if (njb-includes ../../selectedSoundboardIds id)}}selected{{/if}}" data-sound-id="{{id}}" style="--card-color: {{#if color}}{{color}}{{else}}#ff6b35{{/if}};">
+                    {{#if ../../selectionMode}}<div class="card-select-overlay"><input type="checkbox" class="sb-select-checkbox" {{#if (njb-includes ../../selectedSoundboardIds id)}}checked{{/if}}></div>{{/if}}
+                    <div class="sb-card-bg">{{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}}">{{/if}}</div>
                     <div class="sb-card-content">
-                        <!-- Icon -->
-                        <div class="sb-icon">
-                            <i class="{{#if icon}}{{icon}}{{else}}fas fa-volume-up{{/if}}"></i>
-                        </div>
-
-                        <!-- Name -->
+                        <div class="sb-icon"><i class="{{#if icon}}{{icon}}{{else}}fas fa-volume-up{{/if}}"></i></div>
                         <div class="sb-name" title="{{name}}">{{name}}</div>
-
-                        <!-- Source indicator -->
-                        <div class="sb-source">
-                            {{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}
-                        </div>
+                        <div class="sb-source">{{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}</div>
                     </div>
-
-                    <!-- Card Controls -->
                     <div class="sb-card-controls">
-                        <!-- Play/Stop Button (main action) -->
-                        <button class="sb-play-btn {{#if isPlaying}}playing{{/if}}" data-tooltip="{{#if isPlaying}}Stop{{else}}Play{{/if}}">
-                            <i class="fas {{#if isPlaying}}fa-stop{{else}}fa-play{{/if}}"></i>
-                        </button>
-
-                        <!-- Loop Toggle -->
-                        <button class="sb-loop-btn {{#if isLooping}}active{{/if}}" data-tooltip="Loop {{#if isLooping}}(On){{else}}(Off){{/if}}">
-                            <i class="fas fa-redo"></i>
-                        </button>
-
-                        {{#if ../isGM}}
-                        <!-- Edit/Delete (GM only) -->
-                        <button class="sb-edit-btn" data-tooltip="Edit sound">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="sb-delete-btn" data-tooltip="Delete sound">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        {{/if}}
+                        <button class="sb-play-btn {{#if isPlaying}}playing{{/if}}" data-tooltip="{{#if isPlaying}}Stop{{else}}Play{{/if}}"><i class="fas {{#if isPlaying}}fa-stop{{else}}fa-play{{/if}}"></i></button>
+                        <button class="sb-loop-btn {{#if isLooping}}active{{/if}}" data-tooltip="Loop {{#if isLooping}}(On){{else}}(Off){{/if}}"><i class="fas fa-redo"></i></button>
+                        {{#if ../../isGM}}<button class="sb-edit-btn" data-tooltip="Edit sound"><i class="fas fa-edit"></i></button><button class="sb-delete-btn" data-tooltip="Delete sound"><i class="fas fa-trash"></i></button>{{/if}}
                     </div>
-
-                    <!-- Playing indicator -->
-                    {{#if isPlaying}}
-                    <div class="sb-playing-indicator">
-                        <div class="sb-wave">
-                            <span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    {{/if}}
+                    {{#if isPlaying}}<div class="sb-playing-indicator"><div class="sb-wave"><span></span><span></span><span></span><span></span></div></div>{{/if}}
                 </div>
                 {{/each}}
             </div>
+            {{/if}}
+
+            {{!-- Soundboard folder sections --}}
+            {{#each soundboardFolderGroups}}
+            <div class="folder-section" data-folder-id="{{folder.id}}">
+                <div class="folder-header" style="--folder-color: {{folder.color}};">
+                    <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                    <i class="{{folder.icon}} folder-icon"></i>
+                    <span class="folder-name">{{folder.name}}</span>
+                    <span class="folder-count">{{tracks.length}}</span>
+                    {{#if ../../isGM}}
+                    <div class="folder-actions">
+                        <button class="folder-edit-btn" data-folder-id="{{folder.id}}" data-library="soundboard" data-tooltip="Edit folder"><i class="fas fa-edit"></i></button>
+                    </div>
+                    {{/if}}
+                </div>
+                <div class="folder-tracks {{#if collapsed}}collapsed{{/if}}">
+                    <div class="soundboard-grid sb-size-{{../../soundboardSize}}">
+                        {{#each tracks}}
+                        <div class="soundboard-card {{#if isPlaying}}playing{{/if}} {{#if isLooping}}looping{{/if}} {{#if (njb-includes ../../../selectedSoundboardIds id)}}selected{{/if}}" data-sound-id="{{id}}" style="--card-color: {{#if color}}{{color}}{{else}}#ff6b35{{/if}};">
+                            {{#if ../../../selectionMode}}<div class="card-select-overlay"><input type="checkbox" class="sb-select-checkbox" {{#if (njb-includes ../../../selectedSoundboardIds id)}}checked{{/if}}></div>{{/if}}
+                            <div class="sb-card-bg">{{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}}">{{/if}}</div>
+                            <div class="sb-card-content">
+                                <div class="sb-icon"><i class="{{#if icon}}{{icon}}{{else}}fas fa-volume-up{{/if}}"></i></div>
+                                <div class="sb-name" title="{{name}}">{{name}}</div>
+                                <div class="sb-source">{{#if (eq source 'youtube')}}<i class="fab fa-youtube"></i>{{else}}<i class="fas fa-file-audio"></i>{{/if}}</div>
+                            </div>
+                            <div class="sb-card-controls">
+                                <button class="sb-play-btn {{#if isPlaying}}playing{{/if}}" data-tooltip="{{#if isPlaying}}Stop{{else}}Play{{/if}}"><i class="fas {{#if isPlaying}}fa-stop{{else}}fa-play{{/if}}"></i></button>
+                                <button class="sb-loop-btn {{#if isLooping}}active{{/if}}" data-tooltip="Loop {{#if isLooping}}(On){{else}}(Off){{/if}}"><i class="fas fa-redo"></i></button>
+                                {{#if ../../../isGM}}<button class="sb-edit-btn" data-tooltip="Edit sound"><i class="fas fa-edit"></i></button><button class="sb-delete-btn" data-tooltip="Delete sound"><i class="fas fa-trash"></i></button>{{/if}}
+                            </div>
+                            {{#if isPlaying}}<div class="sb-playing-indicator"><div class="sb-wave"><span></span><span></span><span></span><span></span></div></div>{{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+            </div>
+            {{/each}}
             {{else}}
             <div class="empty-state soundboard-empty">
                 <i class="fas fa-th" style="font-size: 4rem; color: #ff6b35; margin-bottom: 20px;"></i>
@@ -795,7 +904,9 @@
       <!-- Now Playing Info -->
       <div class="now-playing-info">
         <div class="now-playing-art">
-          {{#if currentTrack.thumbnail}}
+          {{#if nowPlayingHidden}}
+          <div class="art-placeholder"><i class="fas fa-mask"></i></div>
+          {{else if currentTrack.thumbnail}}
           <img src="{{currentTrack.thumbnail}}" alt="{{currentTrack.name}}">
           {{else}}
           <div class="art-placeholder"><i class="fas fa-music"></i></div>
@@ -803,8 +914,13 @@
         </div>
         <div class="track-details">
           <div class="np-title-wrapper">
+            {{#if nowPlayingHidden}}
+            <div class="np-title" id="music-title">Now Playing</div>
+            <span class="title-tooltip" id="music-title-tooltip">Now Playing</span>
+            {{else}}
             <div class="np-title" id="music-title">{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}</div>
             <span class="title-tooltip" id="music-title-tooltip">{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}</span>
+            {{/if}}
           </div>
           <div class="np-subtitle">
             {{#if currentPlaylist}}
@@ -869,9 +985,27 @@
   {{#if isGM}}
   <div class="selection-toolbar {{#if selectedCount}}visible{{/if}}">
     <span class="selection-count">{{selectedCountText}}</span>
-    <button class="btn-add-to-playlist" data-tooltip="{{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}">
-      <i class="fas fa-plus"></i> {{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}
-    </button>
+    <div class="selection-actions">
+      {{#if (eq view 'library')}}
+      <button class="btn-add-to-playlist" data-tooltip="{{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}">
+        <i class="fas fa-plus"></i> {{localize "NARRATOR-JUKEBOX.Dialog.Playlist.AddToTitle"}}
+      </button>
+      {{/if}}
+      {{#if (ne view 'soundboard')}}
+      <button class="btn-bulk-tag" data-tooltip="Add Tag">
+        <i class="fas fa-tag"></i> Add Tag
+      </button>
+      <button class="btn-bulk-remove-tag" data-tooltip="Remove Tag">
+        <i class="fas fa-tags"></i> Remove Tag
+      </button>
+      {{/if}}
+      <button class="btn-move-to-folder" data-tooltip="Move to Folder">
+        <i class="fas fa-folder"></i> Move to Folder
+      </button>
+      <button class="btn-bulk-delete" data-tooltip="Delete Selected">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    </div>
     <button class="btn-clear-selection" data-tooltip="{{localize "NARRATOR-JUKEBOX.Common.Cancel"}}">
       <i class="fas fa-times"></i>
     </button>

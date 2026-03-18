@@ -44,6 +44,7 @@ export function showAddPlaylistDialog({ jukebox, onSuccess }) {
     title: localize('Dialog.Playlist.NewTitle'),
     content: content,
     classes: DIALOG_CLASSES.playlist,
+    default: 'create',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.playlist);
       applyDarkTheme(html);

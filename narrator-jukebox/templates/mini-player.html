@@ -229,15 +229,17 @@
     <div class="mini-player-section music-player {{#if (ne miniActiveTab 'music')}}hidden{{/if}}">
       <div class="mini-now-playing">
         <div class="mini-np-art">
-          {{#if currentTrack.thumbnail}}
+          {{#if nowPlayingHidden}}
+          <div class="mini-np-placeholder"><i class="fas fa-mask"></i></div>
+          {{else if currentTrack.thumbnail}}
           <img src="{{currentTrack.thumbnail}}" alt="{{currentTrack.name}}">
           {{else}}
           <div class="mini-np-placeholder"><i class="fas fa-music"></i></div>
           {{/if}}
         </div>
         <div class="mini-np-info">
-          <div class="mini-np-title" title="{{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}">
-            {{#if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}
+          <div class="mini-np-title" title="{{#if nowPlayingHidden}}Now Playing{{else if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}">
+            {{#if nowPlayingHidden}}Now Playing{{else if currentTrack.name}}{{currentTrack.name}}{{else}}No Music{{/if}}
           </div>
         </div>
       </div>

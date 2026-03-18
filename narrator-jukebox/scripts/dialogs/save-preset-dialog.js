@@ -110,6 +110,7 @@ export function showSavePresetDialog({ jukebox, onSuccess }) {
     title: localize('Dialog.Preset.SaveTitle'),
     content: content,
     classes: [...DIALOG_CLASSES.ambience, 'preset-save-dialog'],
+    default: 'save',
     render: (html) => {
       applyDialogClasses(html, [...DIALOG_CLASSES.ambience, 'preset-save-dialog']);
       applyDarkTheme(html);

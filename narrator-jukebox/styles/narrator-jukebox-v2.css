@@ -1003,8 +1003,8 @@
 
 .narrator-jukebox-app .col-thumb img { width: 40px; height: 40px; object-fit: cover; border-radius: 2px; }
 .narrator-jukebox-app .col-title { display: flex; flex-direction: column; justify-content: center; overflow: hidden; padding-right: 10px; }
-.narrator-jukebox-app .t-name { font-weight: 600; color: white; display: flex; align-items: center; gap: 0; min-width: 0; }
-.narrator-jukebox-app .t-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.narrator-jukebox-app .t-name { font-weight: 600; color: white; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.narrator-jukebox-app .t-name-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .narrator-jukebox-app .track-row.active .t-name { color: var(--jb-accent); }
 .narrator-jukebox-app .t-sub { font-size: 0.8rem; color: var(--jb-text-secondary); }
 
@@ -1088,6 +1088,29 @@
 }
 .narrator-jukebox-app .action-btn:hover { color: var(--jb-accent); }
 .narrator-jukebox-app .action-btn.delete-track-btn:hover { color: #e91e63; }
+
+/* Track visibility toggle (spoiler protection) */
+.narrator-jukebox-app .track-visibility-btn {
+    display: inline-flex !important;
+    width: auto !important;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.35);
+    transition: color 0.2s;
+}
+.narrator-jukebox-app .track-visibility-btn:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+.narrator-jukebox-app .track-visibility-btn.is-hidden {
+    color: #f0a030;
+}
+.narrator-jukebox-app .track-visibility-btn.is-hidden:hover {
+    color: #ffc107;
+}
 
 @keyframes jb-pulse {
     0% { opacity: 1; }
@@ -2292,6 +2315,15 @@
     transform: rotate(45deg);
 }
 
+.add-track-dialog-window .playlist-edit-dialog .playlist-cover-preview {
+    background: linear-gradient(145deg, rgba(29, 185, 84, 0.22), rgba(10, 10, 10, 0.92)) !important;
+    border-color: rgba(29, 185, 84, 0.35) !important;
+}
+
+.add-track-dialog-window .playlist-edit-dialog .playlist-cover-preview i {
+    color: rgba(29, 185, 84, 0.78) !important;
+}
+
 /* Scrollbar styling for playlist options */
 .add-track-dialog-window .playlist-options-container::-webkit-scrollbar {
     width: 8px;
@@ -2360,8 +2392,16 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: auto !important;
+    max-height: calc(100vh - 96px);
     color: #fff !important;
+}
+
+.mood-editor-dialog-v2 .window-content > form,
+.mood-editor-dialog-v2.app .window-content > form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
 }
 
 .mood-editor-dialog-v2 .dialog-content,
@@ -2369,16 +2409,13 @@
     background: #0a0a0a !important;
     color: #fff !important;
     padding: 0 !important;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    overflow: visible;
 }
 
 /* Main Editor Container */
 .mood-editor-dialog-v2 .mood-editor-v2 {
     display: flex;
     flex-direction: column;
-    height: auto;
     font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -2444,7 +2481,6 @@
 
 /* Cards Grid */
 .mood-editor-dialog-v2 .mood-cards-grid {
-    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 24px 28px;
@@ -2452,6 +2488,7 @@
     grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
     gap: 20px;
     align-content: start;
+    max-height: min(58vh, 760px);
 }
 
 .mood-editor-dialog-v2 .mood-cards-grid::-webkit-scrollbar {
@@ -3077,12 +3114,15 @@
 /* Dialog Buttons */
 .mood-editor-dialog-v2 .dialog-buttons,
 .mood-editor-dialog-v2.app .dialog-buttons {
-    padding: 16px 28px 20px !important;
+    padding: 12px 28px 16px !important;
     background: rgba(0, 0, 0, 0.5) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
     display: flex !important;
+    align-items: center !important;
     justify-content: flex-end !important;
     gap: 12px !important;
+    flex-shrink: 0 !important;
+    min-height: 0 !important;
 }
 
 .mood-editor-dialog-v2 .dialog-button,
@@ -4552,6 +4592,18 @@
     flex-shrink: 0;
 }
 
+.narrator-jukebox-app .playlist-browser-cover.custom-cover {
+    display: block;
+    background: linear-gradient(145deg, rgba(29, 185, 84, 0.18), rgba(0, 0, 0, 0.4));
+}
+
+.narrator-jukebox-app .playlist-browser-cover.custom-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .narrator-jukebox-app .cover-cell-mini {
     overflow: hidden;
 }
@@ -4773,6 +4825,17 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+.narrator-jukebox-app .playlist-cover.custom-cover {
+    background: linear-gradient(145deg, rgba(29, 185, 84, 0.18), rgba(0, 0, 0, 0.45));
+}
+
+.narrator-jukebox-app .playlist-cover.custom-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .narrator-jukebox-app .playlist-cover-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -4910,6 +4973,47 @@
 .narrator-jukebox-app .playlist-shuffle-btn:hover {
     color: #fff;
     transform: scale(1.1);
+}
+
+/* Playlist Loop Button */
+.narrator-jukebox-app .playlist-loop-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--jb-text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.narrator-jukebox-app .playlist-loop-btn:hover {
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.narrator-jukebox-app .playlist-loop-btn.active {
+    color: var(--jb-accent);
+}
+
+.narrator-jukebox-app .playlist-loop-btn.active:hover {
+    color: var(--jb-accent-hover);
+}
+
+/* Per-Track Loop Button */
+.narrator-jukebox-app .track-loop-btn.active {
+    color: var(--jb-accent);
+    opacity: 1;
+}
+
+.narrator-jukebox-app .track-row .col-actions:has(.track-loop-btn.active) {
+    opacity: 1;
+}
+
+.narrator-jukebox-app .track-loop-btn.active:hover {
+    color: var(--jb-accent-hover);
+    background: rgba(29, 185, 84, 0.1);
 }
 
 /* Playlist Track List */
@@ -6466,20 +6570,172 @@
     }
 }
 
+/* Soundboard Size Toggle */
+.narrator-jukebox-app .sb-size-toggle {
+    display: flex;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.narrator-jukebox-app .sb-size-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    padding: 0;
+}
+
+.narrator-jukebox-app .sb-size-btn:hover {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.narrator-jukebox-app .sb-size-btn.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Soundboard Size: Small */
+.narrator-jukebox-app .soundboard-grid.sb-size-small {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.narrator-jukebox-app .sb-size-small .soundboard-card {
+    min-height: 90px;
+    padding: 10px;
+}
+
+.narrator-jukebox-app .sb-size-small .sb-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.narrator-jukebox-app .sb-size-small .sb-icon i {
+    font-size: 1rem;
+}
+
+.narrator-jukebox-app .sb-size-small .sb-name {
+    font-size: 0.75rem;
+}
+
+.narrator-jukebox-app .sb-size-small .sb-card-controls button {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+}
+
+.narrator-jukebox-app .sb-size-small .sb-play-btn {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+/* Soundboard Size: Medium (default — no overrides needed, matches base styles) */
+
+/* Soundboard Size: Large */
+.narrator-jukebox-app .soundboard-grid.sb-size-large {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.narrator-jukebox-app .sb-size-large .soundboard-card {
+    min-height: 200px;
+    padding: 20px;
+}
+
+.narrator-jukebox-app .sb-size-large .sb-icon {
+    width: 60px;
+    height: 60px;
+}
+
+.narrator-jukebox-app .sb-size-large .sb-icon i {
+    font-size: 1.8rem;
+}
+
+.narrator-jukebox-app .sb-size-large .sb-name {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Large size: thumbnail is clearly visible */
+.narrator-jukebox-app .sb-size-large .sb-card-bg {
+    opacity: 0.5;
+}
+
+.narrator-jukebox-app .sb-size-large .sb-card-bg img {
+    filter: blur(0px);
+}
+
+/* Large size: darken content area for readability over visible thumbnail */
+.narrator-jukebox-app .sb-size-large .sb-card-content {
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
 /* ===================================
    Context Menu Styles
    =================================== */
-.narrator-jukebox-app .nj-context-menu {
+.nj-context-menu {
     position: fixed;
-    background: rgba(30, 30, 35, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px 0;
-    min-width: 160px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
+    min-width: 240px;
+    max-width: 280px;
+    padding: 12px;
+    background:
+        radial-gradient(circle at top left, rgba(29, 185, 84, 0.18), transparent 42%),
+        linear-gradient(180deg, rgba(28, 28, 28, 0.98) 0%, rgba(18, 18, 18, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
     z-index: 10000;
     animation: contextMenuFadeIn 0.15s ease;
+    overflow: hidden;
+    isolation: isolate;
+    font-family: var(--jb-font-family), sans-serif;
+}
+
+.nj-context-menu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 30%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.nj-context-header {
+    padding: 2px 6px 12px;
+    margin-bottom: 4px;
+}
+
+.nj-context-title {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nj-context-subtitle {
+    margin-top: 5px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 @keyframes contextMenuFadeIn {
@@ -6493,41 +6749,125 @@
     }
 }
 
-.narrator-jukebox-app .nj-context-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 14px;
-    color: var(--jb-text-secondary);
-    font-size: 0.85rem;
+.nj-context-item {
+    appearance: none;
+    -webkit-appearance: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    width: 100%;
+    min-height: 0;
+    height: auto !important;
+    margin: 0;
+    padding: 12px 14px !important;
+    border: none !important;
+    border-radius: 14px;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 0.88rem;
+    font-family: inherit;
+    text-align: left;
+    text-transform: none;
+    text-shadow: none;
+    line-height: 1.2 !important;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
-.narrator-jukebox-app .nj-context-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--jb-text-primary);
+.nj-context-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff;
+    transform: translateX(2px);
 }
 
-.narrator-jukebox-app .nj-context-item i {
-    width: 16px;
+.nj-context-item:disabled {
+    opacity: 0.32;
+    cursor: default;
+}
+
+.nj-context-item-main {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.nj-context-item-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.nj-context-label {
+    color: #fff;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+}
+
+.nj-context-description {
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: normal;
+}
+
+.nj-context-shortcut {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.nj-context-item i {
+    width: 18px;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: rgba(255, 255, 255, 0.72);
 }
 
-.narrator-jukebox-app .nj-context-item.danger {
-    color: #e57373;
+.nj-context-item[data-action="play"] i,
+.nj-context-item[data-action="shuffle"] i {
+    color: var(--jb-accent);
 }
 
-.narrator-jukebox-app .nj-context-item.danger:hover {
-    background: rgba(229, 115, 115, 0.15);
-    color: #ef5350;
+.nj-context-item[data-action="edit"] i,
+.nj-context-item[data-action="duplicate"] i {
+    color: rgba(255, 255, 255, 0.82);
 }
 
-.narrator-jukebox-app .nj-context-divider {
+.nj-context-item.danger {
+    color: #ff7b7b;
+}
+
+.nj-context-item.danger .nj-context-label,
+.nj-context-item.danger i {
+    color: #ff7b7b;
+}
+
+.nj-context-item.danger .nj-context-description {
+    color: rgba(255, 123, 123, 0.68);
+}
+
+.nj-context-item.danger:hover:not(:disabled) {
+    background: rgba(255, 123, 123, 0.12) !important;
+    color: #ff9f9f;
+}
+
+.nj-context-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 6px 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 10%, rgba(255, 255, 255, 0.12) 90%, transparent 100%);
+    margin: 8px -12px;
 }
 
 /* ===================================
@@ -10052,6 +10392,55 @@
     opacity: 0.6;
 }
 
+.narrator-jukebox-app .ambience-issue-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(251, 191, 36, 0.16);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+    font-size: 0.72rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.narrator-jukebox-app .ambience-card.has-issue {
+    border-color: rgba(251, 191, 36, 0.45);
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.12);
+}
+
+.narrator-jukebox-app .amb-issue {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    color: #fcd34d;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.narrator-jukebox-app .amb-issue.permanent {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.28);
+    color: #fca5a5;
+}
+
+.narrator-jukebox-app .amb-issue span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Volume Control */
 .narrator-jukebox-app .amb-volume-control {
     position: relative;
@@ -10588,6 +10977,38 @@
     background: rgba(29, 185, 84, 0.25) !important;
 }
 
+/* Card Selection Overlay (Ambience & Soundboard) */
+.narrator-jukebox-app .card-select-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.narrator-jukebox-app .card-select-overlay input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--jb-accent);
+    margin: 0;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+}
+
+/* Selected Card States */
+.narrator-jukebox-app .ambience-card.selected {
+    border-color: var(--jb-accent) !important;
+    box-shadow: 0 0 0 1px var(--jb-accent), 0 0 12px rgba(29, 185, 84, 0.3) !important;
+}
+
+.narrator-jukebox-app .soundboard-card.selected {
+    border-color: var(--jb-accent) !important;
+    box-shadow: 0 0 0 1px var(--jb-accent), 0 0 12px rgba(29, 185, 84, 0.3) !important;
+}
+
 /* Select All Checkbox in Header */
 .narrator-jukebox-app .select-all-col {
     width: 40px;
@@ -10698,6 +11119,100 @@
 .narrator-jukebox-app .selection-toolbar .btn-clear-selection:hover {
     background: var(--jb-bg-card-hover);
     color: var(--jb-text-primary);
+}
+
+/* Selection Actions Group */
+.narrator-jukebox-app .selection-toolbar .selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Bulk Tag Button */
+.narrator-jukebox-app .selection-toolbar .btn-bulk-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--jb-accent);
+    border-radius: 20px;
+    color: var(--jb-accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.narrator-jukebox-app .selection-toolbar .btn-bulk-tag:hover {
+    background: rgba(29, 185, 84, 0.1);
+}
+
+/* Bulk Remove Tag Button */
+.narrator-jukebox-app .selection-toolbar .btn-bulk-remove-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--jb-border);
+    border-radius: 20px;
+    color: var(--jb-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.narrator-jukebox-app .selection-toolbar .btn-bulk-remove-tag:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--jb-text-primary);
+}
+
+/* Move to Folder Button */
+.narrator-jukebox-app .selection-toolbar .btn-move-to-folder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--jb-border);
+    border-radius: 20px;
+    color: var(--jb-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.narrator-jukebox-app .selection-toolbar .btn-move-to-folder:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--jb-text-primary);
+}
+
+/* Bulk Delete Button */
+.narrator-jukebox-app .selection-toolbar .btn-bulk-delete {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid rgba(233, 30, 99, 0.4);
+    border-radius: 20px;
+    color: #e91e63;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.narrator-jukebox-app .selection-toolbar .btn-bulk-delete:hover {
+    background: rgba(233, 30, 99, 0.15);
+    border-color: #e91e63;
 }
 
 /* Add All Visible Button (shows when filter is active) */
@@ -10934,4 +11449,380 @@
 /* Queue empty state */
 .narrator-jukebox-app .mini-empty-state.queue i {
     color: var(--jb-accent);
+}
+
+/* ==========================================
+   Folder System
+   ========================================== */
+
+/* Folder Section */
+.narrator-jukebox-app .folder-section {
+    margin-bottom: 2px;
+}
+
+/* Folder Header */
+.narrator-jukebox-app .folder-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--folder-color, #1db954);
+    border-radius: 0 6px 6px 0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    user-select: none;
+    margin-top: 4px;
+}
+
+.narrator-jukebox-app .folder-header:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.narrator-jukebox-app .folder-toggle {
+    background: none !important;
+    border: none !important;
+    padding: 4px;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+    box-shadow: none !important;
+}
+
+.narrator-jukebox-app .folder-chevron {
+    transition: transform 0.2s ease;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+}
+
+.narrator-jukebox-app .folder-chevron.collapsed {
+    transform: rotate(-90deg);
+}
+
+.narrator-jukebox-app .folder-icon {
+    color: var(--folder-color);
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.narrator-jukebox-app .folder-name {
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.narrator-jukebox-app .folder-count {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.narrator-jukebox-app .folder-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.narrator-jukebox-app .folder-header:hover .folder-actions {
+    opacity: 1;
+}
+
+.narrator-jukebox-app .folder-edit-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.narrator-jukebox-app .folder-edit-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Folder Tracks Container */
+.narrator-jukebox-app .folder-tracks {
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+}
+
+.narrator-jukebox-app .folder-tracks.collapsed {
+    display: none;
+}
+
+/* Folder tracks inner grid for ambience/soundboard */
+.narrator-jukebox-app .folder-tracks .ambience-layer-grid,
+.narrator-jukebox-app .folder-tracks .soundboard-grid {
+    padding: 8px 8px 8px 22px;
+}
+
+/* Create Folder Button */
+.narrator-jukebox-app .create-folder-btn {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--jb-text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.narrator-jukebox-app .create-folder-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.narrator-jukebox-app .create-folder-btn i {
+    margin-right: 4px;
+}
+
+/* ==========================================
+   Folder Dialog Styles
+   ========================================== */
+
+/* Folder dialog color/icon pickers */
+.folder-dialog .color-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.folder-dialog .color-preset {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.folder-dialog .color-preset:hover {
+    transform: scale(1.15);
+}
+
+.folder-dialog .color-preset.active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.folder-dialog .color-picker {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+}
+
+.folder-dialog .color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.folder-dialog .icon-picker-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.folder-dialog .icon-preview {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.folder-dialog .folder-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    flex: 1;
+}
+
+.folder-dialog .icon-preset {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+
+.folder-dialog .icon-preset:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.folder-dialog .icon-preset.active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Folder Preview */
+.folder-dialog .folder-preview {
+    background: var(--jb-bg-main, #121212);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.folder-dialog .folder-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-left: 3px solid var(--folder-color, #1db954);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.folder-dialog .folder-preview-header .folder-chevron {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+}
+
+.folder-dialog .folder-preview-header .folder-icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.folder-dialog .folder-preview-header .folder-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #fff;
+}
+
+.folder-dialog .folder-preview-header .folder-count {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* Danger zone */
+.folder-dialog .danger-zone {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+.folder-dialog .delete-folder-btn {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.folder-dialog .delete-folder-btn:hover {
+    background: rgba(231, 76, 60, 0.2);
+    border-color: rgba(231, 76, 60, 0.5);
+}
+
+.folder-dialog .danger-hint {
+    display: block;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+}
+
+/* ==========================================
+   Move to Folder Dialog Styles
+   ========================================== */
+
+.move-to-folder-dialog .move-folder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.move-to-folder-dialog .move-folder-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.move-to-folder-dialog .move-folder-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.move-to-folder-dialog .move-folder-color {
+    width: 4px;
+    height: 28px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.move-to-folder-dialog .move-folder-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.move-to-folder-dialog .move-folder-name {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.move-to-folder-dialog .no-folder-option {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+}
+
+.move-to-folder-dialog .no-folder-option .move-folder-name {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
 }

@@ -92,6 +92,7 @@ export function showAddSelectedToPlaylistDialog({ musicIds, jukebox, onSuccess }
     title: localize('Dialog.Playlist.AddToTitle'),
     content: content,
     classes: DIALOG_CLASSES.playlist,
+    default: 'add',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.playlist);
       applyDarkTheme(html);

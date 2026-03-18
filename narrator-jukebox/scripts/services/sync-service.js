@@ -6,6 +6,7 @@
 import { JUKEBOX } from '../core/constants.js';
 import { ambienceLayerManager } from '../core/ambience-layer-manager.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
+import { extractYouTubeVideoId, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * SyncService - Manages socket communication for multiplayer sync
@@ -54,6 +55,113 @@ class SyncService {
     return this.socket !== null;
   }
 
+  /**
+   * Normalize legacy track payloads received over socket sync.
+   * Older suggestion flows could send `path` instead of `url` or omit `source`.
+   * @param {object} track
+   * @param {string} channel
+   * @returns {object|null}
+   */
+  _normalizeTrackData(track, channel = 'music') {
+    if (!track) return null;
+
+    const normalized = { ...track };
+    normalized.url = normalized.url || normalized.path || '';
+    const youtubeId = normalized.url ? extractYouTubeVideoId(normalized.url) : null;
+
+    if (youtubeId) {
+      normalized.source = 'youtube';
+      normalized.url = normalizeYouTubeUrl(normalized.url);
+    } else if (!normalized.source) {
+      normalized.source = 'local';
+    }
+
+    if (!normalized.id && track.id) {
+      normalized.id = track.id;
+    }
+
+    normalized._channel = channel;
+    return normalized;
+  }
+
+  /**
+   * Cache embedded track data locally so later sync/seek/pause paths can resolve it.
+   * @param {object} track
+   * @param {string} channel
+   */
+  _cacheTrackData(track, channel = 'music') {
+    const normalized = this._normalizeTrackData(track, channel);
+    if (!normalized?.id) return;
+
+    const collection = channel === 'ambience' ? this.dataService.ambience : this.dataService.music;
+    const index = collection.findIndex(entry => entry.id === normalized.id);
+
+    if (index >= 0) {
+      collection[index] = { ...collection[index], ...normalized };
+    } else {
+      collection.push(normalized);
+    }
+  }
+
+  /**
+   * Serialize track data for socket payloads using the same normalization
+   * rules as incoming sync messages.
+   * @param {object} track
+   * @param {string} channel
+   * @returns {object|null}
+   */
+  _serializeTrackData(track, channel = 'music') {
+    const normalized = this._normalizeTrackData(track, channel);
+    if (!normalized?.id) return null;
+
+    return {
+      id: normalized.id,
+      name: normalized.name,
+      url: normalized.url,
+      source: normalized.source,
+      tags: normalized.tags,
+      thumbnail: normalized.thumbnail,
+      volume: normalized.volume,
+      startTime: normalized.startTime,
+      endTime: normalized.endTime,
+      hidden: normalized.hidden || false
+    };
+  }
+
+  /**
+   * Build a lookup table of ambience layer track data for sync payloads.
+   * @param {object} layersState
+   * @returns {Record<string, object>}
+   */
+  _serializeAmbienceLayerTrackData(layersState = null) {
+    const state = layersState || ambienceLayerManager.getLayersState();
+    const activeLayers = new Map(
+      ambienceLayerManager.getActiveLayers().map(layer => [layer.trackId, layer.track])
+    );
+
+    return (state.layers || []).reduce((acc, layerState) => {
+      const track = activeLayers.get(layerState.trackId) ||
+        this.dataService.getAmbience(layerState.trackId) ||
+        this.dataService.findTrack(layerState.trackId, 'ambience');
+      const serialized = this._serializeTrackData(track, 'ambience');
+      if (serialized) {
+        acc[layerState.trackId] = serialized;
+      }
+      return acc;
+    }, {});
+  }
+
+  /**
+   * Cache a lookup table of embedded track data locally.
+   * @param {Record<string, object>} trackDataMap
+   * @param {string} channel
+   */
+  _cacheTrackDataMap(trackDataMap = {}, channel = 'ambience') {
+    Object.values(trackDataMap || {}).forEach(trackData => {
+      this._cacheTrackData(trackData, channel);
+    });
+  }
+
   // ==========================================
   // Broadcast Commands (GM -> Players)
   // ==========================================
@@ -63,8 +171,9 @@ class SyncService {
    * @param {string} trackId - Track ID to play
    * @param {string} channel - 'music' or 'ambience'
    * @param {number} volume - Current volume level (0-1)
+   * @param {object} [trackData] - Full track data as fallback for clients that haven't synced yet
    */
-  broadcastPlay(trackId, channel = 'music', volume = 0.8) {
+  broadcastPlay(trackId, channel = 'music', volume = 0.8, trackData = null) {
     if (!this.socket) return;
     const payload = {
       action: 'play',
@@ -73,6 +182,11 @@ class SyncService {
       volume,
       timestamp: Date.now()
     };
+    // Include track data so players can play even if their settings haven't synced yet
+    // (e.g. GM just approved a suggestion and immediately hit play)
+    if (trackData) {
+      payload.trackData = this._serializeTrackData(trackData, channel);
+    }
     this.socket.executeForOthers('handleRemoteCommand', payload);
   }
 
@@ -204,7 +318,7 @@ class SyncService {
    * @param {string} trackId - Track ID to add
    * @param {number} volume - Initial volume (0-1)
    */
-  broadcastAmbienceLayerAdd(trackId, volume = 0.8) {
+  broadcastAmbienceLayerAdd(trackId, volume = 0.8, trackData = null) {
     if (!this.socket) return;
     const payload = {
       action: 'ambienceLayers',
@@ -213,6 +327,9 @@ class SyncService {
       volume,
       timestamp: Date.now()
     };
+    if (trackData) {
+      payload.trackData = this._serializeTrackData(trackData, 'ambience');
+    }
     debugLog(' Broadcasting add layer:', trackId);
     this.socket.executeForOthers('handleRemoteCommand', payload);
   }
@@ -304,6 +421,7 @@ class SyncService {
       action: 'ambienceLayers',
       subAction: 'fullSync',
       layersState,
+      trackDataMap: this._serializeAmbienceLayerTrackData(layersState),
       timestamp: Date.now()
     };
     debugLog(' Broadcasting full ambience state:', layersState);
@@ -316,19 +434,31 @@ class SyncService {
   broadcastState() {
     if (!this.socket || !this.playbackService) return;
 
+    const musicTrack = this.playbackService.getCurrentMusicTrack();
+    const ambienceTrack = this.playbackService.getCurrentAmbienceTrack();
+
     const state = {
       action: 'syncState',
-      musicTrackId: this.playbackService.getCurrentMusicTrack()?.id,
+      musicTrackId: musicTrack?.id,
       musicTime: this.playbackService.channels?.music?.currentTime || 0,
       isPlaying: this.playbackService.isPlaying,
-      ambienceTrackId: this.playbackService.getCurrentAmbienceTrack()?.id,
+      ambienceTrackId: ambienceTrack?.id,
       isAmbiencePlaying: this.playbackService.isAmbiencePlaying,
       volume: this.playbackService.channels?.music?.volume || 0.8,
       ambienceVolume: this.playbackService.channels?.ambience?.volume || 0.5,
       // Include ambience layers state
       ambienceLayersState: ambienceLayerManager.getLayersState(),
+      ambienceLayersTrackData: this._serializeAmbienceLayerTrackData(),
       timestamp: Date.now()
     };
+
+    // Include full track data so players can play even if their settings haven't synced
+    if (musicTrack) {
+      state.musicTrackData = this._serializeTrackData(musicTrack, 'music');
+    }
+    if (ambienceTrack) {
+      state.ambienceTrackData = this._serializeTrackData(ambienceTrack, 'ambience');
+    }
 
     this.socket.executeForEveryone('handleRemoteCommand', state);
   }
@@ -479,19 +609,34 @@ class SyncService {
   }
 
   async _handlePlayCommand(payload) {
-    let track = this.dataService.findTrack(payload.trackId, payload.channel);
+    let track = this._normalizeTrackData(this.dataService.findTrack(payload.trackId, payload.channel), payload.channel);
 
-    // Reload data if track not found
+    // Reload data if track not found (settings may not have synced yet)
     if (!track) {
       debugWarn(` Track ${payload.trackId} not found. Reloading data...`);
       await this.dataService.loadAllData();
-      track = this.dataService.findTrack(payload.trackId, payload.channel);
+      track = this._normalizeTrackData(this.dataService.findTrack(payload.trackId, payload.channel), payload.channel);
+    }
 
-      if (!track) {
-        debugError(`Track ${payload.trackId} not found even after reload.`);
-        ui.notifications.error(`Failed to sync: track not found`);
-        return;
-      }
+    // Retry after delay - Foundry world settings propagation can lag behind socketlib
+    if (!track) {
+      debugWarn(` Track still not found. Retrying after delay...`);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await this.dataService.loadAllData();
+      track = this._normalizeTrackData(this.dataService.findTrack(payload.trackId, payload.channel), payload.channel);
+    }
+
+    // Last resort: use embedded track data from the broadcast payload
+    if (!track && payload.trackData) {
+      debugWarn(` Using embedded track data from broadcast for: ${payload.trackData.name}`);
+      track = this._normalizeTrackData(payload.trackData, payload.channel);
+      this._cacheTrackData(track, payload.channel);
+    }
+
+    if (!track) {
+      debugError(`Track ${payload.trackId} not found after all retries.`);
+      ui.notifications.error(`Failed to sync: track not found`);
+      return;
     }
 
     debugLog(`Playing synced track: ${track.name}`);
@@ -537,7 +682,22 @@ class SyncService {
 
     // Sync Music
     if (payload.musicTrackId) {
-      const track = this.dataService.getMusic(payload.musicTrackId);
+      let track = this._normalizeTrackData(this.dataService.getMusic(payload.musicTrackId), 'music');
+
+      // Reload data if track not found (may have been added recently, e.g. approved suggestion)
+      if (!track) {
+        debugWarn(` Sync state: music track ${payload.musicTrackId} not found. Reloading...`);
+        await this.dataService.loadAllData();
+        track = this._normalizeTrackData(this.dataService.getMusic(payload.musicTrackId), 'music');
+      }
+
+      // Last resort: use embedded track data from the sync payload
+      if (!track && payload.musicTrackData) {
+        debugWarn(` Sync state: using embedded track data for: ${payload.musicTrackData.name}`);
+        track = this._normalizeTrackData(payload.musicTrackData, 'music');
+        this._cacheTrackData(track, 'music');
+      }
+
       const currentId = this.playbackService.channels.music.currentTrack?.id;
 
       if (track && currentId !== payload.musicTrackId) {
@@ -557,24 +717,37 @@ class SyncService {
           this.playbackService.channels.music.setVolume(isMuted ? 0 : playerVolume);
         }
 
-        this.playbackService.channels.music.play(track, () => {
-          // Seek to GM's current position after track loads
-          const duration = this.playbackService.channels.music.duration;
-          if (duration && payload.musicTime) {
-            this.playbackService.channels.music.seek(payload.musicTime / duration * 100);
-          }
-          if (!payload.isPlaying) {
-            this.playbackService.channels.music.pause();
-            this.playbackService.isPlaying = false;
-          }
-        });
+        try {
+          await this.playbackService.channels.music.play(track, () => {
+            // Seek to GM's current position after track loads
+            const duration = this.playbackService.channels.music.duration;
+            if (duration && payload.musicTime) {
+              this.playbackService.channels.music.seek(payload.musicTime / duration * 100);
+            }
+            if (!payload.isPlaying) {
+              this.playbackService.channels.music.pause();
+              this.playbackService.isPlaying = false;
+            }
+          });
+        } catch (err) {
+          debugError(' Sync state music playback failed:', err);
+          this.playbackService.isPlaying = false;
+        }
       }
     }
 
     // Sync Ambience (legacy single-track mode)
     if (payload.ambienceTrackId) {
-      let track = this.dataService.getAmbience(payload.ambienceTrackId);
-      if (!track) track = this.dataService.getMusic(payload.ambienceTrackId);
+      let track = this._normalizeTrackData(this.dataService.getAmbience(payload.ambienceTrackId), 'ambience');
+      if (!track) track = this._normalizeTrackData(this.dataService.getMusic(payload.ambienceTrackId), 'ambience');
+
+      // Last resort: use embedded track data from the sync payload
+      if (!track && payload.ambienceTrackData) {
+        debugWarn(` Sync state: using embedded ambience track data for: ${payload.ambienceTrackData.name}`);
+        track = this._normalizeTrackData(payload.ambienceTrackData, 'ambience');
+        this._cacheTrackData(track, 'ambience');
+      }
+
       const currentId = this.playbackService.channels.ambience.currentTrack?.id;
 
       if (track && currentId !== payload.ambienceTrackId) {
@@ -594,12 +767,17 @@ class SyncService {
           this.playbackService.channels.ambience.setVolume(isMuted ? 0 : playerVolume);
         }
 
-        this.playbackService.channels.ambience.play(track, () => {
-          if (!payload.isAmbiencePlaying) {
-            this.playbackService.channels.ambience.pause();
-            this.playbackService.isAmbiencePlaying = false;
-          }
-        });
+        try {
+          await this.playbackService.channels.ambience.play(track, () => {
+            if (!payload.isAmbiencePlaying) {
+              this.playbackService.channels.ambience.pause();
+              this.playbackService.isAmbiencePlaying = false;
+            }
+          });
+        } catch (err) {
+          debugError(' Sync state ambience playback failed:', err);
+          this.playbackService.isAmbiencePlaying = false;
+        }
       }
     }
 
@@ -612,6 +790,7 @@ class SyncService {
       // Restore state if GM has layers, OR if player has layers but GM doesn't (clear them)
       if (hasLayers || playerHasLayers) {
         try {
+          this._cacheTrackDataMap(payload.ambienceLayersTrackData, 'ambience');
           await ambienceLayerManager.restoreState(payload.ambienceLayersState, false);
           debugLog(' Synced ambience layers:', ambienceLayerManager.layerCount);
         } catch (err) {
@@ -673,10 +852,24 @@ class SyncService {
       case 'addLayer':
         await ensureData();
         try {
+          if (payload.trackData) {
+            this._cacheTrackData(payload.trackData, 'ambience');
+          }
+
           // Only add if not already present
           if (!ambienceLayerManager.isLayerActive(payload.trackId)) {
-            await ambienceLayerManager.addLayerWithoutBroadcast(payload.trackId, payload.volume);
-            debugLog(' Added synced layer:', payload.trackId);
+            let layer = await ambienceLayerManager.addLayerWithoutBroadcast(payload.trackId, payload.volume);
+
+            if (!layer && !payload.trackData && !ambienceLayerManager.hasDeferredState?.()) {
+              await this.dataService.loadAllData();
+              layer = await ambienceLayerManager.addLayerWithoutBroadcast(payload.trackId, payload.volume);
+            }
+
+            if (layer || ambienceLayerManager.hasDeferredState?.() || ambienceLayerManager.hasPendingLayers?.()) {
+              debugLog(' Added synced layer:', payload.trackId);
+            } else {
+              debugWarn(' Synced layer could not be created on this client:', payload.trackId);
+            }
           }
         } catch (err) {
           debugError(' Failed to add synced layer:', err);
@@ -709,6 +902,7 @@ class SyncService {
         // Full state sync (for player joining mid-session)
         await ensureData();
         try {
+          this._cacheTrackDataMap(payload.trackDataMap, 'ambience');
           await ambienceLayerManager.restoreState(payload.layersState, false);
           debugLog(' Full sync completed:', ambienceLayerManager.layerCount, 'layers');
         } catch (err) {
@@ -721,6 +915,7 @@ class SyncService {
         if (payload.layersState) {
           await ensureData();
           try {
+            this._cacheTrackDataMap(payload.trackDataMap, 'ambience');
             await ambienceLayerManager.restoreState(payload.layersState, false);
             debugLog(' Legacy sync completed');
           } catch (err) {

@@ -7,9 +7,10 @@ import { JUKEBOX } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
-import { validateField, validateUrl } from '../services/validation-service.js';
+import { validateField, validateUrl, showFieldError } from '../services/validation-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
+import { normalizeYouTubeUrl, probeYouTubePlayback } from '../utils/youtube-utils.js';
 
 /**
  * Ambience-specific theme (purple accent)
@@ -108,10 +109,14 @@ export function showAddAmbienceDialog({ jukebox, onSuccess }) {
             <label><i class="fas fa-link"></i> <span class="url-label">${localize('Labels.FilePath')}</span>${JukeboxBrowser.getFormatsTagHTML()}</label>
             <div class="url-input-wrapper">
               <input type="text" name="url" placeholder="${localize('Placeholders.SelectFileOrPastePath')}" spellcheck="false">
+              <button type="button" class="browse-btn youtube-test-btn hidden" title="Test YouTube embed playback">
+                <i class="fas fa-vial"></i>
+              </button>
               <button type="button" class="browse-btn file-picker-btn">
                 <i class="fas fa-folder-open"></i>
               </button>
             </div>
+            <span class="field-hint youtube-diagnostic hidden"></span>
           </div>
 
           <div class="form-group">
@@ -143,6 +148,7 @@ export function showAddAmbienceDialog({ jukebox, onSuccess }) {
     title: localize('Dialog.Ambience.AddTitle'),
     content: content,
     classes: DIALOG_CLASSES.ambience,
+    default: 'add',
     render: (html) => {
       applyDialogClasses(html, DIALOG_CLASSES.ambience);
       applyDarkTheme(html, AMBIENCE_THEME);
@@ -178,6 +184,8 @@ function setupAddAmbienceListeners(html) {
   const sourceButtons = html.find('.source-btn');
   const urlLabel = html.find('.url-label');
   const browseBtn = html.find('.file-picker-btn');
+  const youtubeTestBtn = html.find('.youtube-test-btn');
+  const youtubeDiagnostic = html.find('.youtube-diagnostic');
   const thumbnailPreview = html.find('.thumbnail-preview');
 
   // Source selector buttons
@@ -194,10 +202,14 @@ function setupAddAmbienceListeners(html) {
       urlLabel.text(localize('Labels.YouTubeURL'));
       urlInput.attr('placeholder', localize('Placeholders.PasteYouTubeURL'));
       browseBtn.hide();
+      youtubeTestBtn.removeClass('hidden');
+      setYouTubeDiagnosticState(youtubeDiagnostic, 'idle', 'Test this YouTube link before saving.');
     } else {
       urlLabel.text(localize('Labels.FilePath'));
       urlInput.attr('placeholder', localize('Placeholders.SelectFileOrPastePath'));
       browseBtn.show();
+      youtubeTestBtn.addClass('hidden');
+      setYouTubeDiagnosticState(youtubeDiagnostic, 'hidden', '');
     }
   });
 
@@ -245,6 +257,11 @@ function setupAddAmbienceListeners(html) {
     const url = e.target.value;
     const source = sourceHidden.val();
 
+    if (source === 'youtube') {
+      setYouTubeDiagnosticState(youtubeDiagnostic, url ? 'idle' : 'hidden', url ? 'Test this YouTube link before saving.' : '');
+      html.removeData('njbYoutubeProbe');
+    }
+
     if (source === 'youtube' && url) {
       const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
       const match = url.match(regExp);
@@ -267,6 +284,69 @@ function setupAddAmbienceListeners(html) {
       }
     }
   });
+
+  youtubeTestBtn.on('click', async () => {
+    await runYouTubeDiagnostic(html, { notify: true });
+  });
+}
+
+function setYouTubeDiagnosticState(diagnosticEl, state, message) {
+  diagnosticEl.removeClass('hidden');
+  diagnosticEl.css('color', '');
+
+  if (state === 'hidden') {
+    diagnosticEl.addClass('hidden');
+    diagnosticEl.text('');
+    return;
+  }
+
+  if (state === 'success') {
+    diagnosticEl.css('color', '#22c55e');
+  } else if (state === 'error') {
+    diagnosticEl.css('color', '#f87171');
+  } else if (state === 'pending') {
+    diagnosticEl.css('color', '#fbbf24');
+  }
+
+  diagnosticEl.text(message);
+}
+
+async function runYouTubeDiagnostic(html, options = {}) {
+  const { notify = false } = options;
+  const source = html.find('input[name="source"]').val();
+  const urlInput = html.find('input[name="url"]');
+  const youtubeDiagnostic = html.find('.youtube-diagnostic');
+  const rawUrl = urlInput.val().trim();
+
+  if (source !== 'youtube' || !rawUrl) {
+    return { ok: true, skipped: true };
+  }
+
+  if (!validateUrl(rawUrl, source)) {
+    setYouTubeDiagnosticState(youtubeDiagnostic, 'error', localize('Validation.InvalidYouTubeURL'));
+    if (notify) ui.notifications.warn(localize('Validation.InvalidYouTubeURL'));
+    return { ok: false, code: 2, details: { userMessage: localize('Validation.InvalidYouTubeURL') } };
+  }
+
+  const normalizedUrl = normalizeYouTubeUrl(rawUrl);
+  const cachedProbe = html.data('njbYoutubeProbe');
+  if (cachedProbe?.url === normalizedUrl && cachedProbe?.result) {
+    return cachedProbe.result;
+  }
+
+  setYouTubeDiagnosticState(youtubeDiagnostic, 'pending', 'Testing YouTube embed playback...');
+  const result = await probeYouTubePlayback(normalizedUrl);
+  html.data('njbYoutubeProbe', { url: normalizedUrl, result });
+
+  if (result.ok) {
+    urlInput.val(normalizedUrl);
+    setYouTubeDiagnosticState(youtubeDiagnostic, 'success', 'This YouTube video can play in the embedded player.');
+  } else {
+    setYouTubeDiagnosticState(youtubeDiagnostic, 'error', result.details.userMessage);
+    if (notify) ui.notifications.warn(result.details.userMessage);
+  }
+
+  return result;
 }
 
 /**
@@ -303,11 +383,22 @@ async function handleAddAmbienceSubmit(html, jukebox) {
     return false;
   }
 
+  if (sourceValue === 'youtube') {
+    const diagnostic = await runYouTubeDiagnostic(html);
+    if (!diagnostic.ok) {
+      showFieldError(urlInput, diagnostic.details.userMessage);
+      ui.notifications.warn(diagnostic.details.userMessage);
+      return false;
+    }
+  }
+
   const data = {
     id: foundry.utils.randomID(),
     name: formElement.name.value.trim(),
     source: formElement.source.value,
-    url: formElement.url.value.trim(),
+    url: formElement.source.value === 'youtube'
+      ? normalizeYouTubeUrl(formElement.url.value.trim())
+      : formElement.url.value.trim(),
     tags: formElement.tags.value.split(',').map(t => t.trim()).filter(t => t),
     thumbnail: formElement.thumbnail.value.trim()
   };

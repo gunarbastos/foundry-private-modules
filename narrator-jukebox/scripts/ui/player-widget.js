@@ -74,7 +74,7 @@ export class PlayerWidget {
   /**
    * Handle first user interaction - unlocks audio context
    */
-  _onFirstInteraction() {
+  async _onFirstInteraction() {
     if (this._userHasInteracted) return;
 
     debugLog('First user interaction detected, audio unlocked');
@@ -82,6 +82,12 @@ export class PlayerWidget {
 
     // Mark interaction in the ambience layer manager - this will apply deferred state
     ambienceLayerManager.markUserInteracted();
+
+    try {
+      await playbackService.retryAmbiencePendingLayers?.();
+    } catch (err) {
+      debugWarn('Failed to retry pending ambience layers after first interaction:', err);
+    }
 
     // Clear our local pending state since ambienceLayerManager handles it now
     this._pendingSync = null;
@@ -274,14 +280,20 @@ export class PlayerWidget {
       </div>
 
       ${this.activeTab === 'music' ? `
+        ${(() => {
+          const isHidden = currentTrack?.hidden;
+          const displayName = isHidden ? 'Now Playing' : (currentTrack?.name || 'No Track');
+          const displayThumb = isHidden ? null : currentTrack?.thumbnail;
+          return `
         <div class="pw-artwork ${isPlaying ? 'pulsing' : ''}">
-          ${currentTrack?.thumbnail
-            ? `<img src="${currentTrack.thumbnail}" alt="${currentTrack.name}">`
-            : `<div class="pw-art-placeholder"><i class="fas fa-music"></i></div>`
+          ${displayThumb
+            ? `<img src="${displayThumb}" alt="${displayName}">`
+            : `<div class="pw-art-placeholder"><i class="fas ${isHidden ? 'fa-mask' : 'fa-music'}"></i></div>`
           }
         </div>
 
-        <div class="pw-track-name" title="${currentTrack?.name || 'No Track'}">${currentTrack?.name || 'No Track'}</div>
+        <div class="pw-track-name" title="${displayName}">${displayName}</div>`;
+        })()}
 
         <div class="pw-progress">
           <span class="pw-time pw-current">${formatTime(current)}</span>
@@ -312,15 +324,16 @@ export class PlayerWidget {
           ${layerCount > 0 ? `
             <div class="pw-layers-list">
               ${activeLayers.map(layer => {
-                const name = layer.track?.name || 'Unknown';
-                const thumbnail = layer.track?.thumbnail;
+                const isLayerHidden = layer.track?.hidden;
+                const name = isLayerHidden ? 'Ambience' : (layer.track?.name || 'Unknown');
+                const thumbnail = isLayerHidden ? null : layer.track?.thumbnail;
                 const volume = layer.volume ?? 0.8;
                 return `
                 <div class="pw-layer-item">
                   <div class="pw-layer-thumb">
                     ${thumbnail
                       ? `<img src="${thumbnail}" alt="${name}">`
-                      : `<i class="fas fa-layer-group"></i>`
+                      : `<i class="fas ${isLayerHidden ? 'fa-mask' : 'fa-layer-group'}"></i>`
                     }
                   </div>
                   <span class="pw-layer-name" title="${name}">${name}</span>

@@ -171,7 +171,7 @@ export function showEditMoodsDialog({ music = [], onSuccess }) {
     default: "save"
   }, {
     width: 1000,
-    height: 700,
+    height: 'auto',
     resizable: true
   });
 

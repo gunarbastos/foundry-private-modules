@@ -87,17 +87,31 @@ class NarratorJukebox {
         if (!NarratorJukebox.instance) return;
 
         if (channel === 'music') {
-          // Check if loop is enabled - if so, replay the same track
-          if (playbackService.musicLoop) {
-            const currentTrack = NarratorJukebox.instance.channels.music.currentTrack;
+          const currentTrack = NarratorJukebox.instance.channels.music.currentTrack;
+          const playlist = playbackService.currentPlaylist;
+
+          // 1. Per-track loop in playlist takes priority
+          if (currentTrack && playlist) {
+            const trackLoop = dataService.isTrackLoopEnabled(playlist.id, currentTrack.id);
+            if (trackLoop) {
+              debugLog("Per-track loop:", currentTrack.name);
+              NarratorJukebox.instance.playMusic(currentTrack.id, 'music');
+              return;
+            }
+          }
+
+          // 2. Global music loop (single-track repeat, non-playlist context)
+          if (playbackService.musicLoop && !playlist) {
             if (currentTrack) {
               debugLog("Looping music:", currentTrack.name);
               NarratorJukebox.instance.playMusic(currentTrack.id, 'music');
+              return;
             }
-          } else {
-            debugLog("Music track ended, calling next()");
-            NarratorJukebox.instance.next();
           }
+
+          // 3. Advance to next track
+          debugLog("Music track ended, calling next()");
+          NarratorJukebox.instance.next();
         } else if (channel === 'ambience') {
           debugLog("Ambience track ended");
           if (playbackService.ambienceLoop) {
@@ -149,6 +163,10 @@ class NarratorJukebox {
 
   get playlists() { return dataService.playlists; }
   set playlists(val) { dataService.playlists = val; }
+
+  get musicFolders() { return dataService.getFolders('music'); }
+  get ambienceFolders() { return dataService.getFolders('ambience'); }
+  get soundboardFolders() { return dataService.getFolders('soundboard'); }
 
   // ==========================================
   // Playback State (Delegated to PlaybackService)
@@ -217,16 +235,46 @@ class NarratorJukebox {
     return await dataService.deleteMusic(id);
   }
 
+  async deleteMultipleMusic(ids) {
+    return await dataService.deleteMultipleMusic(ids);
+  }
+
+  async addTagToMultiple(ids, tag) {
+    return await dataService.addTagToMultiple(ids, tag);
+  }
+
+  async removeTagFromMultiple(ids, tag) {
+    return await dataService.removeTagFromMultiple(ids, tag);
+  }
+
   async addAmbience(data) {
     return await dataService.addAmbience(data);
   }
 
   async updateAmbience(id, data) {
+    ambienceLayerManager.clearLayerIssue?.(id);
     return await dataService.updateAmbience(id, data);
   }
 
   async deleteAmbience(id) {
+    ambienceLayerManager.clearLayerIssue?.(id);
     return await dataService.deleteAmbience(id);
+  }
+
+  async deleteMultipleAmbience(ids) {
+    for (const id of ids) {
+      ambienceLayerManager.clearLayerIssue?.(id);
+      this.stopAmbienceLayer?.(id);
+    }
+    return await dataService.deleteMultipleAmbience(ids);
+  }
+
+  async addTagToMultipleAmbience(ids, tag) {
+    return await dataService.addTagToMultipleAmbience(ids, tag);
+  }
+
+  async removeTagFromMultipleAmbience(ids, tag) {
+    return await dataService.removeTagFromMultipleAmbience(ids, tag);
   }
 
   async addSoundboardSound(data) {
@@ -243,8 +291,48 @@ class NarratorJukebox {
     return await dataService.deleteSoundboardSound(id);
   }
 
+  async deleteMultipleSoundboard(ids) {
+    for (const id of ids) {
+      this.stopSoundboardSound?.(id);
+    }
+    return await dataService.deleteMultipleSoundboard(ids);
+  }
+
+  // Folder Operations
+  async createFolder(library, data) {
+    return await dataService.createFolder(library, data);
+  }
+
+  async updateFolder(library, id, data) {
+    return await dataService.updateFolder(library, id, data);
+  }
+
+  async deleteFolder(library, id) {
+    return await dataService.deleteFolder(library, id);
+  }
+
+  async moveTracksToFolder(library, trackIds, folderId) {
+    return await dataService.moveTracksToFolder(library, trackIds, folderId);
+  }
+
+  getFolders(library) {
+    return dataService.getFolders(library);
+  }
+
   async createPlaylist(name) {
     return await dataService.createPlaylist(name);
+  }
+
+  async updatePlaylist(id, data) {
+    return await dataService.updatePlaylist(id, data);
+  }
+
+  async duplicatePlaylist(id, name = null) {
+    return await dataService.duplicatePlaylist(id, name);
+  }
+
+  async reorderPlaylist(id, targetIndex) {
+    return await dataService.reorderPlaylist(id, targetIndex);
   }
 
   async deletePlaylist(id) {
@@ -271,6 +359,14 @@ class NarratorJukebox {
       ui.notifications.info(`Removed track from playlist "${playlist.name}"`);
     }
     return result;
+  }
+
+  async togglePlaylistLoop(playlistId) {
+    return await dataService.togglePlaylistLoop(playlistId);
+  }
+
+  async togglePlaylistTrackLoop(playlistId, musicId) {
+    return await dataService.togglePlaylistTrackLoop(playlistId, musicId);
   }
 
   // ==========================================
@@ -476,6 +572,23 @@ class NarratorJukebox {
    */
   getAmbienceLayerCount() {
     return playbackService.getAmbienceLayerCount();
+  }
+
+  /**
+   * Get the last recorded issue for an ambience track, if any.
+   * @param {string} trackId - Track ID
+   * @returns {object|null}
+   */
+  getAmbienceLayerIssue(trackId) {
+    return playbackService.getAmbienceLayerIssue(trackId);
+  }
+
+  /**
+   * Get all recorded ambience layer issues.
+   * @returns {Array<object>}
+   */
+  getAmbienceLayerIssues() {
+    return playbackService.getAmbienceLayerIssues();
   }
 
   /**
