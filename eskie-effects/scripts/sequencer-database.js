@@ -11,6 +11,8 @@ export async function createDatabase(moduleFolder) {
     default: [100, 0, 0],
     ranged: [200, 200, 200],
     line: [200, 200, 200],
+    cone: [200, 0, 100],
+    ray: [200, 0, 100],
     };
     //--------------------
     //ATTACK
@@ -121,6 +123,23 @@ export async function createDatabase(moduleFolder) {
                                     '01': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_Yellow_Slow_01.webm`,
                                     '02': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_Yellow_Slow_02.webm`,
                                     '03': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_Yellow_Slow_03.webm`,
+                                },
+                            },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Heavy/Attack_Melee_Generic_01_Bludgeoning_Heavy_White_Slow_03.webm`,
                                 },
                             },
                             purpleblack: {
@@ -261,6 +280,23 @@ export async function createDatabase(moduleFolder) {
                                     '03': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_Yellow_Slow_03.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_White_Slow_03.webm`,
+                                },
+                            },                            
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Bludgeoning/Light/Attack_Melee_Generic_01_Bludgeoning_Light_PurpleBlack_Fast_01.webm`,
@@ -399,6 +435,23 @@ export async function createDatabase(moduleFolder) {
                                     '03': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_Yellow_Slow_03.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_White_Slow_03.webm`,
+                                },
+                            },                            
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Bludgeoning/Medium/Attack_Melee_Generic_01_Bludgeoning_Medium_PurpleBlack_Fast_01.webm`,
@@ -521,6 +574,20 @@ export async function createDatabase(moduleFolder) {
                                     '02': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_Yellow_Slow_02.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Fast_02.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Normal_02.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_White_Slow_02.webm`,
+                                },
+                            },                               
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Piercing/Heavy/Attack_Melee_Generic_01_Piercing_Heavy_PurpleBlack_Fast_01.webm`,
@@ -635,6 +702,20 @@ export async function createDatabase(moduleFolder) {
                                     '02': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_Yellow_Slow_02.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Fast_02.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Normal_02.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_White_Slow_02.webm`,
+                                },
+                            },                              
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Piercing/Light/Attack_Melee_Generic_01_Piercing_Light_PurpleBlack_Fast_01.webm`,
@@ -749,6 +830,20 @@ export async function createDatabase(moduleFolder) {
                                     '02': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_Yellow_Slow_02.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Fast_02.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Normal_02.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_White_Slow_02.webm`,
+                                },
+                            },                               
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Piercing/Medium/Attack_Melee_Generic_01_Piercing_Medium_PurpleBlack_Fast_01.webm`,
@@ -883,6 +978,23 @@ export async function createDatabase(moduleFolder) {
                                     '03': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_Yellow_Slow_03.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_White_Slow_03.webm`,
+                                },
+                            },                            
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Slashing/Heavy/Attack_Melee_Generic_01_Slashing_Heavy_PurpleBlack_Fast_01.webm`,
@@ -1021,6 +1133,23 @@ export async function createDatabase(moduleFolder) {
                                     '03': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_Yellow_Slow_03.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_White_Slow_03.webm`,
+                                },
+                            },                              
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Slashing/Light/Attack_Melee_Generic_01_Slashing_Light_PurpleBlack_Fast_01.webm`,
@@ -1159,6 +1288,23 @@ export async function createDatabase(moduleFolder) {
                                     '03': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_Yellow_Slow_03.webm`,
                                 },
                             },
+                            white: {
+                                fast:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Fast_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Fast_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Fast_03.webm`,
+                                },
+                                normal:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Normal_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Normal_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Normal_03.webm`,
+                                },
+                                slow:{
+                                    '01': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Slow_01.webm`,
+                                    '02': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Slow_02.webm`,
+                                    '03': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_White_Slow_03.webm`,
+                                },
+                            },                              
                             purpleblack: {
                                 fast:{
                                     '01': `${path}/Attack/Melee/Generic/Slashing/Medium/Attack_Melee_Generic_01_Slashing_Medium_PurpleBlack_Fast_01.webm`,
@@ -1198,6 +1344,950 @@ export async function createDatabase(moduleFolder) {
                 },
             },
         },
+        ranged: {
+            arrow: {
+                '01': {
+                    _template: 'ranged',
+                    physical: {
+                        heavy: {
+                            blue: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Blue_Slow_90ft.webm`,
+                                },
+                            },
+                            green: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Normal_30ft.webm`,  
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Green_Slow_90ft.webm`,
+                                },
+                            },
+                            orange: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Orange_Slow_90ft.webm`,
+                                },
+                            },
+                            purple: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Purple_Slow_90ft.webm`,
+                                },
+                            },
+                            red: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Red_Slow_90ft.webm`,
+                                },
+                            },
+                            yellow: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_Yellow_Slow_90ft.webm`,
+                                },
+                            },
+                            white: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_White_Slow_90ft.webm`,
+                                },
+                            },
+                            purpleblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_PurpleBlack_Slow_90ft.webm`,
+                                },
+                            },
+                            redblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Heavy/Attack_Ranged_Arrow_01_Physical_Heavy_RedBlack_Slow_90ft.webm`,
+                                },
+                            },
+                        },
+                        light: {
+                            blue: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Blue_Slow_90ft.webm`,
+                                },
+                            },
+                            green: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Normal_30ft.webm`,  
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Green_Slow_90ft.webm`,
+                                },
+                            },
+                            orange: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Orange_Slow_90ft.webm`,
+                                },
+                            },
+                            purple: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Purple_Slow_90ft.webm`,
+                                },
+                            },
+                            red: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Red_Slow_90ft.webm`,
+                                },
+                            },
+                            yellow: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_Yellow_Slow_90ft.webm`,
+                                },
+                            },
+                            white: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_White_Slow_90ft.webm`,
+                                },
+                            },
+                            purpleblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_PurpleBlack_Slow_90ft.webm`,
+                                },
+                            },
+                            redblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Light/Attack_Ranged_Arrow_01_Physical_Light_RedBlack_Slow_90ft.webm`,
+                                },
+                            },
+                        },
+                        medium: {
+                            blue: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Blue_Slow_90ft.webm`,
+                                },
+                            },
+                            green: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Normal_30ft.webm`,  
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Green_Slow_90ft.webm`,
+                                },
+                            },
+                            orange: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Orange_Slow_90ft.webm`,
+                                },
+                            },
+                            purple: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Purple_Slow_90ft.webm`,
+                                },
+                            },
+                            red: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Red_Slow_90ft.webm`,
+                                },
+                            },
+                            yellow: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_Yellow_Slow_90ft.webm`,
+                                },
+                            },
+                            white: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_White_Slow_90ft.webm`,
+                                },
+                            },
+                            purpleblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_PurpleBlack_Slow_90ft.webm`,
+                                },
+                            },
+                            redblack: {
+                                fast: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Fast_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Fast_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Fast_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Fast_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Fast_90ft.webm`,
+                                },
+                                normal: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Normal_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Normal_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Normal_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Normal_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Normal_90ft.webm`,
+                                },
+                                slow: {
+                                    '05ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Slow_05ft.webm`,
+                                    '15ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Slow_15ft.webm`,
+                                    '30ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Slow_30ft.webm`,
+                                    '60ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Slow_60ft.webm`,
+                                    '90ft': `${path}/Attack/Ranged/Arrow/Physical/Medium/Attack_Ranged_Arrow_01_Physical_Medium_RedBlack_Slow_90ft.webm`,
+                                },
+                            },
+                        },                                                   
+                    },
+                },
+                circle: {
+                    shower: {
+                        _markers: {
+                            loop: { start: 500, end: 1000 }
+                        },                        
+                        physical: {
+                            one_shot: {
+                                blue: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Blue_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Blue_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Blue_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Blue_60ft.webm`,
+                                },
+                                green: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Green_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Green_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Green_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Green_60ft.webm`,
+                                },
+                                orange: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Orange_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Orange_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Orange_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Orange_60ft.webm`,
+                                },
+                                purple: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Purple_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Purple_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Purple_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Purple_60ft.webm`,
+                                },
+                                red: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Red_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Red_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Red_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Red_60ft.webm`,
+                                },
+                                yellow: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Yellow_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Yellow_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Yellow_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_Yellow_60ft.webm`,
+                                },
+                                white: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_White_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_White_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_White_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_White_60ft.webm`,
+                                },
+                                purpleblack: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_PurpleBlack_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_PurpleBlack_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_PurpleBlack_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_PurpleBlack_60ft.webm`,
+                                },
+                                redblack: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_RedBlack_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_RedBlack_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_RedBlack_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/OneShot/Attack_Ranged_Arrow_Circle_Shower_Physical_OneShot_RedBlack_60ft.webm`,
+                                },
+                            },
+                            loop: {
+                                blue: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Blue_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Blue_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Blue_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Blue_60ft.webm`,
+                                },
+                                green: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Green_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Green_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Green_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Green_60ft.webm`,
+                                },
+                                orange: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Orange_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Orange_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Orange_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Orange_60ft.webm`,
+                                },
+                                purple: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Purple_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Purple_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Purple_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Purple_60ft.webm`,
+                                },
+                                red: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Red_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Red_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Red_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Red_60ft.webm`,
+                                },
+                                yellow: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Yellow_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Yellow_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Yellow_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_Yellow_60ft.webm`,
+                                },
+                                white: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_White_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_White_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_White_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_White_60ft.webm`,
+                                },
+                                purpleblack: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_PurpleBlack_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_PurpleBlack_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_PurpleBlack_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_PurpleBlack_60ft.webm`,
+                                },
+                                redblack: {
+                                    'radius_10ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_RedBlack_10ft.webm`,
+                                    'radius_20ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_RedBlack_20ft.webm`,
+                                    'radius_30ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_RedBlack_30ft.webm`,
+                                    'radius_60ft': `${path}/Attack/Ranged/Arrow/Circle/Shower/Physical/Loop/Attack_Ranged_Arrow_Circle_Shower_Physical_Loop_RedBlack_60ft.webm`,
+                                },
+                            },                            
+                        },
+                    },
+                },
+                cone: {
+                    _template: 'cone',
+                    thin: {
+                        physical: {
+                            blue: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Blue_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Blue_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Blue_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Blue_90ft.webm`,
+                            },
+                            green: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Green_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Green_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Green_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Green_90ft.webm`,
+                            },
+                            orange: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Orange_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Orange_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Orange_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Orange_90ft.webm`,
+                            },
+                            purple: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Purple_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Purple_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Purple_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Purple_90ft.webm`,
+                            },
+                            red: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Red_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Red_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Red_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Red_90ft.webm`,
+                            },
+                            yellow: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Yellow_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Yellow_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Yellow_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_Yellow_90ft.webm`,
+                            },
+                            white: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_White_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_White_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_White_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_White_90ft.webm`,
+                            },
+                            purpleblack: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_PurpleBlack_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_PurpleBlack_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_PurpleBlack_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_PurpleBlack_90ft.webm`,
+                            },
+                            redblack: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_RedBlack_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_RedBlack_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_RedBlack_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Thin/Physical/Attack_Ranged_Arrow_Cone_Thin_Physical_RedBlack_90ft.webm`,
+                            },
+                        },
+                    },
+                    wide: {
+                        physical: {
+                            blue: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Blue_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Blue_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Blue_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Blue_90ft.webm`,
+                            },
+                            green: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Green_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Green_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Green_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Green_90ft.webm`,
+                            },
+                            orange: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Orange_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Orange_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Orange_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Orange_90ft.webm`,
+                            },
+                            purple: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Purple_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Purple_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Purple_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Purple_90ft.webm`,
+                            },
+                            red: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Red_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Red_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Red_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Red_90ft.webm`,
+                            },
+                            yellow: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Yellow_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Yellow_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Yellow_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_Yellow_90ft.webm`,
+                            },
+                            white: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_White_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_White_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_White_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_White_90ft.webm`,
+                            },
+                            purpleblack: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_PurpleBlack_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_PurpleBlack_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_PurpleBlack_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_PurpleBlack_90ft.webm`,
+                            },
+                            redblack: {
+                                '15ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_RedBlack_15ft.webm`,
+                                '30ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_RedBlack_30ft.webm`,
+                                '60ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_RedBlack_60ft.webm`,
+                                '90ft': `${path}/Attack/Ranged/Arrow/Cone/Wide/Physical/Attack_Ranged_Arrow_Cone_Wide_Physical_RedBlack_90ft.webm`,
+                            },
+                        },
+                    },                    
+                },
+                ray: {
+                    _template: 'ray',
+                    physical: {
+                        blue: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Blue_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Blue_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Blue_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Blue_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Blue_90ft.webm`,
+                        },
+                        green: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Green_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Green_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Green_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Green_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Green_90ft.webm`,
+                        },
+                        orange: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Orange_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Orange_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Orange_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Orange_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Orange_90ft.webm`,
+                        },
+                        purple: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Purple_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Purple_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Purple_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Purple_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Purple_90ft.webm`,
+                        },
+                        red: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Red_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Red_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Red_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Red_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Red_90ft.webm`,
+                        },
+                        yellow: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Yellow_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Yellow_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Yellow_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Yellow_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_Yellow_90ft.webm`,
+                        },
+                        white: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_White_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_White_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_White_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_White_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_White_90ft.webm`,
+                        },
+                        purpleblack: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_PurpleBlack_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_PurpleBlack_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_PurpleBlack_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_PurpleBlack_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_PurpleBlack_90ft.webm`,
+                        },
+                        redblack: {
+                            '05ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_RedBlack_05ft.webm`,
+                            '15ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_RedBlack_15ft.webm`,
+                            '30ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_RedBlack_30ft.webm`,
+                            '60ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_RedBlack_60ft.webm`,
+                            '90ft': `${path}/Attack/Ranged/Arrow/Ray/Physical/Attack_Ranged_Arrow_Ray_Physical_RedBlack_90ft.webm`,
+                        },
+                    },
+                },               
+            },
+        },            
         touch: {
             generic: {
                 '01': {
