@@ -126,10 +126,14 @@ export class LayoutCalculator extends BaseHandler {
    * Get the CSS value for a size preset or custom value.
    *
    * @param {string|number} size - Size preset key (e.g., 'small', 'medium', 'large') or custom vh value
+   * @param {{castOnly?: boolean}} [options] - Resolution options
    * @returns {string} CSS value (e.g., '18vh')
    */
-  getSizeValue(size) {
-    const preset = this.config.SIZE_PRESETS[size];
+  getSizeValue(size, { castOnly = false } = {}) {
+    const presetMap = castOnly
+      ? (this.config.CAST_ONLY_SIZE_PRESETS || this.config.SIZE_PRESETS)
+      : this.config.SIZE_PRESETS;
+    const preset = presetMap[size] || this.config.SIZE_PRESETS[size];
     if (preset) return preset.value;
 
     // If it's a number, assume vh units
@@ -139,7 +143,7 @@ export class LayoutCalculator extends BaseHandler {
     if (typeof size === 'string' && size.match(/^\d+/)) return size;
 
     // Default fallback
-    return this.config.SIZE_PRESETS.medium.value;
+    return presetMap.medium?.value || this.config.SIZE_PRESETS.medium.value;
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -161,10 +165,12 @@ export class LayoutCalculator extends BaseHandler {
 
     return {
       preset: layoutSettings.preset || 'bottom-center',
-      size: this.getSizeValue(layoutSettings.size),
+      size: this.getSizeValue(layoutSettings.size, { castOnly: this.uiState.castOnlyMode }),
+      shape: layoutSettings.shape || 'circle',
       spacing: layoutSettings.spacing || 24,
       offsetX: layoutSettings.offsetX || 0,
-      offsetY: layoutSettings.offsetY || 5
+      offsetY: layoutSettings.offsetY || 5,
+      displayMode: layoutSettings.displayMode || 'token'
     };
   }
 

@@ -16,7 +16,7 @@
  * @module data/Store
  */
 
-import { CONFIG } from '../config.js';
+import { CONFIG, log } from '../config.js';
 import { SceneModel } from './SceneModel.js';
 import { CharacterModel } from './CharacterModel.js';
 import { FolderModel } from './FolderModel.js';
@@ -79,6 +79,15 @@ export class ExaltedStore {
     /** @type {Object|null} Service instances (populated during initialize()) */
     this._services = null;
 
+    /** @type {number|null} Debounce timer for saveData() */
+    this._saveTimer = null;
+    /** @type {Promise|null} Pending save promise shared across debounced calls */
+    this._savePromise = null;
+    /** @type {Function|null} Resolve callback for the pending save promise */
+    this._saveResolve = null;
+    /** @type {Function|null} Reject callback for the pending save promise */
+    this._saveReject = null;
+
     /** @type {Object} Slideshow playback state */
     this.slideshowState = {
       isPlaying: false,
@@ -109,6 +118,7 @@ export class ExaltedStore {
       layoutSettings: {
         preset: 'bottom-center',
         size: 'medium',
+        shape: 'circle',
         spacing: 24,
         offsetX: 0,
         offsetY: 5
@@ -147,7 +157,7 @@ export class ExaltedStore {
    */
   async initialize() {
     if (this.isInitialized) return;
-    console.log(`${CONFIG.MODULE_NAME} | Initializing Data Store`);
+    log('Initializing Data Store');
 
     await this._loadData();
 
@@ -174,11 +184,14 @@ export class ExaltedStore {
         if (this.activeSceneId) {
            import('../apps/PlayerView.js').then(({ ExaltedScenesPlayerView }) => {
                ExaltedScenesPlayerView.refresh();
-           });
+           }).catch(e => console.error('Exalted Scenes | Failed to load PlayerView:', e));
         }
       }
       if (setting.key === `${CONFIG.MODULE_ID}.${CONFIG.SETTINGS.CHARACTERS}`) {
         this._loadCharacters(newValue);
+        import('../apps/PlayerView.js').then(({ ExaltedScenesPlayerView }) => {
+          ExaltedScenesPlayerView.refreshCast();
+        }).catch(e => console.error('Exalted Scenes | Failed to refresh PlayerView cast:', e));
       }
       if (setting.key === `${CONFIG.MODULE_ID}.${CONFIG.SETTINGS.FOLDERS}`) {
         this._loadFolders(newValue);
@@ -215,7 +228,7 @@ export class ExaltedStore {
 
     this.scenes.clear();
     scenes.forEach(d => this.scenes.set(d.id, new SceneModel(d)));
-    console.log(`${CONFIG.MODULE_NAME} | Synced Scenes (${this.scenes.size})`);
+    log(`Synced Scenes (${this.scenes.size})`);
   }
 
   _loadCharacters(data) {
@@ -234,7 +247,7 @@ export class ExaltedStore {
 
     this.characters.clear();
     chars.forEach(d => this.characters.set(d.id, new CharacterModel(d)));
-    console.log(`${CONFIG.MODULE_NAME} | Synced Characters (${this.characters.size})`);
+    log(`Synced Characters (${this.characters.size})`);
   }
 
   _loadFolders(data) {
@@ -253,7 +266,7 @@ export class ExaltedStore {
 
     this.folders.clear();
     folders.forEach(d => this.folders.set(d.id, new FolderModel(d)));
-    console.log(`${CONFIG.MODULE_NAME} | Synced Folders (${this.folders.size})`);
+    log(`Synced Folders (${this.folders.size})`);
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -285,20 +298,56 @@ export class ExaltedStore {
     this.slideshows.clear();
     slideshowsData.forEach(d => this.slideshows.set(d.id, new SlideshowModel(d)));
 
-    console.log(`${CONFIG.MODULE_NAME} | Loaded ${this.scenes.size} scenes, ${this.characters.size} characters, ${this.slideshows.size} slideshows.`);
+    log(`Loaded ${this.scenes.size} scenes, ${this.characters.size} characters, ${this.slideshows.size} slideshows.`);
   }
 
   /**
    * Saves all data (scenes, characters, folders) to Foundry settings.
+   * Uses debouncing (300ms) to batch rapid successive calls into a single save.
    * Uses _isSaving flag to prevent the updateSetting hook from processing
    * our own updates, which could cause a race condition.
    * @async
+   * @returns {Promise<void>} Resolves when the actual save completes
+   */
+  saveData() {
+    if (!this.isInitialized) return Promise.resolve();
+
+    // If there's already a pending debounce, clear it and reuse the promise
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer);
+    }
+
+    // Create a new promise only if one doesn't exist yet (first call in a batch)
+    if (!this._savePromise) {
+      this._savePromise = new Promise((resolve, reject) => {
+        this._saveResolve = resolve;
+        this._saveReject = reject;
+      });
+    }
+
+    const promise = this._savePromise;
+
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      const resolve = this._saveResolve;
+      const reject = this._saveReject;
+      this._savePromise = null;
+      this._saveResolve = null;
+      this._saveReject = null;
+
+      this._executeSave().then(resolve, reject);
+    }, 300);
+
+    return promise;
+  }
+
+  /**
+   * Executes the actual save operation. Called by the debounced saveData().
+   * @private
+   * @async
    * @returns {Promise<void>}
    */
-  async saveData() {
-    if (!this.isInitialized) return;
-
-    // Set flag to prevent updateSetting hook from processing our own save
+  async _executeSave() {
     this._isSaving = true;
 
     try {
@@ -312,9 +361,8 @@ export class ExaltedStore {
         game.settings.set(CONFIG.MODULE_ID, CONFIG.SETTINGS.FOLDERS, foldersData)
       ]);
 
-      console.log(`${CONFIG.MODULE_NAME} | Data Saved`);
+      log('Data Saved');
     } finally {
-      // Always reset flag, even if save fails
       this._isSaving = false;
     }
   }
@@ -386,12 +434,32 @@ export class ExaltedStore {
   }
 
   /**
+   * Duplicates an existing scene.
+   * @param {string} id - Scene ID to duplicate
+   * @param {Object} [options={}] - Duplicate options
+   * @returns {SceneModel|undefined} The duplicated scene or undefined if not found
+   */
+  duplicateScene(id, options = {}) {
+    return this._services.scene.duplicateScene(id, options);
+  }
+
+  /**
    * Adds a character to a scene's cast.
    * @param {string} sceneId - Scene ID
    * @param {string} charId - Character ID to add
    */
   addCastMember(sceneId, charId) {
     return this._services.scene.addCastMember(sceneId, charId);
+  }
+
+  /**
+   * Adds multiple characters to a scene's cast.
+   * @param {string} sceneId - Scene ID
+   * @param {string[]} charIds - Character IDs to add
+   * @returns {{added: string[], skipped: string[], missing: string[]}} Result summary
+   */
+  addCastMembers(sceneId, charIds) {
+    return this._services.scene.addCastMembers(sceneId, charIds);
   }
 
   /**
@@ -423,6 +491,16 @@ export class ExaltedStore {
    */
   createCharacter(data) {
     return this._services.character.createCharacter(data);
+  }
+
+  /**
+   * Duplicates an existing character.
+   * @param {string} id - Character ID to duplicate
+   * @param {Object} [options={}] - Duplicate options
+   * @returns {CharacterModel|undefined} The duplicated character or undefined if not found
+   */
+  duplicateCharacter(id, options = {}) {
+    return this._services.character.duplicateCharacter(id, options);
   }
 
   /**
@@ -492,6 +570,17 @@ export class ExaltedStore {
   }
 
   /**
+   * Moves multiple items to a folder in a single save operation.
+   * @param {string[]} itemIds - Item IDs to move
+   * @param {string} itemType - Item type: 'scene' or 'character'
+   * @param {string|null} folderId - Target folder ID (null for root)
+   * @returns {number} Number of items moved
+   */
+  moveItemsToFolder(itemIds, itemType, folderId) {
+    return this._services.folder.moveItemsToFolder(itemIds, itemType, folderId);
+  }
+
+  /**
    * Gets folders of a specific type.
    * @param {string} type - Folder type: 'scene' or 'character'
    * @param {string|null} [parentId=null] - Parent folder ID (null for root)
@@ -518,6 +607,16 @@ export class ExaltedStore {
    */
   getItemsInFolder(type, folderId) {
     return this._services.folder.getItemsInFolder(type, folderId);
+  }
+
+  /**
+   * Gets items in a folder and all its subfolders.
+   * @param {string} type - Item type: 'scene' or 'character'
+   * @param {string|null} folderId - Root folder ID
+   * @returns {Array} Array of items in the folder tree
+   */
+  getItemsInFolderTree(type, folderId) {
+    return this._services.folder.getItemsInFolderTree(type, folderId);
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -705,6 +804,57 @@ export class ExaltedStore {
    */
   getSequenceProgress() {
     return this._services.sequencePlayback.getSequenceProgress();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     CAST PRESET OPERATIONS (delegated to SceneService)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Gets all saved cast presets.
+   * @returns {Object[]} Array of cast preset objects
+   */
+  getCastPresets() {
+    return this._services.scene.getCastPresets();
+  }
+
+  /**
+   * Saves a cast preset from a scene's current cast and layout.
+   * @param {string} name - Preset name
+   * @param {string} sceneId - Source scene ID
+   * @returns {{success: boolean, preset?: Object, error?: string}}
+   */
+  saveCastPreset(name, sceneId) {
+    return this._services.scene.saveCastPreset(name, sceneId);
+  }
+
+  /**
+   * Loads a cast preset into a scene, replacing its cast and layout.
+   * @param {string} presetId - Preset ID
+   * @param {string} sceneId - Target scene ID
+   * @returns {{success: boolean, loaded?: number, missing?: string[], error?: string}}
+   */
+  loadCastPreset(presetId, sceneId) {
+    return this._services.scene.loadCastPreset(presetId, sceneId);
+  }
+
+  /**
+   * Deletes a cast preset.
+   * @param {string} presetId - Preset ID
+   * @returns {boolean}
+   */
+  deleteCastPreset(presetId) {
+    return this._services.scene.deleteCastPreset(presetId);
+  }
+
+  /**
+   * Renames a cast preset.
+   * @param {string} presetId - Preset ID
+   * @param {string} newName - New name
+   * @returns {boolean}
+   */
+  renameCastPreset(presetId, newName) {
+    return this._services.scene.renameCastPreset(presetId, newName);
   }
 
   /* ═══════════════════════════════════════════════════════════════

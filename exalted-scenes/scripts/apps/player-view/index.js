@@ -27,6 +27,12 @@ export { BorderPickerHandler } from './BorderPickerHandler.js';
 // D6: MediaHandler - Image/video handling
 export { MediaHandler } from './MediaHandler.js';
 
+// AudioPanelHandler - GM audio panel (now playing, restore, stop)
+export { AudioPanelHandler } from './AudioPanelHandler.js';
+
+// FreePositionHandler - Freeform drag, scale, flip (GM only)
+export { FreePositionHandler } from './FreePositionHandler.js';
+
 /**
  * Stub classes for handlers not yet implemented.
  * These will be replaced with actual implementations in subsequent sub-phases.
@@ -38,6 +44,8 @@ import { LayoutCalculator } from './LayoutCalculator.js';
 import { EmotionPickerHandler } from './EmotionPickerHandler.js';
 import { BorderPickerHandler } from './BorderPickerHandler.js';
 import { MediaHandler } from './MediaHandler.js';
+import { AudioPanelHandler } from './AudioPanelHandler.js';
+import { FreePositionHandler } from './FreePositionHandler.js';
 
 // NOTE: The actions (character-click, select-emotion, close-picker, toggle-emotion-favorite)
 // remain in PlayerView.js as they are static ApplicationV2 action handlers.
@@ -63,7 +71,9 @@ export function createHandlers(view) {
     layout: new LayoutCalculator(view),
     emotionPicker: new EmotionPickerHandler(view),
     borderPicker: new BorderPickerHandler(view),
-    media: new MediaHandler(view)
+    media: new MediaHandler(view),
+    audioPanel: new AudioPanelHandler(view),
+    freePosition: new FreePositionHandler(view)
   };
 }
 

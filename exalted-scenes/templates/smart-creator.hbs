@@ -80,7 +80,7 @@
       </div>
     {{/if}}
 
-    <!-- STEP 2: ASSETS (DROP ZONE) -->
+    <!-- STEP 2: ASSETS (UPLOAD OPTIONS) -->
     {{#if (eq step 2)}}
       <div class="es-smart-creator__panel" data-step="2">
         <section class="es-smart-creator__section es-smart-creator__section--centered">
@@ -90,19 +90,34 @@
             <span class="es-smart-creator__example">{{{localize "EXALTED-SCENES.SmartCreator.UploadExample"}}}</span>
           </div>
 
-          <div class="es-smart-creator__dropzone {{#if uploadProgress}}es-smart-creator__dropzone--uploading{{/if}}" data-action="trigger-upload">
-            <i class="fas {{#if uploadProgress}}fa-spinner fa-spin{{else}}fa-cloud-upload-alt{{/if}}"></i>
-            <h3>{{#if uploadProgress}}{{localize "EXALTED-SCENES.SmartCreator.Uploading"}}{{else}}{{localize "EXALTED-SCENES.SmartCreator.DragAndDrop"}}{{/if}}</h3>
-            <p>{{#if uploadProgress}}{{localize "EXALTED-SCENES.SmartCreator.PleaseWait"}}{{else}}{{localize "EXALTED-SCENES.SmartCreator.OrClickToBrowse"}}{{/if}}</p>
-            <input type="file" webkitdirectory directory multiple style="display:none" class="es-file-input">
-          </div>
-
           {{#if uploadProgress}}
+            <div class="es-smart-creator__dropzone es-smart-creator__dropzone--uploading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <h3>{{localize "EXALTED-SCENES.SmartCreator.Uploading"}}</h3>
+              <p>{{localize "EXALTED-SCENES.SmartCreator.PleaseWait"}}</p>
+            </div>
             <div class="es-smart-creator__progress">
               <div class="es-smart-creator__progress-bar" style="width: {{uploadProgress}}%"></div>
               <span class="es-smart-creator__progress-text">{{uploadProgress}}%</span>
             </div>
+          {{else}}
+            <div class="es-smart-creator__upload-options">
+              <div class="es-smart-creator__upload-option" data-action="trigger-upload-images">
+                <i class="fas fa-images"></i>
+                <h3>{{localize "EXALTED-SCENES.SmartCreator.UploadImages"}}</h3>
+                <p>{{localize "EXALTED-SCENES.SmartCreator.UploadImagesDesc"}}</p>
+              </div>
+              <div class="es-smart-creator__upload-option" data-action="trigger-upload-folder">
+                <i class="fas fa-folder-open"></i>
+                <h3>{{localize "EXALTED-SCENES.SmartCreator.UploadFolder"}}</h3>
+                <p>{{localize "EXALTED-SCENES.SmartCreator.UploadFolderDesc"}}</p>
+              </div>
+            </div>
           {{/if}}
+
+          <!-- Hidden file inputs -->
+          <input type="file" multiple accept="image/*,video/mp4,video/webm" style="display:none" class="es-file-input-images">
+          <input type="file" webkitdirectory directory multiple style="display:none" class="es-file-input-folder">
         </section>
       </div>
     {{/if}}

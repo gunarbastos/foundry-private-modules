@@ -12,13 +12,16 @@
  * @module main
  */
 
-import { CONFIG } from './config.js';
+import { CONFIG, log } from './config.js';
 import { ExaltedScenesGMPanel } from './apps/GMPanel.js';
 import { ExaltedScenesPlayerPanel } from './apps/PlayerPanel.js';
 import { Store } from './data/Store.js';
 import { MigrationService } from './data/MigrationService.js';
 import { SocketHandler } from './data/SocketHandler.js';
+import { MusicRequestPlaybackMonitor } from './data/MusicRequestPlaybackMonitor.js';
 import { ExaltedScenesAPI } from './api/index.js';
+import { borderStyleToInline } from './utils/border-utils.js';
+import { MODULE_KEYBINDINGS, resolveShortcutText } from './shortcuts.js';
 
 /**
  * Main module class for Exalted Scenes.
@@ -38,7 +41,7 @@ class ExaltedScenes {
    * Registers helpers, settings, keybindings, and hooks.
    */
   static initialize() {
-    console.log(`${CONFIG.MODULE_NAME} | Initializing v5.0`);
+    log('Initializing v5.0');
 
     // Register Handlebars Helpers
     this._registerHandlebarsHelpers();
@@ -75,12 +78,22 @@ class ExaltedScenes {
     if (!Handlebars.helpers.lt) {
       Handlebars.registerHelper('lt', (a, b) => a < b);
     }
+    if (!Handlebars.helpers.format) {
+      Handlebars.registerHelper('format', (key, options) => {
+        return game.i18n.format(key, options?.hash ?? {});
+      });
+    }
 
     // Media type helper for video portrait support
     Handlebars.registerHelper('isVideo', (path) => {
       if (!path) return false;
       const ext = path.split('.').pop()?.toLowerCase();
       return ['mp4', 'webm', 'ogg', 'mov'].includes(ext);
+    });
+
+    // Border style helper — generates CSS custom properties for inline style
+    Handlebars.registerHelper('borderInlineStyle', (borderStyle) => {
+      return new Handlebars.SafeString(borderStyleToInline(borderStyle));
     });
   }
 
@@ -160,6 +173,62 @@ class ExaltedScenes {
       default: 'fill'
     });
 
+    const defaultScenePresetChoices = {};
+    for (const [key, preset] of Object.entries(CONFIG.LAYOUT_PRESETS)) {
+      defaultScenePresetChoices[key] = preset.name;
+    }
+    game.settings.register(this.ID, CONFIG.SETTINGS.DEFAULT_SCENE_PRESET, {
+      name: 'EXALTED-SCENES.Settings.DefaultScenePreset.Name',
+      hint: 'EXALTED-SCENES.Settings.DefaultScenePreset.Hint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: defaultScenePresetChoices,
+      default: CONFIG.DEFAULT_LAYOUT.preset
+    });
+
+    const defaultSceneDisplayModeChoices = {};
+    for (const [key, mode] of Object.entries(CONFIG.DISPLAY_MODES)) {
+      defaultSceneDisplayModeChoices[key] = mode.name;
+    }
+    game.settings.register(this.ID, CONFIG.SETTINGS.DEFAULT_SCENE_DISPLAY_MODE, {
+      name: 'EXALTED-SCENES.Settings.DefaultSceneDisplayMode.Name',
+      hint: 'EXALTED-SCENES.Settings.DefaultSceneDisplayMode.Hint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: defaultSceneDisplayModeChoices,
+      default: CONFIG.DEFAULT_LAYOUT.displayMode
+    });
+
+    const defaultSceneShapeChoices = {};
+    for (const [key, preset] of Object.entries(CONFIG.SHAPE_PRESETS)) {
+      defaultSceneShapeChoices[key] = preset.name;
+    }
+    game.settings.register(this.ID, CONFIG.SETTINGS.DEFAULT_SCENE_SHAPE, {
+      name: 'EXALTED-SCENES.Settings.DefaultSceneShape.Name',
+      hint: 'EXALTED-SCENES.Settings.DefaultSceneShape.Hint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: defaultSceneShapeChoices,
+      default: CONFIG.DEFAULT_LAYOUT.shape
+    });
+
+    const defaultSceneSizeChoices = {};
+    for (const [key, preset] of Object.entries(CONFIG.SIZE_PRESETS)) {
+      defaultSceneSizeChoices[key] = preset.name;
+    }
+    game.settings.register(this.ID, CONFIG.SETTINGS.DEFAULT_SCENE_SIZE, {
+      name: 'EXALTED-SCENES.Settings.DefaultSceneSize.Name',
+      hint: 'EXALTED-SCENES.Settings.DefaultSceneSize.Hint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: defaultSceneSizeChoices,
+      default: CONFIG.DEFAULT_LAYOUT.size
+    });
+
     // User preference - Color Theme
     const themeChoices = {};
     for (const [key, theme] of Object.entries(CONFIG.COLOR_THEMES)) {
@@ -174,6 +243,32 @@ class ExaltedScenes {
       choices: themeChoices,
       default: 'rose',
       onChange: (value) => ExaltedScenes._applyColorTheme(value)
+    });
+
+    // Cast presets storage (world-scoped, hidden from config UI)
+    game.settings.register(this.ID, CONFIG.SETTINGS.CAST_PRESETS, {
+      scope: 'world',
+      config: false,
+      type: Array,
+      default: []
+    });
+
+    // Broadcast state persistence (for player reconnection)
+    game.settings.register(this.ID, CONFIG.SETTINGS.BROADCAST_STATE, {
+      scope: 'world',
+      config: false,
+      type: Object,
+      default: { mode: null }
+    });
+
+    // GM preference - Allow players to position characters in Free Composition mode
+    game.settings.register(this.ID, CONFIG.SETTINGS.FREEFORM_PLAYER_CONTROL, {
+      name: 'EXALTED-SCENES.Settings.FreeformPlayerControl.Name',
+      hint: 'EXALTED-SCENES.Settings.FreeformPlayerControl.Hint',
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: false
     });
   }
 
@@ -197,31 +292,71 @@ class ExaltedScenes {
       el.classList.add(theme.cssClass);
     });
 
-    console.log(`${CONFIG.MODULE_NAME} | Applied theme: ${theme.name}`);
+    log(`Applied theme: ${theme.name}`);
   }
 
   /**
    * Registers keyboard shortcuts for the module.
-   * Default: Ctrl+Shift+C opens the appropriate panel based on user role.
+   * All shortcuts are configurable through Foundry's Configure Controls UI.
    * @private
    */
   static _registerKeybindings() {
-    game.keybindings.register(this.ID, 'open-panel', {
-      name: 'EXALTED-SCENES.Keybindings.OpenPanel.Name',
-      hint: 'EXALTED-SCENES.Keybindings.OpenPanel.Hint',
-      editable: [
-        { key: 'KeyC', modifiers: [KeyboardManager.MODIFIER_KEYS.CONTROL, KeyboardManager.MODIFIER_KEYS.SHIFT] }
-      ],
-      onDown: () => {
+    for (const binding of MODULE_KEYBINDINGS) {
+      game.keybindings.register(this.ID, binding.id, {
+        name: resolveShortcutText(binding.nameKey, binding.defaultName),
+        hint: resolveShortcutText(binding.hintKey, binding.defaultHint),
+        editable: binding.editable,
+        onDown: () => this._handleKeybinding(binding.action),
+        restricted: false,
+        precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
+      });
+    }
+  }
+
+  /**
+   * Routes keybinding actions to the correct module behavior.
+   * GM-only actions are intentionally registered for everyone so users can
+   * rebind them locally, but they no-op when the current user is not a GM.
+   *
+   * @private
+   * @param {string} action - Action identifier from the shortcut catalog
+   * @returns {boolean} True when handled
+   */
+  static _handleKeybinding(action) {
+    switch (action) {
+      case 'openPanel':
         if (game.user.isGM) {
           ExaltedScenesGMPanel.show();
         } else {
           ExaltedScenesPlayerPanel.show();
         }
-      },
-      restricted: false, // Allow all users to use the keybinding
-      precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
-    });
+        return true;
+
+      case 'stopLiveOutput':
+        if (!game.user.isGM) return false;
+        ExaltedScenesGMPanel.stopLiveOutput();
+        return true;
+
+      case 'openLiveView':
+        if (!game.user.isGM) return false;
+        ExaltedScenesGMPanel.openLiveView();
+        return true;
+
+      case 'toggleSlideshowPause':
+        if (!game.user.isGM) return false;
+        return ExaltedScenesGMPanel.toggleSlideshowPause();
+
+      case 'previousLiveStep':
+        if (!game.user.isGM) return false;
+        return ExaltedScenesGMPanel.navigateLiveStep(-1);
+
+      case 'nextLiveStep':
+        if (!game.user.isGM) return false;
+        return ExaltedScenesGMPanel.navigateLiveStep(1);
+
+      default:
+        return false;
+    }
   }
 
   /**
@@ -232,7 +367,7 @@ class ExaltedScenes {
    * @async
    */
   static async _onReady() {
-    console.log(`${CONFIG.MODULE_NAME} | Ready`);
+    log('Ready');
 
     // Initialize Store
     await Store.initialize();
@@ -242,28 +377,63 @@ class ExaltedScenes {
 
     // Initialize Sockets
     SocketHandler.initialize();
+    MusicRequestPlaybackMonitor.initialize();
+
+    // Restore broadcast state for reconnecting players
+    this._restoreBroadcastState();
 
     // Apply saved color theme
     const savedTheme = game.settings.get(this.ID, CONFIG.SETTINGS.COLOR_THEME);
     this._applyColorTheme(savedTheme);
 
     // Monks Common Display Compatibility
+    // MCD adds body.hide-ui to hide the Foundry interface on player displays (e.g. TV).
+    // We must ensure our broadcast and cast-only views remain visible and on top.
     if (game.modules.get('monks-common-display')?.active) {
       const style = document.createElement('style');
       style.id = 'exalted-scenes-mcd-compat';
+      // MCD's hide-ui selector has ~30 :not(#id) clauses, giving it enormous
+      // specificity (~30 ID selectors). We must match or exceed that specificity
+      // for our override to win. Repeating the same ID selector is a standard
+      // CSS specificity hack: #id#id#id counts as 3 ID selectors of specificity
+      // but still matches the same element.
+      const sp = '#exalted-scenes-player-view'.repeat(25); // (25,0,0) beats MCD's ~(23,8,1)
       style.textContent = `
-        body.hide-ui #exalted-scenes-player-view,
-        body.hide-ui #exalted-scenes-player-view .es-player-view {
+        /* Override MCD's high-specificity hide-all selector.
+           MCD uses body.hide-ui > *:not(#a):not(#b)... (~30 :not(#id) = ~30,1,1).
+           We counter with repeated ID selectors for sufficient specificity. */
+        body.hide-ui ${sp} {
           display: block !important;
+          visibility: visible !important;
+        }
+
+        /* The inner player view respects its own active/inactive state via opacity,
+           but must not be hidden by MCD's broad selectors */
+        body.hide-ui ${sp} .es-player-view {
+          display: block !important;
+          visibility: visible !important;
+        }
+
+        /* Active broadcast must sit above the Foundry canvas on MCD displays */
+        body.hide-ui ${sp} .es-player-view--active {
+          z-index: 1000 !important;
+        }
+
+        /* Hide Foundry canvas during full-scene broadcast to prevent
+           dual rendering (e.g. animated Beneos maps + broadcast scene).
+           Cast-only mode is excluded — es-broadcast-active is not set
+           when cast-only is active, since the canvas IS the background. */
+        body.hide-ui.es-broadcast-active #board {
+          visibility: hidden !important;
         }
       `;
       document.head.appendChild(style);
-      console.log(`${CONFIG.MODULE_NAME} | Monks Common Display compatibility enabled`);
+      log('Monks Common Display compatibility enabled');
     }
 
     // Expose Public API
     game.modules.get(this.ID).api = new ExaltedScenesAPI();
-    console.log(`${CONFIG.MODULE_NAME} | Public API initialized`);
+    log('Public API initialized');
   }
 
   /**
@@ -273,7 +443,7 @@ class ExaltedScenes {
    * @param {Array|Object} controls - Scene control buttons (format varies by Foundry version)
    */
   static _onGetSceneControlButtons(controls) {
-    console.log(`${CONFIG.MODULE_NAME} | Hook: getSceneControlButtons`, controls);
+    log('Hook: getSceneControlButtons', controls);
 
     // Handle both Array (standard) and Object (V13/modified) structures
     let tokenControls;
@@ -311,6 +481,65 @@ class ExaltedScenes {
           console.warn(`${CONFIG.MODULE_NAME} | Unknown tools structure:`, tokenControls.tools);
       }
     }
+  }
+
+  /**
+   * Restores broadcast state for players who reconnect (F5) during an active broadcast.
+   * Reads the persisted broadcast state from settings and activates the appropriate view.
+   * @private
+   */
+  static _restoreBroadcastState() {
+    const state = game.settings.get(this.ID, CONFIG.SETTINGS.BROADCAST_STATE);
+    if (!state?.mode) return;
+
+    // GM doesn't need restore — they control the broadcast and already have local state
+    if (game.user.isGM) return;
+
+    log('Restoring broadcast state:', state.mode);
+
+    import('./apps/PlayerView.js').then(({ ExaltedScenesPlayerView }) => {
+      switch (state.mode) {
+        case 'scene':
+          if (state.sceneId) {
+            Store.setActiveScene(state.sceneId);
+            ExaltedScenesPlayerView.activate(state.sceneId, {
+              theaterShotId: state.theaterShotId || null
+            });
+          }
+          break;
+
+        case 'cast-only':
+          if (state.characterIds?.length) {
+            Store.castOnlyState = {
+              isActive: true,
+              characterIds: [...state.characterIds],
+              layoutSettings: { ...state.layoutSettings }
+            };
+            ExaltedScenesPlayerView.activateCastOnly(state.characterIds, state.layoutSettings);
+          }
+          break;
+
+        case 'slideshow':
+          // Slideshows are GM-driven with timers — can't fully restore mid-slide.
+          // Restore the current scene being shown so the player at least sees something.
+          if (state.sceneId) {
+            Store.setActiveScene(state.sceneId);
+            ExaltedScenesPlayerView.activate(state.sceneId);
+          }
+          break;
+
+        case 'sequence':
+          // Restore the current sequence background
+          if (state.sceneId && state.background) {
+            Store.setActiveScene(state.sceneId);
+            ExaltedScenesPlayerView.activateSequence(
+              state.sceneId, state.background,
+              state.transitionType || 'dissolve', 0
+            );
+          }
+          break;
+      }
+    }).catch(e => console.error('Exalted Scenes | Failed to restore broadcast state:', e));
   }
 }
 

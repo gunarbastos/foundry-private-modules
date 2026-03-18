@@ -58,21 +58,45 @@ export class SceneModel {
     };
 
     // Layout settings for cast display
-    this.layoutSettings = data.layoutSettings || {
-      preset: 'bottom-center',    // Position preset
-      size: 'medium',             // Size preset (small, medium, large, xlarge) or custom vh value
-      spacing: 24,                // Gap between characters in pixels
-      offsetX: 0,                 // Horizontal offset in vh
-      offsetY: 5                  // Vertical offset in vh
+    const layout = data.layoutSettings || {};
+    this.layoutSettings = {
+      preset: layout.preset || 'bottom-center',    // Position preset (includes 'freeform' for free composition)
+      size: layout.size || 'medium',               // Size preset (small, medium, large, xlarge) or custom vh value
+      shape: layout.shape || 'circle',             // Shape preset (circle, rounded, square, portrait)
+      spacing: layout.spacing ?? 24,               // Gap between characters in pixels
+      offsetX: layout.offsetX ?? 0,                // Horizontal offset in vh
+      offsetY: layout.offsetY ?? 5,                // Vertical offset in vh
+      positions: layout.positions || {},              // Per-character layout state { [charId]: { x, y, scale, flipped, layer } }
+      displayMode: layout.displayMode || 'token',    // Display mode: 'token' (shaped portraits) or 'hero' (transparent sprites)
+      theaterMode: layout.theaterMode ?? false,      // Hero-only Theater Mode toggle
+      theaterShots: Array.isArray(layout.theaterShots) ? layout.theaterShots : [],
+      theaterStripPosition: layout.theaterStripPosition || null,
+      theaterStripHeight: Number.isFinite(Number(layout.theaterStripHeight))
+        ? Math.round(Number(layout.theaterStripHeight))
+        : null
     };
 
-    // Narrator Jukebox audio integration
-    this.audio = data.audio || {
-      playlistId: null,           // Linked playlist ID from Narrator Jukebox
-      ambiencePresetId: null,     // Linked ambience preset ID
-      autoPlayMusic: false,       // Auto-play playlist on broadcast
-      autoPlayAmbience: false,    // Auto-play ambience preset on broadcast
-      stopOnEnd: false            // Stop audio when scene ends/changes
+    // Narrator Jukebox audio integration (v6.0 expanded schema)
+    const audio = data.audio || {};
+    this.audio = {
+      // New v6.0 fields — multi-track soundtrack, ambience layers, soundboard
+      playlists: audio.playlists || [],         // Array of { id, name } — attached NJ playlists
+      tracks: audio.tracks || [],               // Array of { id, name, playlistId } — individual soundtrack tracks
+      layers: audio.layers || [],               // Array of { id, name, volume } — ambience layers
+      sounds: audio.sounds || [],               // Array of { id, name } — soundboard quick-access sounds
+      volume: audio.volume ?? 1.0,              // Master volume (0-1)
+      fadeOut: audio.fadeOut ?? 0,               // Fade-out duration in seconds (0 = instant)
+      playbackMode: audio.playbackMode || 'sequential', // 'sequential', 'shuffle', 'single'
+
+      // Auto-play settings
+      autoPlayMusic: audio.autoPlayMusic ?? false,
+      autoPlayAmbience: audio.autoPlayAmbience ?? false,
+      stopOnEnd: audio.stopOnEnd ?? false,
+
+      // Legacy fields — preserved for backward compatibility with pre-v6 data
+      // Resolved to tracks[]/layers[] on first Scene Editor open when NJ is available
+      _legacyPlaylistId: audio._legacyPlaylistId ?? audio.playlistId ?? null,
+      _legacyAmbiencePresetId: audio._legacyAmbiencePresetId ?? audio.ambiencePresetId ?? null
     };
   }
 
@@ -175,27 +199,27 @@ export class SceneModel {
   }
 
   /**
-   * Checks if this scene has any audio configured (playlist or ambience).
+   * Checks if this scene has any audio configured (tracks, layers, sounds, or legacy).
    * @type {boolean}
    */
   get hasAudio() {
-    return !!(this.audio?.playlistId || this.audio?.ambiencePresetId);
+    return this.hasPlaylist || this.hasAmbience || this.audio?.sounds?.length > 0;
   }
 
   /**
-   * Checks if this scene has a linked playlist.
+   * Checks if this scene has a soundtrack configured (new tracks or legacy playlist).
    * @type {boolean}
    */
   get hasPlaylist() {
-    return !!this.audio?.playlistId;
+    return !!(this.audio?.playlists?.length > 0 || this.audio?.tracks?.length > 0 || this.audio?._legacyPlaylistId);
   }
 
   /**
-   * Checks if this scene has a linked ambience preset.
+   * Checks if this scene has ambience configured (new layers or legacy preset).
    * @type {boolean}
    */
   get hasAmbience() {
-    return !!this.audio?.ambiencePresetId;
+    return !!(this.audio?.layers?.length > 0 || this.audio?._legacyAmbiencePresetId);
   }
 
   /**

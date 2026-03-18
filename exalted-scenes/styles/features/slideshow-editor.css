@@ -173,7 +173,7 @@
   background: rgba(0, 0, 0, 0.15);
   border-radius: var(--es-radius-md);
   border: 2px dashed var(--es-border-default);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__scenes--drag-over {
@@ -225,7 +225,7 @@
   border: 1px solid var(--es-border-subtle);
   border-radius: var(--es-radius-md);
   cursor: grab;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__scene:hover {
@@ -344,7 +344,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__scene-actions button:hover {
@@ -407,7 +407,7 @@
   cursor: pointer;
   font-size: var(--es-font-size-xs);
   color: var(--es-text-secondary);
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__available-scene:hover {
@@ -458,7 +458,7 @@
   font-size: var(--es-font-size-sm);
   font-family: var(--es-font-sans);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__select:hover {
@@ -487,7 +487,7 @@
   color: var(--es-text-body);
   font-size: var(--es-font-size-sm);
   font-family: var(--es-font-sans);
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
 }
 
 .es-slideshow-editor__input-unit input:hover {
@@ -540,7 +540,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
   flex-shrink: 0;
 }
 
@@ -606,7 +606,7 @@
   font-weight: 500;
   font-family: var(--es-font-sans);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease;
+  transition: var(--es-transition-all);
   border: 1px solid transparent;
 }
 

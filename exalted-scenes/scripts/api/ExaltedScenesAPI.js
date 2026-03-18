@@ -12,6 +12,8 @@
 import { CONFIG } from '../config.js';
 import { Store } from '../data/Store.js';
 import { SocketHandler } from '../data/SocketHandler.js';
+import { normalizeMediaFocusMap } from '../utils/media-focus.js';
+import { NarratorJukeboxIntegration } from '../data/NarratorJukeboxIntegration.js';
 
 /**
  * Hook event name constants.
@@ -68,6 +70,8 @@ const HOOK_NAMES = Object.freeze({
  * - {@link ExaltedScenesAPI#sequences api.sequences} - Sequence playback control
  * - {@link ExaltedScenesAPI#broadcast api.broadcast} - Scene broadcasting control
  * - {@link ExaltedScenesAPI#castOnly api.castOnly} - Cast-only mode control
+ * - {@link ExaltedScenesAPI#audio api.audio} - Narrator Jukebox audio integration
+ * - {@link ExaltedScenesAPI#castPresets api.castPresets} - Cast preset management (save/load/delete)
  * - {@link ExaltedScenesAPI#config api.config} - Read-only configuration constants
  * - {@link ExaltedScenesAPI#hooks api.hooks} - Hook event name constants
  *
@@ -138,7 +142,7 @@ export class ExaltedScenesAPI {
         if (!self._requireInit()) return null;
         const scene = Store.scenes.get(sceneId);
         if (!scene) return null;
-        return foundry.utils.deepClone(scene.cast);
+        return [...scene.cast];
       },
 
       /**
@@ -173,8 +177,32 @@ export class ExaltedScenesAPI {
         if (data.bgType) scene.bgType = data.bgType;
         if (data.tags) scene.tags = [...data.tags];
         await Store.saveData();
-        Hooks.callAll(HOOK_NAMES.SCENE_CREATE, { scene: self._cloneScene(scene) });
-        return { success: true, data: self._cloneScene(scene) };
+        const cloned = self._cloneScene(scene);
+        Hooks.callAll(HOOK_NAMES.SCENE_CREATE, { scene: cloned });
+        return { success: true, data: cloned };
+      },
+
+      /**
+       * Duplicates an existing scene.
+       * @param {string} sceneId - The source scene ID
+       * @param {Object} [options={}] - Duplicate options
+       * @param {string} [options.name] - Optional explicit name for the duplicate
+       * @param {string|null} [options.folderId] - Optional destination folder override
+       * @returns {Promise<{success: boolean, data?: Object, error?: string}>} API result
+       */
+      async duplicate(sceneId, options = {}) {
+        const guard = self._requireGM('scenes.duplicate');
+        if (guard) return guard;
+        if (!Store.scenes.has(sceneId)) return { success: false, error: `Scene not found: ${sceneId}` };
+
+        const scene = Store.duplicateScene(sceneId, {
+          name: options.name,
+          folder: options.folderId
+        });
+        await Store.saveData();
+        const cloned = self._cloneScene(scene);
+        Hooks.callAll(HOOK_NAMES.SCENE_CREATE, { scene: cloned, duplicatedFrom: sceneId });
+        return { success: true, data: cloned };
       },
 
       /**
@@ -196,12 +224,9 @@ export class ExaltedScenesAPI {
           }
         }
         await Store.saveData();
-        Hooks.callAll(HOOK_NAMES.SCENE_UPDATE, {
-          sceneId,
-          changes: foundry.utils.deepClone(changes),
-          scene: self._cloneScene(scene)
-        });
-        return { success: true, data: self._cloneScene(scene) };
+        const cloned = self._cloneScene(scene);
+        Hooks.callAll(HOOK_NAMES.SCENE_UPDATE, { sceneId, changes, scene: cloned });
+        return { success: true, data: cloned };
       },
 
       /**
@@ -373,9 +398,10 @@ export class ExaltedScenesAPI {
        * @param {Object} data - Character creation data
        * @param {string} data.name - Character name (required)
        * @param {Object} [data.states] - Emotion states map { stateName: imagePath }
+       * @param {Object} [data.stateFocus] - Emotion focus map { stateName: { x, y } }
        * @param {string[]} [data.tags] - Initial tags
        * @param {string} [data.folderId] - Folder ID to place character in
-       * @param {string} [data.borderStyle='gold'] - Border preset name
+       * @param {Object} [data.borderStyle] - Border style { effect, color?, color2? }
        * @param {string} [data.actorId] - Linked Foundry Actor ID
        * @returns {Promise<{success: boolean, data?: Object, error?: string}>} API result
        */
@@ -389,20 +415,45 @@ export class ExaltedScenesAPI {
           name: data.name,
           imagePath: imagePath
         });
-        if (data.states) char.states = { ...data.states };
-        if (data.tags) char.tags = new Set(data.tags);
+         if (data.states) char.states = { ...data.states };
+         if (data.stateFocus) char.stateFocus = normalizeMediaFocusMap(data.stateFocus);
+         if (data.tags) char.tags = new Set(data.tags);
         if (data.folderId) char.folder = data.folderId;
         if (data.borderStyle) char.borderStyle = data.borderStyle;
         if (data.actorId) char.actorId = data.actorId;
         await Store.saveData();
-        Hooks.callAll(HOOK_NAMES.CHARACTER_CREATE, { character: self._cloneCharacter(char) });
-        return { success: true, data: self._cloneCharacter(char) };
+        const cloned = self._cloneCharacter(char);
+        Hooks.callAll(HOOK_NAMES.CHARACTER_CREATE, { character: cloned });
+        return { success: true, data: cloned };
+      },
+
+      /**
+       * Duplicates an existing character.
+       * @param {string} characterId - The source character ID
+       * @param {Object} [options={}] - Duplicate options
+       * @param {string} [options.name] - Optional explicit name for the duplicate
+       * @param {string|null} [options.folderId] - Optional destination folder override
+       * @returns {Promise<{success: boolean, data?: Object, error?: string}>} API result
+       */
+      async duplicate(characterId, options = {}) {
+        const guard = self._requireGM('characters.duplicate');
+        if (guard) return guard;
+        if (!Store.characters.has(characterId)) return { success: false, error: `Character not found: ${characterId}` };
+
+        const char = Store.duplicateCharacter(characterId, {
+          name: options.name,
+          folder: options.folderId
+        });
+        await Store.saveData();
+        const cloned = self._cloneCharacter(char);
+        Hooks.callAll(HOOK_NAMES.CHARACTER_CREATE, { character: cloned, duplicatedFrom: characterId });
+        return { success: true, data: cloned };
       },
 
       /**
        * Updates an existing character's properties.
        * @param {string} characterId - The character ID
-       * @param {Object} changes - Properties to update (name, states, currentState, borderStyle, favorite, actorId, musicPlaylistId)
+       * @param {Object} changes - Properties to update (name, states, stateFocus, currentState, borderStyle, favorite, actorId, musicPlaylistId, music)
        * @returns {Promise<{success: boolean, data?: Object, error?: string}>} API result
        */
       async update(characterId, changes) {
@@ -411,19 +462,16 @@ export class ExaltedScenesAPI {
         const char = Store.characters.get(characterId);
         if (!char) return { success: false, error: `Character not found: ${characterId}` };
 
-        const allowed = ['name', 'states', 'currentState', 'borderStyle', 'favorite', 'actorId', 'musicPlaylistId'];
+        const allowed = ['name', 'states', 'stateFocus', 'currentState', 'borderStyle', 'favorite', 'actorId', 'musicPlaylistId', 'music', 'heroStates', 'currentHeroState', 'hideNameInBroadcast'];
         for (const key of Object.keys(changes)) {
           if (allowed.includes(key)) {
-            char[key] = changes[key];
+            char[key] = key === 'stateFocus' ? normalizeMediaFocusMap(changes[key]) : changes[key];
           }
         }
         await Store.saveData();
-        Hooks.callAll(HOOK_NAMES.CHARACTER_UPDATE, {
-          characterId,
-          changes: foundry.utils.deepClone(changes),
-          character: self._cloneCharacter(char)
-        });
-        return { success: true, data: self._cloneCharacter(char) };
+        const cloned = self._cloneCharacter(char);
+        Hooks.callAll(HOOK_NAMES.CHARACTER_UPDATE, { characterId, changes, character: cloned });
+        return { success: true, data: cloned };
       },
 
       /**
@@ -473,14 +521,28 @@ export class ExaltedScenesAPI {
        * Sets a character's border style. Respects permissions and lock status.
        * Broadcasts the change to all connected clients via socket.
        * @param {string} characterId - The character ID
-       * @param {string} borderPreset - Border preset name from CONFIG.BORDER_PRESETS
+       * @param {Object|string} borderStyle - Border style object { effect, color?, color2? } or legacy preset string
        * @returns {{success: boolean, error?: string}} API result
        */
-      setBorder(characterId, borderPreset) {
+      setBorder(characterId, borderStyle) {
         if (!self._requireInit()) return { success: false, error: 'Module not initialized' };
         const char = Store.characters.get(characterId);
         if (!char) return { success: false, error: `Character not found: ${characterId}` };
-        if (!CONFIG.BORDER_PRESETS[borderPreset]) return { success: false, error: `Invalid border preset: ${borderPreset}` };
+
+        // Backward compat: string callers get mapped through migration map
+        if (typeof borderStyle === 'string') {
+          const migrated = CONFIG.BORDER_MIGRATION_MAP[borderStyle];
+          if (!migrated) return { success: false, error: `Invalid border preset: ${borderStyle}` };
+          borderStyle = { ...migrated };
+        }
+
+        // Validate object format
+        if (!borderStyle || typeof borderStyle !== 'object' || !borderStyle.effect) {
+          return { success: false, error: 'Invalid border style: must be { effect, color?, color2? }' };
+        }
+        if (!CONFIG.BORDER_EFFECTS[borderStyle.effect]) {
+          return { success: false, error: `Invalid border effect: ${borderStyle.effect}` };
+        }
 
         if (!game.user.isGM) {
           if (char.locked) return { success: false, error: 'Character is locked by GM' };
@@ -489,7 +551,7 @@ export class ExaltedScenesAPI {
           }
         }
 
-        SocketHandler.emitUpdateBorder(characterId, borderPreset);
+        SocketHandler.emitUpdateBorder(characterId, borderStyle);
         return { success: true };
       },
 
@@ -695,8 +757,9 @@ export class ExaltedScenesAPI {
           color: data.color || null
         });
         await Store.saveData();
-        Hooks.callAll(HOOK_NAMES.FOLDER_CREATE, { folder: self._cloneFolder(folder) });
-        return { success: true, data: self._cloneFolder(folder) };
+        const cloned = self._cloneFolder(folder);
+        Hooks.callAll(HOOK_NAMES.FOLDER_CREATE, { folder: cloned });
+        return { success: true, data: cloned };
       },
 
       /**
@@ -713,12 +776,9 @@ export class ExaltedScenesAPI {
         Store.updateFolder(folderId, changes);
         await Store.saveData();
         const folder = Store.folders.get(folderId);
-        Hooks.callAll(HOOK_NAMES.FOLDER_UPDATE, {
-          folderId,
-          changes: foundry.utils.deepClone(changes),
-          folder: self._cloneFolder(folder)
-        });
-        return { success: true, data: self._cloneFolder(folder) };
+        const cloned = self._cloneFolder(folder);
+        Hooks.callAll(HOOK_NAMES.FOLDER_UPDATE, { folderId, changes, folder: cloned });
+        return { success: true, data: cloned };
       },
 
       /**
@@ -790,7 +850,7 @@ export class ExaltedScenesAPI {
        */
       getProgress() {
         if (!self._requireInit()) return null;
-        return foundry.utils.deepClone(Store.getSlideshowProgress());
+        return Store.getSlideshowProgress();
       },
 
       /**
@@ -1238,6 +1298,209 @@ export class ExaltedScenesAPI {
     });
 
     // ═══════════════════════════════════════════════════════════════
+    // AUDIO NAMESPACE (Narrator Jukebox Integration)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Narrator Jukebox audio integration: playback state queries and GM-only controls.
+     * Requires the Narrator Jukebox module to be installed and active.
+     * @namespace
+     */
+    this.audio = Object.freeze({
+      /**
+       * Whether the Narrator Jukebox module is installed and active.
+       * @returns {boolean}
+       */
+      isAvailable() {
+        return NarratorJukeboxIntegration.isAvailable;
+      },
+
+      /**
+       * Gets the current NJ playback state.
+       * @returns {{isPlaying: boolean, currentTrack: Object|null, isPreviewMode: boolean}|null} Playback state or null if NJ unavailable
+       */
+      getPlaybackState() {
+        if (!NarratorJukeboxIntegration.isAvailable) return null;
+        return NarratorJukeboxIntegration.getPlaybackState();
+      },
+
+      /**
+       * Gets a scene's audio configuration (tracks, layers, sounds, volume, fadeOut, playbackMode).
+       * @param {string} sceneId - Scene ID
+       * @returns {Object|null} Audio config (deep clone) or null if scene not found
+       */
+      getSceneAudio(sceneId) {
+        if (!self._requireInit()) return null;
+        const scene = Store.scenes.get(sceneId);
+        if (!scene) return null;
+        return foundry.utils.deepClone(scene.audio);
+      },
+
+      /**
+       * Plays a scene's full audio (soundtrack + ambience). GM only.
+       * @param {string} sceneId - Scene ID whose audio to play
+       * @returns {Promise<{success: boolean, data?: {music: boolean, ambience: boolean}, error?: string}>}
+       */
+      async playSceneAudio(sceneId) {
+        const guard = self._requireGM('audio.playSceneAudio');
+        if (guard) return guard;
+        if (!NarratorJukeboxIntegration.isAvailable) return { success: false, error: 'Narrator Jukebox is not available' };
+        const scene = Store.scenes.get(sceneId);
+        if (!scene) return { success: false, error: `Scene not found: ${sceneId}` };
+
+        const result = await NarratorJukeboxIntegration.playSceneAudio(scene);
+        return { success: true, data: foundry.utils.deepClone(result) };
+      },
+
+      /**
+       * Restores a scene's audio (music and/or ambience) without checking auto-play flags. GM only.
+       * @param {string} sceneId - Scene ID whose audio to restore
+       * @param {Object} [options] - Restore options
+       * @param {boolean} [options.music=true] - Whether to restore music
+       * @param {boolean} [options.ambience=true] - Whether to restore ambience
+       * @returns {Promise<{success: boolean, data?: {music: boolean, ambience: boolean}, error?: string}>}
+       */
+      async restoreSceneAudio(sceneId, options) {
+        const guard = self._requireGM('audio.restoreSceneAudio');
+        if (guard) return guard;
+        if (!NarratorJukeboxIntegration.isAvailable) return { success: false, error: 'Narrator Jukebox is not available' };
+        const scene = Store.scenes.get(sceneId);
+        if (!scene) return { success: false, error: `Scene not found: ${sceneId}` };
+
+        const result = await NarratorJukeboxIntegration.restoreSceneAudio(scene, options);
+        return { success: true, data: foundry.utils.deepClone(result) };
+      },
+
+      /**
+       * Stops all audio, optionally using a scene's fade-out duration. GM only.
+       * @param {string} [sceneId] - Optional scene ID to read fadeOut duration from
+       * @returns {Promise<{success: boolean, error?: string}>}
+       */
+      async stopAll(sceneId) {
+        const guard = self._requireGM('audio.stopAll');
+        if (guard) return guard;
+        if (!NarratorJukeboxIntegration.isAvailable) return { success: false, error: 'Narrator Jukebox is not available' };
+
+        let fadeDuration = 0;
+        if (sceneId) {
+          const scene = Store.scenes.get(sceneId);
+          if (scene?.audio?.fadeOut) fadeDuration = scene.audio.fadeOut;
+        }
+        await NarratorJukeboxIntegration.fadeOutAndStop(fadeDuration);
+        return { success: true };
+      },
+
+      /**
+       * Triggers a one-shot soundboard sound. GM only.
+       * @param {string} soundId - Soundboard sound ID to play
+       * @returns {Promise<{success: boolean, error?: string}>}
+       */
+      async playSoundboardSound(soundId) {
+        const guard = self._requireGM('audio.playSoundboardSound');
+        if (guard) return guard;
+        if (!NarratorJukeboxIntegration.isAvailable) return { success: false, error: 'Narrator Jukebox is not available' };
+        if (!soundId) return { success: false, error: 'Sound ID is required' };
+
+        const played = await NarratorJukeboxIntegration.playSoundboardSound(soundId);
+        return played ? { success: true } : { success: false, error: 'Failed to play soundboard sound' };
+      },
+
+      /**
+       * Sets the music channel volume (0–1). GM only.
+       * @param {number} volume - Volume level between 0 and 1
+       * @returns {Promise<{success: boolean, error?: string}>}
+       */
+      async setVolume(volume) {
+        const guard = self._requireGM('audio.setVolume');
+        if (guard) return guard;
+        if (!NarratorJukeboxIntegration.isAvailable) return { success: false, error: 'Narrator Jukebox is not available' };
+        if (typeof volume !== 'number' || volume < 0 || volume > 1) {
+          return { success: false, error: 'Volume must be a number between 0 and 1' };
+        }
+
+        const set = NarratorJukeboxIntegration.setMusicVolume(volume);
+        return set ? { success: true } : { success: false, error: 'Failed to set volume' };
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // CAST PRESETS NAMESPACE
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Cast preset management: save, load, list, delete, and rename reusable cast + layout configurations.
+     * @namespace
+     */
+    this.castPresets = Object.freeze({
+      /**
+       * Lists all saved cast presets.
+       * @returns {Object[]} Array of preset objects (safe copies)
+       */
+      list() {
+        if (!self._requireInit()) return [];
+        return foundry.utils.deepClone(Store.getCastPresets());
+      },
+
+      /**
+       * Saves the cast and layout of a scene as a named preset. GM only.
+       * @param {string} name - Preset display name
+       * @param {string} sceneId - Source scene ID
+       * @returns {{success: boolean, preset?: Object, error?: string}}
+       */
+      save(name, sceneId) {
+        const guard = self._requireGM('castPresets.save');
+        if (guard) return guard;
+        if (!name?.trim()) return { success: false, error: 'Preset name is required' };
+        if (!sceneId) return { success: false, error: 'Scene ID is required' };
+        return Store.saveCastPreset(name, sceneId);
+      },
+
+      /**
+       * Loads a preset into a scene, replacing its cast and layout settings. GM only.
+       * @param {string} presetId - Preset ID to load
+       * @param {string} sceneId - Target scene ID
+       * @returns {{success: boolean, loaded?: number, missing?: string[], error?: string}}
+       */
+      load(presetId, sceneId) {
+        const guard = self._requireGM('castPresets.load');
+        if (guard) return guard;
+        if (!presetId) return { success: false, error: 'Preset ID is required' };
+        if (!sceneId) return { success: false, error: 'Scene ID is required' };
+        return Store.loadCastPreset(presetId, sceneId);
+      },
+
+      /**
+       * Deletes a cast preset. GM only.
+       * @param {string} presetId - Preset ID to delete
+       * @returns {{success: boolean, error?: string}}
+       */
+      delete(presetId) {
+        const guard = self._requireGM('castPresets.delete');
+        if (guard) return guard;
+        if (!presetId) return { success: false, error: 'Preset ID is required' };
+        return Store.deleteCastPreset(presetId)
+          ? { success: true }
+          : { success: false, error: 'Preset not found' };
+      },
+
+      /**
+       * Renames a cast preset. GM only.
+       * @param {string} presetId - Preset ID
+       * @param {string} newName - New display name
+       * @returns {{success: boolean, error?: string}}
+       */
+      rename(presetId, newName) {
+        const guard = self._requireGM('castPresets.rename');
+        if (guard) return guard;
+        if (!presetId) return { success: false, error: 'Preset ID is required' };
+        if (!newName?.trim()) return { success: false, error: 'New name is required' };
+        return Store.renameCastPreset(presetId, newName)
+          ? { success: true }
+          : { success: false, error: 'Preset not found' };
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
     // CONFIG NAMESPACE (read-only)
     // ═══════════════════════════════════════════════════════════════
 
@@ -1247,18 +1510,13 @@ export class ExaltedScenesAPI {
      * @namespace
      */
     this.config = Object.freeze({
-      /** @returns {Object} All border style presets */
-      get BORDER_PRESETS() { return foundry.utils.deepClone(CONFIG.BORDER_PRESETS); },
-      /** @returns {Object} All cast layout presets */
-      get LAYOUT_PRESETS() { return foundry.utils.deepClone(CONFIG.LAYOUT_PRESETS); },
-      /** @returns {Object} All portrait size presets */
-      get SIZE_PRESETS() { return foundry.utils.deepClone(CONFIG.SIZE_PRESETS); },
-      /** @returns {Object} Available transition types */
-      get TRANSITIONS() { return foundry.utils.deepClone(CONFIG.TRANSITIONS); },
-      /** @returns {Object} Background motion presets (Ken Burns effects) */
-      get BACKGROUND_MOTION() { return foundry.utils.deepClone(CONFIG.BACKGROUND_MOTION); },
-      /** @returns {Object} UI color theme presets */
-      get COLOR_THEMES() { return foundry.utils.deepClone(CONFIG.COLOR_THEMES); }
+      BORDER_EFFECTS: Object.freeze(foundry.utils.deepClone(CONFIG.BORDER_EFFECTS)),
+      BORDER_COLORS: Object.freeze(foundry.utils.deepClone(CONFIG.BORDER_COLORS)),
+      LAYOUT_PRESETS: Object.freeze(foundry.utils.deepClone(CONFIG.LAYOUT_PRESETS)),
+      SIZE_PRESETS: Object.freeze(foundry.utils.deepClone(CONFIG.SIZE_PRESETS)),
+      TRANSITIONS: Object.freeze(foundry.utils.deepClone(CONFIG.TRANSITIONS)),
+      BACKGROUND_MOTION: Object.freeze(foundry.utils.deepClone(CONFIG.BACKGROUND_MOTION)),
+      COLOR_THEMES: Object.freeze(foundry.utils.deepClone(CONFIG.COLOR_THEMES))
     });
 
     // ═══════════════════════════════════════════════════════════════
@@ -1290,8 +1548,8 @@ export class ExaltedScenesAPI {
         } else {
           ExaltedScenesPlayerPanel.show();
         }
-      });
-    });
+      }).catch(e => console.error('Exalted Scenes | Failed to load PlayerPanel:', e));
+    }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
   }
 
   /**
@@ -1300,7 +1558,7 @@ export class ExaltedScenesAPI {
   openGMPanel() {
     import('../apps/GMPanel.js').then(({ ExaltedScenesGMPanel }) => {
       ExaltedScenesGMPanel.show();
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
   }
 
   /**
@@ -1309,7 +1567,7 @@ export class ExaltedScenesAPI {
   openPlayerPanel() {
     import('../apps/PlayerPanel.js').then(({ ExaltedScenesPlayerPanel }) => {
       ExaltedScenesPlayerPanel.show();
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load PlayerPanel:', e));
   }
 
   /**
@@ -1318,10 +1576,10 @@ export class ExaltedScenesAPI {
   close() {
     import('../apps/GMPanel.js').then(({ ExaltedScenesGMPanel }) => {
       if (ExaltedScenesGMPanel._instance) ExaltedScenesGMPanel._instance.close();
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
     import('../apps/PlayerPanel.js').then(({ ExaltedScenesPlayerPanel }) => {
       if (ExaltedScenesPlayerPanel._instance) ExaltedScenesPlayerPanel._instance.close();
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load PlayerPanel:', e));
   }
 
   /**
@@ -1379,40 +1637,22 @@ export class ExaltedScenesAPI {
    */
   _cloneScene(scene) {
     if (!scene) return null;
-    return foundry.utils.deepClone(scene.toJSON());
+    return scene.toJSON();
   }
 
-  /**
-   * Creates a safe clone of a character model.
-   * @private
-   * @param {CharacterModel} char
-   * @returns {Object}
-   */
   _cloneCharacter(char) {
     if (!char) return null;
-    return foundry.utils.deepClone(char.toJSON());
+    return char.toJSON();
   }
 
-  /**
-   * Creates a safe clone of a folder model.
-   * @private
-   * @param {FolderModel} folder
-   * @returns {Object}
-   */
   _cloneFolder(folder) {
     if (!folder) return null;
-    return foundry.utils.deepClone(folder.toJSON());
+    return folder.toJSON();
   }
 
-  /**
-   * Creates a safe clone of a slideshow model.
-   * @private
-   * @param {SlideshowModel} slideshow
-   * @returns {Object}
-   */
   _cloneSlideshow(slideshow) {
     if (!slideshow) return null;
-    return foundry.utils.deepClone(slideshow.toJSON());
+    return slideshow.toJSON();
   }
 }
 

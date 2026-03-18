@@ -39,176 +39,216 @@
       </nav>
     </div>
 
-    <!-- Slideshows Section -->
-    <div class="es-sidebar-section">
-      <div class="es-sidebar-header">
-        {{localize "EXALTED-SCENES.Tabs.Slideshows"}}
+    <!-- Slideshows (compact dropdown) -->
+    <div class="es-sidebar-section es-slideshow-section">
+      <div class="es-nav-item es-slideshow-trigger" data-action="toggle-slideshow-dropdown">
+        <i class="fas fa-images"></i>
+        <span>{{localize "EXALTED-SCENES.Tabs.Slideshows"}}</span>
+        {{#if slideshowProgress}}
+          <span class="es-slideshow-playing-dot"></span>
+        {{/if}}
+        {{#if slideshows.length}}
+          <span class="es-nav-count">{{slideshows.length}}</span>
+        {{/if}}
         <button class="es-btn-icon es-btn-icon--small" data-action="create-slideshow" title="{{localize "EXALTED-SCENES.GMPanel.CreateSlideshow"}}">
           <i class="fas fa-plus"></i>
         </button>
       </div>
 
-      {{!-- Slideshow Controls (when playing) --}}
-      {{#if slideshowProgress}}
-        <div class="es-slideshow-controls-panel">
-          <div class="es-slideshow-now-playing">
-            <span class="es-slideshow-status">
-              {{#if slideshowProgress.isPaused}}<i class="fas fa-pause"></i> {{localize "EXALTED-SCENES.Status.Paused"}}{{else}}<i class="fas fa-play"></i> {{localize "EXALTED-SCENES.Status.Playing"}}{{/if}}
-            </span>
-            <span class="es-slideshow-current-scene">{{slideshowProgress.sceneName}}</span>
-            <span class="es-slideshow-counter">{{add slideshowProgress.currentIndex 1}} / {{slideshowProgress.totalScenes}}</span>
-          </div>
-          <div class="es-slideshow-control-buttons">
-            <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-prev" title="{{localize "EXALTED-SCENES.Slideshow.PreviousScene"}}">
-              <i class="fas fa-step-backward"></i>
-            </button>
-            {{#if slideshowProgress.isPaused}}
-              <button class="es-btn-icon es-btn-icon--small es-btn-icon--primary" data-action="slideshow-resume" title="{{localize "EXALTED-SCENES.Common.Resume"}}">
-                <i class="fas fa-play"></i>
+      {{#if slideshowDropdownOpen}}
+      <div class="es-slideshow-dropdown">
+        {{!-- Playback controls (only when playing) --}}
+        {{#if slideshowProgress}}
+          <div class="es-slideshow-controls-panel">
+            <div class="es-slideshow-now-playing">
+              <span class="es-slideshow-status">
+                {{#if slideshowProgress.isPaused}}<i class="fas fa-pause"></i> {{localize "EXALTED-SCENES.Status.Paused"}}{{else}}<i class="fas fa-play"></i> {{localize "EXALTED-SCENES.Status.Playing"}}{{/if}}
+              </span>
+              <span class="es-slideshow-current-scene">{{slideshowProgress.sceneName}}</span>
+              <span class="es-slideshow-counter">{{add slideshowProgress.currentIndex 1}} / {{slideshowProgress.totalScenes}}</span>
+            </div>
+            <div class="es-slideshow-control-buttons">
+              <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-prev" title="{{localize "EXALTED-SCENES.Slideshow.PreviousScene"}}">
+                <i class="fas fa-step-backward"></i>
               </button>
-            {{else}}
-              <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-pause" title="{{localize "EXALTED-SCENES.Common.Pause"}}">
-                <i class="fas fa-pause"></i>
+              {{#if slideshowProgress.isPaused}}
+                <button class="es-btn-icon es-btn-icon--small es-btn-icon--primary" data-action="slideshow-resume" title="{{localize "EXALTED-SCENES.Common.Resume"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+              {{else}}
+                <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-pause" title="{{localize "EXALTED-SCENES.Common.Pause"}}">
+                  <i class="fas fa-pause"></i>
+                </button>
+              {{/if}}
+              <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-next" title="{{localize "EXALTED-SCENES.Slideshow.NextScene"}}">
+                <i class="fas fa-step-forward"></i>
               </button>
-            {{/if}}
-            <button class="es-btn-icon es-btn-icon--small" data-action="slideshow-next" title="{{localize "EXALTED-SCENES.Slideshow.NextScene"}}">
-              <i class="fas fa-step-forward"></i>
-            </button>
-            <button class="es-btn-icon es-btn-icon--small es-btn-icon--danger" data-action="slideshow-stop" title="{{localize "EXALTED-SCENES.Slideshow.StopSlideshow"}}">
-              <i class="fas fa-stop"></i>
-            </button>
-          </div>
-        </div>
-      {{/if}}
-
-      <nav class="es-nav es-slideshow-list">
-        {{#each slideshows}}
-          <div class="es-nav-item es-slideshow-item {{#if isPlaying}}es-slideshow-item--active{{/if}}" data-slideshow-id="{{id}}">
-            <i class="fas fa-images"></i>
-            <span class="es-slideshow-name" title="{{name}}">{{name}}</span>
-            <span class="es-slideshow-meta">{{sceneCount}} scenes</span>
-            <div class="es-slideshow-actions">
-              <button class="es-btn-icon es-btn-icon--tiny" data-action="play-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Play"}}">
-                <i class="fas fa-play"></i>
-              </button>
-              <button class="es-btn-icon es-btn-icon--tiny" data-action="edit-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Edit"}}">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="es-btn-icon es-btn-icon--tiny" data-action="delete-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
-                <i class="fas fa-trash"></i>
+              <button class="es-btn-icon es-btn-icon--small es-btn-icon--danger" data-action="slideshow-stop" title="{{localize "EXALTED-SCENES.Slideshow.StopSlideshow"}}">
+                <i class="fas fa-stop"></i>
               </button>
             </div>
           </div>
-        {{else}}
-          <div class="es-nav-empty">
-            <span>{{localize "EXALTED-SCENES.EmptyState.NoSlideshowsYet"}}</span>
-          </div>
-        {{/each}}
-      </nav>
+        {{/if}}
+
+        {{!-- Slideshow list --}}
+        <div class="es-slideshow-dropdown-list">
+          {{#each slideshows}}
+            <div class="es-slideshow-item {{#if isPlaying}}es-slideshow-item--active{{/if}}" data-slideshow-id="{{id}}">
+              <i class="fas fa-images"></i>
+              <span class="es-slideshow-name" title="{{name}}">{{name}}</span>
+              <span class="es-slideshow-meta">{{sceneCount}} scenes</span>
+              <div class="es-slideshow-actions">
+                <button class="es-btn-icon es-btn-icon--tiny" data-action="play-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Play"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button class="es-btn-icon es-btn-icon--tiny" data-action="edit-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Edit"}}">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="es-btn-icon es-btn-icon--tiny" data-action="delete-slideshow" data-slideshow-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          {{else}}
+            <div class="es-nav-empty">
+              <span>{{localize "EXALTED-SCENES.EmptyState.NoSlideshowsYet"}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
     </div>
 
-    <!-- Cast-Only Mode Section -->
-    <div class="es-sidebar-section">
-      <div class="es-sidebar-header">
-        {{localize "EXALTED-SCENES.Tabs.CastOnly"}}
+    <!-- Cast-Only Mode (compact dropdown) -->
+    <div class="es-sidebar-section es-cast-only-section">
+      <div class="es-nav-item es-cast-only-trigger" data-action="toggle-cast-only-dropdown">
+        <i class="fas fa-broadcast-tower"></i>
+        <span>{{localize "EXALTED-SCENES.Tabs.CastOnly"}}</span>
         {{#if castOnlyProgress}}
           <span class="es-live-badge es-live-badge--small">{{localize "EXALTED-SCENES.Status.Live"}}</span>
         {{/if}}
       </div>
-      <p class="es-hint es-sidebar-hint">{{localize "EXALTED-SCENES.CastOnly.Hint"}}</p>
 
-      {{!-- Cast-Only Controls (when active) --}}
-      {{#if castOnlyProgress}}
-        <div class="es-cast-only-controls-panel">
-          <div class="es-cast-only-status">
-            <i class="fas fa-users"></i>
-            <span>{{castOnlyProgress.characters.length}} character{{#if (gt castOnlyProgress.characters.length 1)}}s{{/if}} visible</span>
-          </div>
-          <button class="es-btn es-btn-danger es-btn-sm" data-action="cast-only-stop">
-            <i class="fas fa-stop"></i> {{localize "EXALTED-SCENES.CastOnly.StopCastOnly"}}
-          </button>
+      {{#if castOnlyDropdownOpen}}
+      <div class="es-cast-only-dropdown">
+        <p class="es-hint es-dropdown-hint">{{localize "EXALTED-SCENES.CastOnly.Hint"}}</p>
 
-          {{!-- Layout Controls --}}
-          <div class="es-cast-only-layout">
-            <div class="es-cast-only-layout-label">{{localize "EXALTED-SCENES.CastOnly.Position"}}</div>
-            <div class="es-cast-only-layout-row">
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-left')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="top-left" title="{{localize "EXALTED-SCENES.Config.Layouts.TopLeft"}}">
-                <i class="fas fa-arrow-up-left"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-center')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="top-center" title="{{localize "EXALTED-SCENES.Config.Layouts.TopCenter"}}">
-                <i class="fas fa-arrows-up-to-line"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-right')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="top-right" title="{{localize "EXALTED-SCENES.Config.Layouts.TopRight"}}">
-                <i class="fas fa-arrow-up-right"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'sidebar-left')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="sidebar-left" title="{{localize "EXALTED-SCENES.Config.Layouts.SidebarLeft"}}">
-                <i class="fas fa-sidebar"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'sidebar-right')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="sidebar-right" title="{{localize "EXALTED-SCENES.Config.Layouts.SidebarRight"}}">
-                <i class="fas fa-sidebar-flip"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-left')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="bottom-left" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomLeft"}}">
-                <i class="fas fa-arrow-down-left"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-center')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="bottom-center" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomCenter"}}">
-                <i class="fas fa-arrows-down-to-line"></i>
-              </button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-right')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="preset" data-preset="bottom-right" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomRight"}}">
-                <i class="fas fa-arrow-down-right"></i>
-              </button>
+        {{!-- Controls (when active) --}}
+        {{#if castOnlyProgress}}
+          <div class="es-cast-only-controls-panel">
+            <div class="es-cast-only-status">
+              <i class="fas fa-users"></i>
+              <span>{{castOnlyProgress.characters.length}} character{{#if (gt castOnlyProgress.characters.length 1)}}s{{/if}} visible</span>
             </div>
+            <button class="es-btn es-btn-danger es-btn-sm" data-action="cast-only-stop">
+              <i class="fas fa-stop"></i> {{localize "EXALTED-SCENES.CastOnly.StopCastOnly"}}
+            </button>
 
-            <div class="es-cast-only-layout-label">{{localize "EXALTED-SCENES.CastOnly.Size"}}</div>
-            <div class="es-cast-only-layout-row">
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'small')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="size" data-size="small" title="{{localize "EXALTED-SCENES.Config.Sizes.Small"}}">{{localize "EXALTED-SCENES.CastOnly.SizeSmall"}}</button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'medium')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="size" data-size="medium" title="{{localize "EXALTED-SCENES.Config.Sizes.Medium"}}">{{localize "EXALTED-SCENES.CastOnly.SizeMedium"}}</button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'large')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="size" data-size="large" title="{{localize "EXALTED-SCENES.Config.Sizes.Large"}}">{{localize "EXALTED-SCENES.CastOnly.SizeLarge"}}</button>
-              <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'xlarge')}}es-cast-only-layout-btn--active{{/if}}"
-                      data-action="cast-only-layout" data-layout="size" data-size="xlarge" title="{{localize "EXALTED-SCENES.Config.Sizes.XLarge"}}">{{localize "EXALTED-SCENES.CastOnly.SizeXLarge"}}</button>
-            </div>
-          </div>
-        </div>
-      {{/if}}
+            {{!-- Layout Controls --}}
+            <div class="es-cast-only-layout">
+              <div class="es-cast-only-layout-label">{{localize "EXALTED-SCENES.CastOnly.Position"}}</div>
+              <div class="es-cast-only-layout-row">
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-left')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="top-left" title="{{localize "EXALTED-SCENES.Config.Layouts.TopLeft"}}">
+                  <i class="fas fa-arrow-up-left"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-center')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="top-center" title="{{localize "EXALTED-SCENES.Config.Layouts.TopCenter"}}">
+                  <i class="fas fa-arrows-up-to-line"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'top-right')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="top-right" title="{{localize "EXALTED-SCENES.Config.Layouts.TopRight"}}">
+                  <i class="fas fa-arrow-up-right"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'sidebar-left')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="sidebar-left" title="{{localize "EXALTED-SCENES.Config.Layouts.SidebarLeft"}}">
+                  <i class="fas fa-sidebar"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'sidebar-right')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="sidebar-right" title="{{localize "EXALTED-SCENES.Config.Layouts.SidebarRight"}}">
+                  <i class="fas fa-sidebar-flip"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-left')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="bottom-left" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomLeft"}}">
+                  <i class="fas fa-arrow-down-left"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-center')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="bottom-center" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomCenter"}}">
+                  <i class="fas fa-arrows-down-to-line"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.preset 'bottom-right')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="preset" data-preset="bottom-right" title="{{localize "EXALTED-SCENES.Config.Layouts.BottomRight"}}">
+                  <i class="fas fa-arrow-down-right"></i>
+                </button>
+              </div>
 
-      {{!-- Character Selection for Cast-Only --}}
-      <div class="es-cast-only-selector">
-        <div class="es-cast-only-chars">
-          {{#each castOnlyCharacters}}
-            <div class="es-cast-only-char {{#if selected}}es-cast-only-char--selected{{/if}}"
-                 data-action="toggle-cast-only-char"
-                 data-character-id="{{id}}"
-                 title="{{name}}">
-              <img src="{{image}}" alt="{{name}}">
-              <div class="es-cast-only-check">
-                <i class="fas fa-check"></i>
+              <div class="es-cast-only-layout-label">{{localize "EXALTED-SCENES.CastOnly.Size"}}</div>
+              <div class="es-cast-only-layout-row">
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'xsmall')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="size" data-size="xsmall" title="{{localize "EXALTED-SCENES.Config.Sizes.XSmall"}}">{{localize "EXALTED-SCENES.CastOnly.SizeXSmall"}}</button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'small')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="size" data-size="small" title="{{localize "EXALTED-SCENES.Config.Sizes.Small"}}">{{localize "EXALTED-SCENES.CastOnly.SizeSmall"}}</button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'medium')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="size" data-size="medium" title="{{localize "EXALTED-SCENES.Config.Sizes.Medium"}}">{{localize "EXALTED-SCENES.CastOnly.SizeMedium"}}</button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'large')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="size" data-size="large" title="{{localize "EXALTED-SCENES.Config.Sizes.Large"}}">{{localize "EXALTED-SCENES.CastOnly.SizeLarge"}}</button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.size 'xlarge')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="size" data-size="xlarge" title="{{localize "EXALTED-SCENES.Config.Sizes.XLarge"}}">{{localize "EXALTED-SCENES.CastOnly.SizeXLarge"}}</button>
+              </div>
+
+              <div class="es-cast-only-layout-label">{{localize "EXALTED-SCENES.CastOnly.Shape"}}</div>
+              <div class="es-cast-only-layout-row">
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.shape 'circle')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="shape" data-shape="circle" title="{{localize "EXALTED-SCENES.Config.Shapes.Circle"}}">
+                  <i class="fas fa-circle"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.shape 'rounded')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="shape" data-shape="rounded" title="{{localize "EXALTED-SCENES.Config.Shapes.Rounded"}}">
+                  <i class="fas fa-square"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.shape 'square')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="shape" data-shape="square" title="{{localize "EXALTED-SCENES.Config.Shapes.Square"}}">
+                  <i class="fas fa-square-full"></i>
+                </button>
+                <button class="es-cast-only-layout-btn {{#if (eq castOnlyProgress.layoutSettings.shape 'portrait')}}es-cast-only-layout-btn--active{{/if}}"
+                        data-action="cast-only-layout" data-layout="shape" data-shape="portrait" title="{{localize "EXALTED-SCENES.Config.Shapes.Portrait"}}">
+                  <i class="fas fa-portrait"></i>
+                </button>
               </div>
             </div>
-          {{else}}
-            <div class="es-cast-only-empty">
-              <span>{{localize "EXALTED-SCENES.EmptyState.NoCharactersYet"}}</span>
-            </div>
-          {{/each}}
+          </div>
+        {{/if}}
+
+        {{!-- Character Selection --}}
+        <div class="es-cast-only-selector">
+          <div class="es-cast-only-chars">
+            {{#each castOnlyCharacters}}
+              <div class="es-cast-only-char {{#if selected}}es-cast-only-char--selected{{/if}}"
+                   data-action="toggle-cast-only-char"
+                   data-character-id="{{id}}"
+                   title="{{name}}">
+                <img src="{{image}}" alt="{{name}}" style="{{focusStyle}}">
+                <div class="es-cast-only-check">
+                  <i class="fas fa-check"></i>
+                </div>
+              </div>
+            {{else}}
+              <div class="es-cast-only-empty">
+                <span>{{localize "EXALTED-SCENES.EmptyState.NoCharactersYet"}}</span>
+              </div>
+            {{/each}}
+          </div>
+          {{#unless castOnlyProgress}}
+            <button class="es-btn es-btn-primary es-btn-sm es-cast-only-start {{#unless castOnlySelectedCount}}disabled{{/unless}}"
+                    data-action="cast-only-start"
+                    {{#unless castOnlySelectedCount}}disabled{{/unless}}>
+              <i class="fas fa-broadcast-tower"></i>
+              {{localize "EXALTED-SCENES.CastOnly.StartCastOnly"}} {{#if castOnlySelectedCount}}({{castOnlySelectedCount}}){{/if}}
+            </button>
+          {{/unless}}
         </div>
-        {{#unless castOnlyProgress}}
-          <button class="es-btn es-btn-primary es-btn-sm es-cast-only-start {{#unless castOnlySelectedCount}}disabled{{/unless}}"
-                  data-action="cast-only-start"
-                  {{#unless castOnlySelectedCount}}disabled{{/unless}}>
-            <i class="fas fa-broadcast-tower"></i>
-            {{localize "EXALTED-SCENES.CastOnly.StartCastOnly"}} {{#if castOnlySelectedCount}}({{castOnlySelectedCount}}){{/if}}
-          </button>
-        {{/unless}}
       </div>
+      {{/if}}
     </div>
   </aside>
 
@@ -281,53 +321,116 @@
         {{/if}}
       </div>
       <div class="es-actions">
-        <!-- Sort Dropdown -->
-        <div class="es-sort-dropdown">
-          <button class="es-btn es-btn-secondary es-sort-trigger" data-action="toggle-sort" title="{{localize "EXALTED-SCENES.GMPanel.SortBy"}}">
-            <i class="fas fa-sort-amount-down"></i>
-            <span class="es-sort-label">{{sortLabel}}</span>
-            <i class="fas fa-caret-down"></i>
-          </button>
-          {{#if sortMenuOpen}}
-            <div class="es-sort-menu">
-              <div class="es-sort-option {{#if (eq sortBy 'name')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="name">
-                <i class="fas fa-font"></i> {{localize "EXALTED-SCENES.GMPanel.SortName"}}
+        <div class="es-toolbar-group es-toolbar-group--sort">
+          <div class="es-sort-dropdown">
+            <button type="button"
+                    class="es-btn es-btn-secondary es-sort-trigger es-toolbar-btn {{#if sortMenuOpen}}es-toolbar-btn--open{{/if}}"
+                    data-action="toggle-sort"
+                    title="{{localize "EXALTED-SCENES.GMPanel.SortBy"}}"
+                    aria-haspopup="menu"
+                    aria-expanded="{{#if sortMenuOpen}}true{{else}}false{{/if}}">
+              <i class="fas fa-sort-amount-down"></i>
+              <span class="es-sort-label">{{sortLabel}}</span>
+              <i class="fas fa-caret-down es-sort-caret"></i>
+            </button>
+            {{#if sortMenuOpen}}
+              <div class="es-sort-menu" role="menu">
+                <button type="button" class="es-sort-option {{#if (eq sortBy 'name')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="name">
+                  <i class="fas fa-font"></i> {{localize "EXALTED-SCENES.GMPanel.SortName"}}
+                </button>
+                <button type="button" class="es-sort-option {{#if (eq sortBy 'created')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="created">
+                  <i class="fas fa-calendar-plus"></i> {{localize "EXALTED-SCENES.GMPanel.SortDateCreated"}}
+                </button>
+                <button type="button" class="es-sort-option {{#if (eq sortBy 'lastUsed')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="lastUsed">
+                  <i class="fas fa-clock"></i> {{localize "EXALTED-SCENES.GMPanel.SortLastUsed"}}
+                </button>
+                <button type="button" class="es-sort-option {{#if (eq sortBy 'playCount')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="playCount">
+                  <i class="fas fa-fire"></i> {{localize "EXALTED-SCENES.GMPanel.SortMostUsed"}}
+                </button>
+                <button type="button" class="es-sort-option {{#if (eq sortBy 'custom')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="custom">
+                  <i class="fas fa-hand-pointer"></i> {{localize "EXALTED-SCENES.GMPanel.SortCustom"}}
+                </button>
+                <div class="es-sort-divider"></div>
+                <button type="button" class="es-sort-option" data-action="toggle-sort-direction">
+                  <i class="fas {{#if sortAscending}}fa-sort-amount-up{{else}}fa-sort-amount-down{{/if}}"></i>
+                  {{#if sortAscending}}{{localize "EXALTED-SCENES.GMPanel.SortAscending"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.SortDescending"}}{{/if}}
+                </button>
               </div>
-              <div class="es-sort-option {{#if (eq sortBy 'created')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="created">
-                <i class="fas fa-calendar-plus"></i> {{localize "EXALTED-SCENES.GMPanel.SortDateCreated"}}
-              </div>
-              <div class="es-sort-option {{#if (eq sortBy 'lastUsed')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="lastUsed">
-                <i class="fas fa-clock"></i> {{localize "EXALTED-SCENES.GMPanel.SortLastUsed"}}
-              </div>
-              <div class="es-sort-option {{#if (eq sortBy 'playCount')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="playCount">
-                <i class="fas fa-fire"></i> {{localize "EXALTED-SCENES.GMPanel.SortMostUsed"}}
-              </div>
-              <div class="es-sort-option {{#if (eq sortBy 'custom')}}es-sort-option--active{{/if}}" data-action="sort" data-sort="custom">
-                <i class="fas fa-hand-pointer"></i> {{localize "EXALTED-SCENES.GMPanel.SortCustom"}}
-              </div>
-              <div class="es-sort-divider"></div>
-              <div class="es-sort-option" data-action="toggle-sort-direction">
-                <i class="fas {{#if sortAscending}}fa-sort-amount-up{{else}}fa-sort-amount-down{{/if}}"></i>
-                {{#if sortAscending}}{{localize "EXALTED-SCENES.GMPanel.SortAscending"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.SortDescending"}}{{/if}}
-              </div>
-            </div>
-          {{/if}}
+            {{/if}}
+          </div>
         </div>
-        <button class="es-btn es-btn-secondary" data-action="toggle-view" title="{{localize "EXALTED-SCENES.GMPanel.ToggleView"}}">
-          <i class="fas {{#if (eq viewMode 'list')}}fa-th-large{{else}}fa-list{{/if}}"></i>
-        </button>
-        {{#if (eq activeTab 'scenes')}}
-          <button class="es-btn es-btn-secondary {{#if animatedPreviews}}es-btn--active{{/if}}" data-action="toggle-animated-previews" title="{{#if animatedPreviews}}{{localize "EXALTED-SCENES.GMPanel.DisableAnimatedPreviews"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.EnableAnimatedPreviews"}}{{/if}}">
-            <i class="fas fa-play-circle"></i>
+        <div class="es-toolbar-group es-toolbar-group--actions">
+          <button type="button" class="es-btn es-btn-secondary es-toolbar-btn es-shortcuts-trigger {{#if shortcutsOpen}}es-btn--active{{/if}}" data-action="toggle-shortcuts" title="{{shortcutButtonLabel}}" aria-label="{{shortcutButtonLabel}}">
+            <i class="fas fa-keyboard"></i>
+            <span>{{shortcutButtonLabel}}</span>
           </button>
-        {{/if}}
-        {{#unless isFavorites}}
-          <button class="es-btn es-btn-secondary" data-action="create-folder" title="{{localize "EXALTED-SCENES.GMPanel.CreateFolder"}}">
-            <i class="fas fa-folder-plus"></i>
+          <button type="button" class="es-btn es-btn-secondary es-toolbar-btn es-toolbar-btn--icon" data-action="toggle-view" title="{{localize "EXALTED-SCENES.GMPanel.ToggleView"}}" aria-label="{{localize "EXALTED-SCENES.GMPanel.ToggleView"}}">
+            <i class="fas {{#if (eq viewMode 'list')}}fa-th-large{{else}}fa-list{{/if}}"></i>
           </button>
-        {{/unless}}
+          {{#if (eq activeTab 'scenes')}}
+            <button type="button" class="es-btn es-btn-secondary es-toolbar-btn es-toolbar-btn--icon {{#if animatedPreviews}}es-btn--active{{/if}}" data-action="toggle-animated-previews" title="{{#if animatedPreviews}}{{localize "EXALTED-SCENES.GMPanel.DisableAnimatedPreviews"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.EnableAnimatedPreviews"}}{{/if}}" aria-label="{{#if animatedPreviews}}{{localize "EXALTED-SCENES.GMPanel.DisableAnimatedPreviews"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.EnableAnimatedPreviews"}}{{/if}}">
+              <i class="fas fa-play-circle"></i>
+            </button>
+          {{/if}}
+          {{#unless isFavorites}}
+            <button type="button" class="es-btn es-btn-secondary es-toolbar-btn es-toolbar-btn--icon" data-action="create-folder" title="{{localize "EXALTED-SCENES.GMPanel.CreateFolder"}}" aria-label="{{localize "EXALTED-SCENES.GMPanel.CreateFolder"}}">
+              <i class="fas fa-folder-plus"></i>
+            </button>
+          {{/unless}}
+        </div>
       </div>
     </header>
+
+    {{#if shortcutsOpen}}
+      <div class="es-shortcuts-overlay">
+        <button type="button" class="es-shortcuts-backdrop" data-action="toggle-shortcuts" aria-label="{{localize "EXALTED-SCENES.Common.Close"}}"></button>
+        <section class="es-shortcuts-panel" aria-label="{{shortcutDialogTitle}}">
+          <header class="es-shortcuts-header">
+            <div class="es-shortcuts-header-copy">
+              <div class="es-shortcuts-kicker">{{shortcutButtonLabel}}</div>
+              <h2 class="es-shortcuts-title">{{shortcutDialogTitle}}</h2>
+              <p class="es-shortcuts-subtitle">{{shortcutDialogHint}}</p>
+            </div>
+            <button type="button" class="es-btn-icon es-btn-icon--small" data-action="toggle-shortcuts" title="{{localize "EXALTED-SCENES.Common.Close"}}" aria-label="{{localize "EXALTED-SCENES.Common.Close"}}">
+              <i class="fas fa-times"></i>
+            </button>
+          </header>
+
+          <div class="es-shortcuts-groups">
+            {{#each shortcutGroups}}
+              <section class="es-shortcuts-group">
+                <div class="es-shortcuts-group-head">
+                  <div class="es-shortcuts-group-title">{{label}}</div>
+                  <div class="es-shortcuts-group-hint">{{description}}</div>
+                </div>
+
+                <div class="es-shortcuts-list">
+                  {{#each items}}
+                    <div class="es-shortcut-row">
+                      <div class="es-shortcut-copy">
+                        <div class="es-shortcut-label-row">
+                          <span class="es-shortcut-label">{{label}}</span>
+                          {{#if gmOnly}}
+                            <span class="es-shortcut-badge">GM</span>
+                          {{/if}}
+                        </div>
+                        <div class="es-shortcut-description">{{description}}</div>
+                      </div>
+
+                      <div class="es-shortcut-keys">
+                        {{#each parts}}
+                          <kbd class="es-shortcut-key">{{this}}</kbd>
+                        {{/each}}
+                      </div>
+                    </div>
+                  {{/each}}
+                </div>
+              </section>
+            {{/each}}
+          </div>
+        </section>
+      </div>
+    {{/if}}
 
     <!-- Active Filters -->
     {{#if (or activeTags.length excludedTags.length)}}
@@ -346,130 +449,342 @@
       </div>
     {{/if}}
 
-    <div class="es-grid {{#if (eq viewMode 'list')}}es-grid--list-view{{/if}}">
-      {{!-- Back to Parent Folder --}}
-      {{#if isInFolder}}
-        <div class="es-folder-card es-folder-back" data-action="navigate-up">
-          <div class="es-folder-icon">
-            <i class="fas fa-level-up-alt"></i>
-          </div>
-          <div class="es-folder-name">..</div>
-        </div>
-      {{/if}}
+    {{#if showSelectionSummary}}
+      <div class="es-selection-bar" role="status" aria-live="polite">
+        <div class="es-selection-count">{{selectionCountLabel}}</div>
+        <div class="es-selection-hint">{{selectionHint}}</div>
+      </div>
+    {{/if}}
 
-      {{!-- Folders --}}
-      {{#each folders}}
-        <div class="es-folder-card" data-folder-id="{{id}}" data-action="open-folder"
-             {{#if color}}data-color="{{color}}" style="--folder-color: {{color}}"{{/if}}>
-          <div class="es-folder-icon">
-            <i class="fas fa-folder"></i>
-          </div>
-          <div class="es-folder-name" title="{{name}}">{{name}}</div>
-          <div class="es-folder-meta">
-            {{itemCount}} item{{#if (gt itemCount 1)}}s{{/if}}
-            {{#if subfolderCount}}, {{subfolderCount}} folder{{#if (gt subfolderCount 1)}}s{{/if}}{{/if}}
-          </div>
-          <div class="es-folder-actions">
-            <div class="es-folder-color-btn" title="{{localize "EXALTED-SCENES.GMPanel.ChangeColor"}}">
-              <i class="fas fa-palette"></i>
-              <input type="color" value="{{#if color}}{{color}}{{else}}#d4af37{{/if}}" data-action="change-folder-color">
+    <div class="es-grid {{#if (eq viewMode 'list')}}es-grid--list-view{{else}}es-grid--sectioned{{/if}} {{#if (eq activeTab 'scenes')}}es-grid--scene-library{{else}}es-grid--character-library{{/if}}">
+      {{#if (eq viewMode 'list')}}
+        {{!-- Back to Parent Folder --}}
+        {{#if isInFolder}}
+          <div class="es-folder-card es-folder-back" data-action="navigate-up">
+            <div class="es-folder-icon">
+              <i class="fas fa-level-up-alt"></i>
             </div>
-            <button class="es-folder-action" data-action="rename-folder" title="{{localize "EXALTED-SCENES.Common.Rename"}}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="es-folder-action" data-action="delete-folder" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
-              <i class="fas fa-trash"></i>
-            </button>
+            <div class="es-folder-name">..</div>
           </div>
-        </div>
-      {{/each}}
+        {{/if}}
 
-      {{!-- Items --}}
-      {{#each items}}
-          <div class="es-card {{#if (eq ../selectedId id)}}es-card--selected{{/if}} {{#if favorite}}es-card--favorite{{/if}} {{#if (eq ../activeSceneId id)}}es-card--broadcasting{{/if}}"
-               data-id="{{id}}"
-               data-type="{{type}}"
-               data-action="select">
-
-            <div class="es-card-thumbnail {{#if (eq bgType 'video')}}es-card-thumbnail--has-video{{/if}} {{#if ../animatedPreviews}}es-card-thumbnail--animated{{/if}}">
-              {{!-- Use video element for video thumbnails, image for others --}}
-              {{#if (eq bgType 'video')}}
-                <video class="thumbnail-preview" src="{{thumbnail}}" muted loop playsinline disablepictureinpicture preload="metadata" {{#if ../animatedPreviews}}autoplay{{/if}}></video>
-              {{else}}
-                <img src="{{thumbnail}}" loading="lazy">
-              {{/if}}
-              {{!-- Video indicator badge --}}
-              {{#if (eq bgType 'video')}}
-                <div class="es-video-badge" title="{{localize "EXALTED-SCENES.GMPanel.AnimatedBackground"}}">
-                  <i class="fas fa-film"></i>
-                </div>
-              {{/if}}
-              {{!-- Audio indicator badge (Narrator Jukebox linked) --}}
-              {{#if hasAudio}}
-                <div class="es-audio-badge" title="{{localize "EXALTED-SCENES.GMPanel.AudioLinked"}}">
-                  <i class="fas fa-music"></i>
-                </div>
-              {{/if}}
-              {{!-- Favorite indicator (always visible when favorited) --}}
-              <button class="es-favorite-btn {{#if favorite}}es-favorite-btn--active{{/if}}"
-                      data-action="toggle-favorite"
-                      data-id="{{id}}"
-                      data-type="{{type}}"
-                      title="{{#if favorite}}{{localize "EXALTED-SCENES.GMPanel.RemoveFromFavorites"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.AddToFavorites"}}{{/if}}">
-                <i class="{{#if favorite}}fas{{else}}far{{/if}} fa-star"></i>
+        {{!-- Folders --}}
+        {{#each folders}}
+          <div class="es-folder-card" data-folder-id="{{id}}" data-action="open-folder"
+               {{#if color}}data-color="{{color}}" style="--folder-color: {{color}}"{{/if}}>
+            <div class="es-folder-icon">
+              <i class="fas fa-folder"></i>
+            </div>
+            <div class="es-folder-name" title="{{name}}">{{name}}</div>
+            <div class="es-folder-meta">
+              {{itemCount}} item{{#if (gt itemCount 1)}}s{{/if}}
+              {{#if subfolderCount}}, {{subfolderCount}} folder{{#if (gt subfolderCount 1)}}s{{/if}}{{/if}}
+            </div>
+            <div class="es-folder-actions">
+              <div class="es-folder-color-btn" title="{{localize "EXALTED-SCENES.GMPanel.ChangeColor"}}">
+                <i class="fas fa-palette"></i>
+                <input type="color" value="{{#if color}}{{color}}{{else}}#d4af37{{/if}}" data-action="change-folder-color">
+              </div>
+              <button class="es-folder-action" data-action="rename-folder" title="{{localize "EXALTED-SCENES.Common.Rename"}}">
+                <i class="fas fa-edit"></i>
               </button>
-              <div class="es-card-overlay">
-                {{#if (eq type 'scene')}}
-                  {{#if (eq ../activeSceneId id)}}
-                    <button class="es-action-btn es-action-btn--danger" data-action="stop-broadcast" title="{{localize "EXALTED-SCENES.GMPanel.StopBroadcast"}}">
-                      <i class="fas fa-stop"></i>
-                    </button>
-                  {{else}}
-                    <button class="es-action-btn" data-action="broadcast" title="{{localize "EXALTED-SCENES.GMPanel.Broadcast"}}">
-                      <i class="fas fa-play"></i>
-                    </button>
-                  {{/if}}
-                {{/if}}
-                <button class="es-action-btn" data-action="edit" title="{{localize "EXALTED-SCENES.Common.Edit"}}">
-                  <i class="fas fa-edit"></i>
-                </button>
-                {{#if (eq type 'character')}}
-                  <button class="es-action-btn" data-action="quick-add" title="{{localize "EXALTED-SCENES.GMPanel.AddToActiveScene"}}">
-                    <i class="fas fa-plus-circle"></i>
-                  </button>
-                {{/if}}
-                <button class="es-action-btn es-action-btn-danger" data-action="delete" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-              {{!-- Phase 2: Info overlay - title appears on hover inside thumbnail --}}
-              <div class="es-card-info-overlay">
-                <span class="es-card-title">{{name}}</span>
-              </div>
-              {{!-- Emotion count badge for characters with multiple emotions --}}
-              {{#if (eq type 'character')}}
-                {{#if (gt emotionCount 1)}}
-                  <div class="es-emotion-badge" title="{{emotionCount}} emotions available">
-                    <i class="fas fa-theater-masks"></i>
-                    <span>{{emotionCount}}</span>
+              <button class="es-folder-action" data-action="delete-folder" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        {{/each}}
+
+        {{!-- Items --}}
+        {{#each items}}
+            <div class="es-card {{#if isSelected}}es-card--selected{{/if}} {{#if favorite}}es-card--favorite{{/if}} {{#if (eq ../activeSceneId id)}}es-card--broadcasting{{/if}}"
+                 data-id="{{id}}"
+                 data-type="{{type}}"
+                 data-action="select"
+                 aria-selected="{{#if isSelected}}true{{else}}false{{/if}}">
+
+              <div class="es-card-thumbnail {{#if (eq bgType 'video')}}es-card-thumbnail--has-video{{/if}} {{#if ../animatedPreviews}}es-card-thumbnail--animated{{/if}}">
+                {{!-- Use video element for video thumbnails, image for others --}}
+                {{#if (eq bgType 'video')}}
+                      <video class="thumbnail-preview" src="{{thumbnail}}" muted loop playsinline disablepictureinpicture preload="metadata" style="{{thumbnailFocusStyle}}" {{#if ../animatedPreviews}}autoplay{{/if}}></video>
+                    {{else}}
+                      <img src="{{thumbnail}}" loading="lazy" style="{{thumbnailFocusStyle}}">
+                    {{/if}}
+                {{!-- Video indicator badge --}}
+                {{#if (eq bgType 'video')}}
+                  <div class="es-video-badge" title="{{localize "EXALTED-SCENES.GMPanel.AnimatedBackground"}}">
+                    <i class="fas fa-film"></i>
                   </div>
                 {{/if}}
-              {{/if}}
-            </div>
+                {{!-- Audio indicator badge (Narrator Jukebox linked) --}}
+                {{#if hasAudio}}
+                  <div class="es-audio-badge" title="{{localize "EXALTED-SCENES.GMPanel.AudioLinked"}}">
+                    <i class="fas fa-music"></i>
+                  </div>
+                {{/if}}
+                {{!-- Favorite indicator (always visible when favorited) --}}
+                <button class="es-favorite-btn {{#if favorite}}es-favorite-btn--active{{/if}}"
+                        data-action="toggle-favorite"
+                        data-id="{{id}}"
+                        data-type="{{type}}"
+                        title="{{#if favorite}}{{localize "EXALTED-SCENES.GMPanel.RemoveFromFavorites"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.AddToFavorites"}}{{/if}}">
+                  <i class="{{#if favorite}}fas{{else}}far{{/if}} fa-star"></i>
+                </button>
+                <div class="es-card-overlay">
+                  {{#if (eq type 'scene')}}
+                    {{#if (eq ../activeSceneId id)}}
+                      <button class="es-action-btn es-action-btn--danger" data-action="stop-broadcast" title="{{localize "EXALTED-SCENES.GMPanel.StopBroadcast"}}">
+                        <i class="fas fa-stop"></i>
+                      </button>
+                    {{else}}
+                      <button class="es-action-btn" data-action="broadcast" title="{{localize "EXALTED-SCENES.GMPanel.Broadcast"}}">
+                        <i class="fas fa-play"></i>
+                      </button>
+                    {{/if}}
+                  {{else}}
+                    <button class="es-action-btn" data-action="quick-add" title="{{localize "EXALTED-SCENES.GMPanel.AddToActiveScene"}}">
+                      <i class="fas fa-plus-circle"></i>
+                    </button>
+                  {{/if}}
+                </div>
+                {{!-- Phase 2: Info overlay - title appears on hover inside thumbnail --}}
+                <div class="es-card-info-overlay">
+                  <span class="es-card-title">{{name}}</span>
+                </div>
+                {{!-- Emotion count badge for characters with multiple emotions --}}
+                {{#if (eq type 'character')}}
+                  {{#if (gt emotionCount 1)}}
+                    <div class="es-emotion-badge" title="{{emotionBadgeTitle}}">
+                      <i class="fas fa-theater-masks"></i>
+                      <span>{{emotionCount}}</span>
+                    </div>
+                  {{/if}}
+                {{/if}}
+              </div>
 
-            <div class="es-card-body">
-              <div class="es-card-title" title="{{name}}">{{name}}</div>
-              {{#if (and (eq ../viewMode 'list') folderName)}}
-                <div class="es-card-folder"><i class="fas fa-folder"></i> {{folderName}}</div>
-              {{/if}}
-              <div class="es-card-tags">
-                {{#each tags}}
-                  <span class="es-tag-badge" data-action="filter-tag" data-tag="{{this}}" title="{{localize "EXALTED-SCENES.GMPanel.FilterTagTooltip"}}">{{this}}</span>
-                {{/each}}
+              <div class="es-card-body">
+                <div class="es-card-main">
+                  <div class="es-card-title-row">
+                    <div class="es-card-title" title="{{name}}">{{name}}</div>
+                    {{#if ../customSortActive}}
+                      <div class="es-card-drag-handle es-drag-handle" aria-hidden="true" title="{{../sortLabel}}">
+                        <i class="fas fa-grip-vertical"></i>
+                      </div>
+                    {{/if}}
+                  </div>
+                  {{#if (or characterStateLabel (and (eq ../viewMode 'list') folderName) itemStats.length listSortMetaText)}}
+                    <div class="es-card-subline">
+                      {{#if characterStateLabel}}
+                        <div class="es-card-state" title="{{characterStateLabel}}">
+                          <span>{{characterStateLabel}}</span>
+                        </div>
+                      {{/if}}
+                      {{#if (and (eq ../viewMode 'list') folderName)}}
+                        <div class="es-card-folder" title="{{folderName}}">
+                          <i class="fas fa-folder"></i>
+                          <span>{{folderName}}</span>
+                        </div>
+                      {{/if}}
+                      {{#if itemStats.length}}
+                        <div class="es-card-stats">
+                          {{#each itemStats}}
+                            <div class="es-card-stat {{#if toneClass}}{{toneClass}}{{/if}} {{#if iconOnly}}es-card-stat--icon-only{{/if}}" title="{{title}}">
+                              <i class="fas {{icon}}"></i>
+                              {{#if value}}
+                                <span>{{value}}</span>
+                              {{/if}}
+                            </div>
+                          {{/each}}
+                        </div>
+                      {{/if}}
+                      {{#if listSortMetaText}}
+                        <div class="es-card-sort-meta" title="{{../sortLabel}}: {{listSortMetaText}}">
+                          <i class="fas {{listSortMetaIcon}}"></i>
+                          <span>{{listSortMetaText}}</span>
+                        </div>
+                      {{/if}}
+                    </div>
+                  {{/if}}
+                </div>
+                {{#if (or visibleTags.length hiddenTagCount)}}
+                  <div class="es-card-tags">
+                    {{#each visibleTags}}
+                      <span class="es-tag-badge" data-action="filter-tag" data-tag="{{this}}" title="{{localize "EXALTED-SCENES.GMPanel.FilterTagTooltip"}}">{{this}}</span>
+                    {{/each}}
+                    {{#if hiddenTagCount}}
+                      <span class="es-tag-badge es-tag-badge--overflow" aria-hidden="true">+{{hiddenTagCount}}</span>
+                    {{/if}}
+                  </div>
+                {{/if}}
               </div>
             </div>
-          </div>
-      {{/each}}
+        {{/each}}
+      {{else}}
+        {{#if (or isInFolder folders.length)}}
+          <section class="es-grid-section es-grid-section--folders">
+            <div class="es-grid-cluster es-grid-cluster--folders">
+              {{#if isInFolder}}
+                <div class="es-folder-card es-folder-back" data-action="navigate-up">
+                  <div class="es-folder-icon">
+                    <i class="fas fa-level-up-alt"></i>
+                  </div>
+                  <div class="es-folder-name">..</div>
+                </div>
+              {{/if}}
+
+              {{#each folders}}
+                <div class="es-folder-card" data-folder-id="{{id}}" data-action="open-folder"
+                     {{#if color}}data-color="{{color}}" style="--folder-color: {{color}}"{{/if}}>
+                  <div class="es-folder-icon">
+                    <i class="fas fa-folder"></i>
+                  </div>
+                  <div class="es-folder-name" title="{{name}}">{{name}}</div>
+                  <div class="es-folder-meta">
+                    {{itemCount}} item{{#if (gt itemCount 1)}}s{{/if}}
+                    {{#if subfolderCount}}, {{subfolderCount}} folder{{#if (gt subfolderCount 1)}}s{{/if}}{{/if}}
+                  </div>
+                  <div class="es-folder-actions">
+                    <div class="es-folder-color-btn" title="{{localize "EXALTED-SCENES.GMPanel.ChangeColor"}}">
+                      <i class="fas fa-palette"></i>
+                      <input type="color" value="{{#if color}}{{color}}{{else}}#d4af37{{/if}}" data-action="change-folder-color">
+                    </div>
+                    <button class="es-folder-action" data-action="rename-folder" title="{{localize "EXALTED-SCENES.Common.Rename"}}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="es-folder-action" data-action="delete-folder" title="{{localize "EXALTED-SCENES.Common.Delete"}}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          </section>
+        {{/if}}
+
+        {{#if items.length}}
+          <section class="es-grid-section es-grid-section--items">
+            <div class="es-grid-cluster es-grid-cluster--items">
+              {{#each items}}
+                <div class="es-card {{#if isSelected}}es-card--selected{{/if}} {{#if favorite}}es-card--favorite{{/if}} {{#if (eq ../activeSceneId id)}}es-card--broadcasting{{/if}}"
+                     data-id="{{id}}"
+                     data-type="{{type}}"
+                     data-action="select"
+                     aria-selected="{{#if isSelected}}true{{else}}false{{/if}}">
+
+                  <div class="es-card-thumbnail {{#if (eq bgType 'video')}}es-card-thumbnail--has-video{{/if}} {{#if ../animatedPreviews}}es-card-thumbnail--animated{{/if}}">
+                    {{#if (eq bgType 'video')}}
+                          <video class="thumbnail-preview" src="{{thumbnail}}" muted loop playsinline disablepictureinpicture preload="metadata" style="{{thumbnailFocusStyle}}" {{#if ../animatedPreviews}}autoplay{{/if}}></video>
+                        {{else}}
+                          <img src="{{thumbnail}}" loading="lazy" style="{{thumbnailFocusStyle}}">
+                        {{/if}}
+                    {{#if (eq bgType 'video')}}
+                      <div class="es-video-badge" title="{{localize "EXALTED-SCENES.GMPanel.AnimatedBackground"}}">
+                        <i class="fas fa-film"></i>
+                      </div>
+                    {{/if}}
+                    {{#if hasAudio}}
+                      <div class="es-audio-badge" title="{{localize "EXALTED-SCENES.GMPanel.AudioLinked"}}">
+                        <i class="fas fa-music"></i>
+                      </div>
+                    {{/if}}
+                    <button class="es-favorite-btn {{#if favorite}}es-favorite-btn--active{{/if}}"
+                            data-action="toggle-favorite"
+                            data-id="{{id}}"
+                            data-type="{{type}}"
+                            title="{{#if favorite}}{{localize "EXALTED-SCENES.GMPanel.RemoveFromFavorites"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.AddToFavorites"}}{{/if}}">
+                      <i class="{{#if favorite}}fas{{else}}far{{/if}} fa-star"></i>
+                    </button>
+                    <div class="es-card-overlay">
+                      {{#if (eq type 'scene')}}
+                        {{#if (eq ../activeSceneId id)}}
+                          <button class="es-action-btn es-action-btn--danger" data-action="stop-broadcast" title="{{localize "EXALTED-SCENES.GMPanel.StopBroadcast"}}">
+                            <i class="fas fa-stop"></i>
+                          </button>
+                        {{else}}
+                          <button class="es-action-btn" data-action="broadcast" title="{{localize "EXALTED-SCENES.GMPanel.Broadcast"}}">
+                            <i class="fas fa-play"></i>
+                          </button>
+                        {{/if}}
+                      {{else}}
+                        <button class="es-action-btn" data-action="quick-add" title="{{localize "EXALTED-SCENES.GMPanel.AddToActiveScene"}}">
+                          <i class="fas fa-plus-circle"></i>
+                        </button>
+                      {{/if}}
+                    </div>
+                    <div class="es-card-info-overlay">
+                      <span class="es-card-title">{{name}}</span>
+                    </div>
+                    {{#if (eq type 'character')}}
+                      {{#if (gt emotionCount 1)}}
+                        <div class="es-emotion-badge" title="{{emotionBadgeTitle}}">
+                          <i class="fas fa-theater-masks"></i>
+                          <span>{{emotionCount}}</span>
+                        </div>
+                      {{/if}}
+                    {{/if}}
+                  </div>
+
+                  <div class="es-card-body">
+                    <div class="es-card-main">
+                      <div class="es-card-title-row">
+                        <div class="es-card-title" title="{{name}}">{{name}}</div>
+                        {{#if ../customSortActive}}
+                          <div class="es-card-drag-handle es-drag-handle" aria-hidden="true" title="{{../sortLabel}}">
+                            <i class="fas fa-grip-vertical"></i>
+                          </div>
+                        {{/if}}
+                      </div>
+                      {{#if (or characterStateLabel (and (eq ../viewMode 'list') folderName) itemStats.length listSortMetaText)}}
+                        <div class="es-card-subline">
+                          {{#if characterStateLabel}}
+                            <div class="es-card-state" title="{{characterStateLabel}}">
+                              <span>{{characterStateLabel}}</span>
+                            </div>
+                          {{/if}}
+                          {{#if (and (eq ../viewMode 'list') folderName)}}
+                            <div class="es-card-folder" title="{{folderName}}">
+                              <i class="fas fa-folder"></i>
+                              <span>{{folderName}}</span>
+                            </div>
+                          {{/if}}
+                          {{#if itemStats.length}}
+                            <div class="es-card-stats">
+                              {{#each itemStats}}
+                                <div class="es-card-stat {{#if toneClass}}{{toneClass}}{{/if}} {{#if iconOnly}}es-card-stat--icon-only{{/if}}" title="{{title}}">
+                                  <i class="fas {{icon}}"></i>
+                                  {{#if value}}
+                                    <span>{{value}}</span>
+                                  {{/if}}
+                                </div>
+                              {{/each}}
+                            </div>
+                          {{/if}}
+                          {{#if listSortMetaText}}
+                            <div class="es-card-sort-meta" title="{{../sortLabel}}: {{listSortMetaText}}">
+                              <i class="fas {{listSortMetaIcon}}"></i>
+                              <span>{{listSortMetaText}}</span>
+                            </div>
+                          {{/if}}
+                        </div>
+                      {{/if}}
+                    </div>
+                    {{#if (or visibleTags.length hiddenTagCount)}}
+                      <div class="es-card-tags">
+                        {{#each visibleTags}}
+                          <span class="es-tag-badge" data-action="filter-tag" data-tag="{{this}}" title="{{localize "EXALTED-SCENES.GMPanel.FilterTagTooltip"}}">{{this}}</span>
+                        {{/each}}
+                        {{#if hiddenTagCount}}
+                          <span class="es-tag-badge es-tag-badge--overflow" aria-hidden="true">+{{hiddenTagCount}}</span>
+                        {{/if}}
+                      </div>
+                    {{/if}}
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          </section>
+        {{/if}}
+      {{/if}}
 
       {{!-- Empty State (only when no folders AND no items AND not in a folder) --}}
       {{#unless (or items.length folders.length isInFolder)}}
@@ -510,10 +825,29 @@
             </div>
             {{#unless hasFilters}}
               <div class="es-empty-state-action">
-                <button class="es-btn es-btn-primary es-btn-hero" data-action="create">
-                  <i class="fas fa-plus-circle"></i>
-                  {{#if (eq activeTab 'scenes')}}{{localize "EXALTED-SCENES.GMPanel.CreateScene"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.CreateCharacter"}}{{/if}}
-                </button>
+                {{#if (eq activeTab 'scenes')}}
+                  <div class="es-empty-state-actions">
+                    <button class="es-btn es-btn-primary es-btn-hero" data-action="create">
+                      <i class="fas fa-plus-circle"></i>
+                      {{localize "EXALTED-SCENES.GMPanel.CreateScene"}}
+                    </button>
+                    <button class="es-btn es-btn-secondary es-btn-hero" data-action="import-scenes">
+                      <i class="fas fa-upload"></i>
+                      {{localize "EXALTED-SCENES.GMPanel.ImportScenes"}}
+                    </button>
+                  </div>
+                {{else}}
+                  <div class="es-empty-state-actions">
+                    <button class="es-btn es-btn-primary es-btn-hero" data-action="create">
+                      <i class="fas fa-plus-circle"></i>
+                      {{localize "EXALTED-SCENES.GMPanel.CreateCharacter"}}
+                    </button>
+                    <button class="es-btn es-btn-secondary es-btn-hero" data-action="import-actors">
+                      <i class="fas fa-users"></i>
+                      {{localize "EXALTED-SCENES.GMPanel.ImportActors"}}
+                    </button>
+                  </div>
+                {{/if}}
                 <div class="es-empty-hint">
                   {{localize "EXALTED-SCENES.EmptyState.DragHint"}}
                 </div>
@@ -525,29 +859,48 @@
     </div>
 
     <!-- Floating Action Button -->
-    <button class="es-fab" data-action="create" title="{{#if (eq activeTab 'scenes')}}{{localize "EXALTED-SCENES.GMPanel.CreateNewScene"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.CreateNewCharacter"}}{{/if}}">
-      <span class="es-fab-icon">
-        {{#if (eq activeTab 'scenes')}}
-          <i class="fas fa-film"></i>
-        {{else}}
-          <i class="fas fa-user-plus"></i>
-        {{/if}}
-      </span>
-      <span class="es-fab-label">{{#if (eq activeTab 'scenes')}}{{localize "EXALTED-SCENES.GMPanel.NewScene"}}{{else}}{{localize "EXALTED-SCENES.GMPanel.NewCharacter"}}{{/if}}</span>
-    </button>
+    {{#if (eq activeTab 'scenes')}}
+      <div class="es-fab-stack {{#if inspectorOpen}}es-fab-stack--inspector{{/if}}">
+        <button class="es-fab-secondary" data-action="import-scenes" title="{{localize "EXALTED-SCENES.GMPanel.ImportScenes"}}">
+          <span class="es-fab-secondary__icon">
+            <i class="fas fa-upload"></i>
+          </span>
+          <span class="es-fab-secondary__label">{{localize "EXALTED-SCENES.GMPanel.ImportScenes"}}</span>
+        </button>
+        <button class="es-fab es-fab--stacked" data-action="create" title="{{localize "EXALTED-SCENES.GMPanel.CreateNewScene"}}">
+          <span class="es-fab-icon">
+            <i class="fas fa-film"></i>
+          </span>
+          <span class="es-fab-label">{{localize "EXALTED-SCENES.GMPanel.NewScene"}}</span>
+        </button>
+      </div>
+    {{else}}
+      <div class="es-fab-stack {{#if inspectorOpen}}es-fab-stack--inspector{{/if}}">
+        <button class="es-fab-secondary" data-action="import-actors" title="{{localize "EXALTED-SCENES.GMPanel.ImportActors"}}">
+          <span class="es-fab-secondary__icon">
+            <i class="fas fa-users"></i>
+          </span>
+          <span class="es-fab-secondary__label">{{localize "EXALTED-SCENES.GMPanel.ImportActors"}}</span>
+        </button>
+        <button class="es-fab es-fab--stacked" data-action="create" title="{{localize "EXALTED-SCENES.GMPanel.CreateNewCharacter"}}">
+          <span class="es-fab-icon">
+            <i class="fas fa-user-plus"></i>
+          </span>
+          <span class="es-fab-label">{{localize "EXALTED-SCENES.GMPanel.NewCharacter"}}</span>
+        </button>
+      </div>
+    {{/if}}
   </main>
 
   <!-- ═══════════════════════════════════════════════════════════════
        INSPECTOR (Right Panel)
        ═══════════════════════════════════════════════════════════════ -->
   {{#if inspectorOpen}}
-    <aside class="es-inspector">
-      <div class="es-inspector-header">
-        <div class="es-inspector-title">
-          <i class="fas fa-info-circle"></i> {{selectedItem.name}}
-          {{#if (eq activeSceneId selectedId)}}
-            <span class="es-live-badge">{{localize "EXALTED-SCENES.Status.Live"}}</span>
-          {{/if}}
+    <aside class="es-inspector {{#if (eq selectedItem.type 'scene')}}es-inspector--scene{{else}}es-inspector--character{{/if}}">
+      <div class="es-inspector-contextbar">
+        <div class="es-inspector-context-label">
+          <i class="fas {{#if (eq selectedItem.type 'scene')}}fa-film{{else}}fa-user-circle{{/if}}"></i>
+          <span>{{#if (eq selectedItem.type 'scene')}}{{localize "EXALTED-SCENES.Nav.AllScenes"}}{{else}}{{localize "EXALTED-SCENES.Nav.AllCharacters"}}{{/if}}</span>
         </div>
         <div class="es-inspector-actions">
           <button class="es-btn-icon es-favorite-toggle {{#if selectedItem.favorite}}es-favorite-toggle--active{{/if}}"
@@ -563,163 +916,432 @@
         </div>
       </div>
 
-      <div class="es-inspector-preview">
-        {{#if (eq selectedItem.bgType 'video')}}
-          <video src="{{selectedItem.image}}" muted loop autoplay playsinline disablepictureinpicture></video>
-        {{else}}
-          <img src="{{selectedItem.image}}">
-        {{/if}}
-      </div>
-
-      <div class="es-inspector-controls">
-        {{#if (eq selectedItem.type 'scene')}}
-          {{#if (eq activeSceneId selectedId)}}
-            <button class="es-btn es-btn-danger" data-action="stop-broadcast">
-              <i class="fas fa-stop"></i> {{localize "EXALTED-SCENES.GMPanel.StopBroadcast"}}
-            </button>
-          {{else}}
-            {{#if selectedItem.isSequence}}
-              <button class="es-btn es-btn-primary" data-action="broadcast-sequence">
-                <i class="fas fa-play-circle"></i> {{localize "EXALTED-SCENES.GMPanel.StartSequence"}}
-              </button>
+      <div class="es-inspector-header">
+        <div class="es-inspector-heading">
+          <div class="es-inspector-kicker">
+            {{#if (eq selectedItem.type 'scene')}}
+              {{#if selectedItem.isSequence}}
+                {{localize "EXALTED-SCENES.Sequence.Sequence"}}
+              {{else}}
+                {{localize "EXALTED-SCENES.Nav.Scenes"}}
+              {{/if}}
             {{else}}
-              <button class="es-btn es-btn-primary" data-action="broadcast">
-                <i class="fas fa-broadcast-tower"></i> {{localize "EXALTED-SCENES.GMPanel.Broadcast"}}
-              </button>
+              {{localize "EXALTED-SCENES.Nav.Characters"}}
             {{/if}}
-          {{/if}}
-        {{else}}
-          {{!-- Character controls --}}
-          <button class="es-btn es-btn-secondary" data-action="quick-add" title="{{localize "EXALTED-SCENES.GMPanel.AddToActiveScene"}}">
-            <i class="fas fa-plus-circle"></i> {{localize "EXALTED-SCENES.GMPanel.AddToScene"}}
-          </button>
-        {{/if}}
+          </div>
+          <div class="es-inspector-title-row">
+            <h2 class="es-inspector-title">{{selectedItem.name}}</h2>
+            {{#if (eq activeSceneId selectedId)}}
+              <span class="es-live-badge">{{localize "EXALTED-SCENES.Status.Live"}}</span>
+            {{/if}}
+          </div>
+        </div>
       </div>
 
-      {{!-- Sequence Timeline (only for sequence scenes) --}}
-      {{#if (eq selectedItem.type 'scene')}}
-        {{#if selectedItem.isSequence}}
-          <div class="es-sequence-panel">
-            <div class="es-sequence-header">
-              <span><i class="fas fa-images"></i> {{localize "EXALTED-SCENES.Sequence.Sequence"}}</span>
-              <span class="es-sequence-count">{{selectedItem.sequenceBackgrounds.length}} backgrounds</span>
-              <button class="es-btn-icon es-btn-icon--small" data-action="remove-sequence" title="{{localize "EXALTED-SCENES.Sequence.ConvertBack"}}">
-                <i class="fas fa-times-circle"></i>
-              </button>
-            </div>
-
-            {{!-- Sequence Navigation Controls (visible when sequence is live) --}}
-            {{#if sequenceProgress}}
-              <div class="es-sequence-controls">
-                <button class="es-btn-icon {{#if sequenceProgress.isFirst}}disabled{{/if}}"
-                        data-action="sequence-prev"
-                        title="{{localize "EXALTED-SCENES.Sequence.PreviousBackground"}}"
-                        {{#if sequenceProgress.isFirst}}disabled{{/if}}>
-                  <i class="fas fa-chevron-left"></i>
-                </button>
-                <span class="es-sequence-counter">
-                  {{add sequenceProgress.currentIndex 1}} / {{sequenceProgress.totalBackgrounds}}
-                </span>
-                <button class="es-btn-icon {{#if (and sequenceProgress.isLast (eq selectedItem.sequenceSettings.onEnd 'stop'))}}disabled{{/if}}"
-                        data-action="sequence-next"
-                        title="{{localize "EXALTED-SCENES.Sequence.NextBackground"}}"
-                        {{#if (and sequenceProgress.isLast (eq selectedItem.sequenceSettings.onEnd 'stop'))}}disabled{{/if}}>
-                  <i class="fas fa-chevron-right"></i>
-                </button>
-              </div>
-            {{/if}}
-
-            {{!-- Timeline (accepts scene drag & drop) --}}
-            <div class="es-sequence-timeline" title="{{localize "EXALTED-SCENES.Sequence.DragScenesHere"}}">
-              {{#each selectedItem.sequenceBackgrounds}}
-                <div class="es-sequence-thumb {{#if (eq @index ../sequenceProgress.currentIndex)}}es-sequence-thumb--active{{/if}}"
-                     data-action="sequence-goto"
-                     data-index="{{@index}}"
-                     data-bg-id="{{id}}"
-                     title="Background {{add @index 1}}">
-                  <img src="{{path}}" alt="Background {{add @index 1}}">
-                  <span class="es-sequence-thumb-num">{{add @index 1}}</span>
-                  <button class="es-sequence-thumb-remove" data-action="remove-sequence-bg" data-bg-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Remove"}}">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              {{/each}}
-              <div class="es-sequence-thumb add-new" data-action="add-sequence-bg" title="{{localize "EXALTED-SCENES.Sequence.AddBackground"}}">
-                <i class="fas fa-plus"></i>
+      {{#if (eq selectedItem.type 'character')}}
+        <div class="es-inspector-preview es-inspector-preview--character">
+          <img src="{{selectedItem.image}}" style="{{selectedItem.imageFocusStyle}}">
+          <div class="es-inspector-preview-overlay es-inspector-preview-overlay--visible es-inspector-preview-overlay--character">
+            <div class="es-inspector-preview-copy">
+              <div class="es-inspector-preview-kicker">{{localize "EXALTED-SCENES.Nav.Characters"}}</div>
+              <div class="es-inspector-preview-name">{{selectedItem.name}}</div>
+              <div class="es-inspector-preview-meta">
+                {{#if selectedItem.currentState}}
+                  <span class="es-inspector-preview-pill">
+                    <i class="fas fa-bolt"></i>
+                    <span>{{selectedItem.currentState}}</span>
+                  </span>
+                {{/if}}
+                {{#if selectedItem.linkedActor}}
+                  <span class="es-inspector-preview-pill es-inspector-preview-pill--linked" title="{{selectedItem.linkedActor.title}}">
+                    <i class="fas fa-address-book"></i>
+                    <span>{{selectedItem.linkedActor.name}}</span>
+                  </span>
+                {{/if}}
+                {{#if selectedItem.locked}}
+                  <span class="es-inspector-preview-pill es-inspector-preview-pill--locked">
+                    <i class="fas fa-lock"></i>
+                    <span>{{localize "EXALTED-SCENES.CharEditor.Locked"}}</span>
+                  </span>
+                {{/if}}
               </div>
             </div>
-
-            {{!-- Sequence Settings --}}
-            <div class="es-sequence-settings">
-              <div class="es-sequence-setting">
-                <label>{{localize "EXALTED-SCENES.Sequence.Transition"}}</label>
-                <select data-action="sequence-transition-type">
-                  <option value="dissolve" {{#if (eq selectedItem.sequenceSettings.transitionType 'dissolve')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Dissolve"}}</option>
-                  <option value="cut" {{#if (eq selectedItem.sequenceSettings.transitionType 'cut')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.CutInstant"}}</option>
-                </select>
+            <div class="es-inspector-preview-stats">
+              <div class="es-inspector-preview-chip" title="{{selectedItem.emotionBadgeTitle}}">
+                <i class="fas fa-theater-masks"></i>
+                <span>{{selectedItem.emotionCount}}</span>
               </div>
-              {{#if (eq selectedItem.sequenceSettings.transitionType 'dissolve')}}
-                <div class="es-sequence-setting">
-                  <label>{{localize "EXALTED-SCENES.Sequence.Duration"}}</label>
-                  <input type="number"
-                         data-action="sequence-transition-duration"
-                         value="{{selectedItem.sequenceSettings.transitionDuration}}"
-                         min="0.1"
-                         max="5"
-                         step="0.1">
-                  <span class="es-unit">s</span>
+              {{#if selectedItem.heroCount}}
+                <div class="es-inspector-preview-chip" title="{{localize "EXALTED-SCENES.CharEditor.HeroPoses"}}">
+                  <i class="fas fa-user"></i>
+                  <span>{{selectedItem.heroCount}}</span>
                 </div>
               {{/if}}
-              <div class="es-sequence-setting">
-                <label>{{localize "EXALTED-SCENES.Sequence.OnEnd"}}</label>
-                <select data-action="sequence-on-end">
-                  <option value="stop" {{#if (eq selectedItem.sequenceSettings.onEnd 'stop')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Stop"}}</option>
-                  <option value="loop" {{#if (eq selectedItem.sequenceSettings.onEnd 'loop')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Loop"}}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        {{else}}
-          {{!-- Convert to Sequence button for regular scenes --}}
-          <div class="es-convert-sequence">
-            <button class="es-btn es-btn-secondary small" data-action="convert-to-sequence" title="{{localize "EXALTED-SCENES.Sequence.ConvertToSequenceTooltip"}}">
-              <i class="fas fa-layer-group"></i> {{localize "EXALTED-SCENES.Sequence.TurnIntoSequence"}}
-            </button>
-          </div>
-        {{/if}}
-      {{/if}}
-
-      {{#if (eq selectedItem.type 'scene')}}
-        <div class="es-cast-strip" data-scene-id="{{selectedItem.id}}">
-          <div class="es-cast-header">
-            <span>{{localize "EXALTED-SCENES.Cast.Cast"}}</span>
-            <span class="es-cast-count">{{selectedItem.cast.length}} character{{#if (gt selectedItem.cast.length 1)}}s{{/if}}</span>
-          </div>
-          <div class="es-cast-row {{#unless selectedItem.cast.length}}empty{{/unless}}">
-            {{#if selectedItem.cast.length}}
-              {{#each selectedItem.cast}}
-                <div class="es-cast-member"
-                     title="{{name}} - Click to change emotion, drag to reorder"
-                     data-action="cast-click"
-                     data-character-id="{{id}}"
-                     data-index="{{@index}}"
-                     draggable="true">
-                  <img src="{{image}}" alt="{{name}}">
-                  <span class="es-cast-name">{{name}}</span>
-                </div>
-              {{/each}}
-            {{else}}
-              <div class="es-cast-empty">
-                <i class="fas fa-user-plus"></i>
-                <span>{{localize "EXALTED-SCENES.Cast.DragCharactersHere"}}</span>
-              </div>
-            {{/if}}
-            <div class="es-cast-member add-new" data-action="add-cast" title="{{localize "EXALTED-SCENES.Cast.AddCharacterToScene"}}">
-              <div class="add-btn-circle"><i class="fas fa-plus"></i></div>
             </div>
           </div>
         </div>
       {{/if}}
+
+      <div class="es-inspector-controls {{#if (eq selectedItem.type 'scene')}}es-inspector-controls--scene{{else}}is-stacked es-inspector-controls--character{{/if}}">
+        {{#if (eq selectedItem.type 'scene')}}
+          <div class="es-inspector-action-row es-inspector-action-row--triple">
+            {{#if (eq activeSceneId selectedId)}}
+              <button class="es-btn es-btn-danger" data-action="stop-broadcast">
+                <i class="fas fa-stop"></i> {{localize "EXALTED-SCENES.GMPanel.StopBroadcast"}}
+              </button>
+            {{else}}
+              {{#if selectedItem.isSequence}}
+                <button class="es-btn es-btn-primary" data-action="broadcast-sequence">
+                  <i class="fas fa-play-circle"></i> {{localize "EXALTED-SCENES.GMPanel.StartSequence"}}
+                </button>
+              {{else}}
+                <button class="es-btn es-btn-primary" data-action="broadcast">
+                  <i class="fas fa-broadcast-tower"></i> {{localize "EXALTED-SCENES.GMPanel.Broadcast"}}
+                </button>
+              {{/if}}
+            {{/if}}
+            <button class="es-btn es-btn-secondary"
+                    data-action="duplicate"
+                    data-id="{{selectedItem.id}}"
+                    data-type="{{selectedItem.type}}"
+                    title="{{localize "EXALTED-SCENES.Common.Duplicate"}}">
+              <i class="fas fa-copy"></i> {{localize "EXALTED-SCENES.Common.Duplicate"}}
+            </button>
+            <button class="es-btn es-btn-secondary"
+                    data-action="edit"
+                    data-id="{{selectedItem.id}}"
+                    data-type="{{selectedItem.type}}"
+                    title="{{localize "EXALTED-SCENES.Common.Edit"}}">
+              <i class="fas fa-pen"></i> {{localize "EXALTED-SCENES.Common.Edit"}}
+            </button>
+          </div>
+        {{else}}
+          <div class="es-inspector-action-row es-inspector-action-row--triple">
+            <button class="es-btn es-btn-primary" data-action="quick-add" title="{{localize "EXALTED-SCENES.GMPanel.AddToActiveScene"}}">
+              <i class="fas fa-plus-circle"></i> {{localize "EXALTED-SCENES.GMPanel.AddToScene"}}
+            </button>
+            <button class="es-btn es-btn-secondary"
+                    data-action="duplicate"
+                    data-id="{{selectedItem.id}}"
+                    data-type="{{selectedItem.type}}"
+                    title="{{localize "EXALTED-SCENES.Common.Duplicate"}}">
+              <i class="fas fa-copy"></i> {{localize "EXALTED-SCENES.Common.Duplicate"}}
+            </button>
+            <button class="es-btn es-btn-secondary"
+                    data-action="edit"
+                    data-id="{{selectedItem.id}}"
+                    data-type="{{selectedItem.type}}"
+                    title="{{localize "EXALTED-SCENES.Common.Edit"}}">
+              <i class="fas fa-pen"></i> {{localize "EXALTED-SCENES.Common.Edit"}}
+            </button>
+          </div>
+          {{#if selectedItem.linkedActor}}
+            <div class="es-inspector-action-row es-inspector-action-row--single">
+              <button class="es-btn es-btn-secondary"
+                      data-action="open-actor-sheet"
+                      data-character-id="{{selectedItem.id}}"
+                      title="{{selectedItem.linkedActor.title}}">
+                <i class="fas fa-address-book"></i>
+                {{selectedItem.linkedActor.name}}
+              </button>
+            </div>
+          {{/if}}
+        {{/if}}
+      </div>
+
+      <div class="es-inspector-body {{#if (eq selectedItem.type 'scene')}}es-inspector-body--scene{{/if}}">
+        {{#if (eq selectedItem.type 'scene')}}
+          <div class="es-scene-inspector">
+            <section class="es-scene-hero-card">
+              <div class="es-scene-hero-media {{#unless selectedItem.hasPreviewMedia}}es-scene-hero-media--empty{{/unless}}">
+                {{#if selectedItem.hasPreviewMedia}}
+                  {{#if (eq selectedItem.previewBgType 'video')}}
+                    <video src="{{selectedItem.previewImage}}" muted loop autoplay playsinline disablepictureinpicture></video>
+                  {{else}}
+                    <img src="{{selectedItem.previewImage}}" alt="{{selectedItem.name}}">
+                  {{/if}}
+                {{else}}
+                  <div class="es-scene-hero-empty">
+                    <i class="fas {{#if selectedItem.isSequence}}fa-images{{else}}fa-image{{/if}}"></i>
+                    <span>{{localize "EXALTED-SCENES.SceneEditor.BackgroundMedia"}}</span>
+                  </div>
+                {{/if}}
+                <div class="es-scene-hero-overlay">
+                  <div class="es-scene-hero-pills">
+                    {{#each selectedItem.sceneHeroPills}}
+                      <span class="es-scene-hero-pill {{#if toneClass}}es-scene-hero-pill--{{toneClass}}{{/if}}">
+                        <i class="fas {{icon}}"></i>
+                        <span>{{label}}</span>
+                      </span>
+                    {{/each}}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="es-scene-inspector-summary">
+              {{#each selectedItem.sceneSummaryStats}}
+                <div class="es-scene-inspector-stat {{#if toneClass}}es-scene-inspector-stat--{{toneClass}}{{/if}}">
+                  <div class="es-scene-inspector-stat-label">
+                    <i class="fas {{icon}}"></i>
+                    <span>{{label}}</span>
+                  </div>
+                  <div class="es-scene-inspector-stat-value" title="{{value}}">{{value}}</div>
+                  {{#if meta}}
+                    <div class="es-scene-inspector-stat-meta" title="{{meta}}">{{meta}}</div>
+                  {{/if}}
+                </div>
+              {{/each}}
+            </div>
+
+            <section class="es-scene-inspector-section">
+              <div class="es-scene-inspector-section-header">
+                <div class="es-scene-inspector-section-title">{{localize "EXALTED-SCENES.SceneEditor.CastLayout"}}</div>
+              </div>
+              <div class="es-scene-layout-pills">
+                {{#each selectedItem.sceneLayoutPills}}
+                  <span class="es-scene-layout-pill">
+                    <i class="fas {{icon}}"></i>
+                    <span>{{label}}</span>
+                  </span>
+                {{/each}}
+              </div>
+            </section>
+
+            {{!-- Sequence Timeline (only for sequence scenes) --}}
+            {{#if selectedItem.isSequence}}
+              <div class="es-sequence-panel">
+                <div class="es-sequence-header">
+                  <span><i class="fas fa-images"></i> {{localize "EXALTED-SCENES.Sequence.Sequence"}}</span>
+                  <span class="es-sequence-count">{{localize "EXALTED-SCENES.GMPanel.CountBackgrounds" count=selectedItem.sequenceBackgrounds.length}}</span>
+                  <button class="es-btn-icon es-btn-icon--small" data-action="remove-sequence" title="{{localize "EXALTED-SCENES.Sequence.ConvertBack"}}">
+                    <i class="fas fa-times-circle"></i>
+                  </button>
+                </div>
+
+                {{!-- Sequence Navigation Controls (visible when sequence is live) --}}
+                {{#if (and sequenceProgress (eq sequenceProgress.sceneId selectedItem.id))}}
+                  <div class="es-sequence-controls">
+                    <button class="es-btn-icon {{#if sequenceProgress.isFirst}}disabled{{/if}}"
+                            data-action="sequence-prev"
+                            title="{{localize "EXALTED-SCENES.Sequence.PreviousBackground"}}"
+                            {{#if sequenceProgress.isFirst}}disabled{{/if}}>
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="es-sequence-counter">
+                      {{add sequenceProgress.currentIndex 1}} / {{sequenceProgress.totalBackgrounds}}
+                    </span>
+                    <button class="es-btn-icon {{#if (and sequenceProgress.isLast (eq selectedItem.sequenceSettings.onEnd 'stop'))}}disabled{{/if}}"
+                            data-action="sequence-next"
+                            title="{{localize "EXALTED-SCENES.Sequence.NextBackground"}}"
+                            {{#if (and sequenceProgress.isLast (eq selectedItem.sequenceSettings.onEnd 'stop'))}}disabled{{/if}}>
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                {{/if}}
+
+                {{!-- Timeline (accepts scene drag & drop) --}}
+                <div class="es-sequence-timeline" title="{{localize "EXALTED-SCENES.Sequence.DragScenesHere"}}">
+                  {{#each selectedItem.sequenceBackgrounds}}
+                    <div class="es-sequence-thumb {{#if (and ../sequenceProgress (eq ../sequenceProgress.sceneId ../selectedItem.id) (eq @index ../sequenceProgress.currentIndex))}}es-sequence-thumb--active{{/if}}"
+                         data-action="sequence-goto"
+                         data-index="{{@index}}"
+                         data-bg-id="{{id}}"
+                         title="Background {{add @index 1}}">
+                      <img src="{{path}}" alt="Background {{add @index 1}}">
+                      <span class="es-sequence-thumb-num">{{add @index 1}}</span>
+                      <button class="es-sequence-thumb-remove" data-action="remove-sequence-bg" data-bg-id="{{id}}" title="{{localize "EXALTED-SCENES.Common.Remove"}}">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  {{/each}}
+                  <div class="es-sequence-thumb add-new" data-action="add-sequence-bg" title="{{localize "EXALTED-SCENES.Sequence.AddBackground"}}">
+                    <i class="fas fa-plus"></i>
+                  </div>
+                </div>
+
+                {{!-- Sequence Settings --}}
+                <div class="es-sequence-settings">
+                  <div class="es-sequence-setting">
+                    <label>{{localize "EXALTED-SCENES.Sequence.Transition"}}</label>
+                    <select data-action="sequence-transition-type">
+                      <option value="dissolve" {{#if (eq selectedItem.sequenceSettings.transitionType 'dissolve')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Dissolve"}}</option>
+                      <option value="cut" {{#if (eq selectedItem.sequenceSettings.transitionType 'cut')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.CutInstant"}}</option>
+                    </select>
+                  </div>
+                  {{#if (eq selectedItem.sequenceSettings.transitionType 'dissolve')}}
+                    <div class="es-sequence-setting">
+                      <label>{{localize "EXALTED-SCENES.Sequence.Duration"}}</label>
+                      <input type="number"
+                             data-action="sequence-transition-duration"
+                             value="{{selectedItem.sequenceSettings.transitionDuration}}"
+                             min="0.1"
+                             max="5"
+                             step="0.1">
+                      <span class="es-unit">s</span>
+                    </div>
+                  {{/if}}
+                  <div class="es-sequence-setting">
+                    <label>{{localize "EXALTED-SCENES.Sequence.OnEnd"}}</label>
+                    <select data-action="sequence-on-end">
+                      <option value="stop" {{#if (eq selectedItem.sequenceSettings.onEnd 'stop')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Stop"}}</option>
+                      <option value="loop" {{#if (eq selectedItem.sequenceSettings.onEnd 'loop')}}selected{{/if}}>{{localize "EXALTED-SCENES.Sequence.Loop"}}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            {{else}}
+              <section class="es-scene-inspector-section es-scene-convert-card">
+                <div class="es-scene-inspector-section-header">
+                  <div class="es-scene-inspector-section-title">{{localize "EXALTED-SCENES.Sequence.TurnIntoSequence"}}</div>
+                </div>
+                <div class="es-scene-convert-copy">{{localize "EXALTED-SCENES.Sequence.ConvertToSequenceTooltip"}}</div>
+                <button class="es-btn es-btn-secondary" data-action="convert-to-sequence" title="{{localize "EXALTED-SCENES.Sequence.ConvertToSequenceTooltip"}}">
+                  <i class="fas fa-layer-group"></i> {{localize "EXALTED-SCENES.Sequence.TurnIntoSequence"}}
+                </button>
+              </section>
+            {{/if}}
+
+            <section class="es-scene-inspector-section es-scene-inspector-section--cast">
+              <div class="es-cast-strip" data-scene-id="{{selectedItem.id}}">
+                <div class="es-cast-header">
+                  <span>{{localize "EXALTED-SCENES.Cast.Cast"}}</span>
+                  <span class="es-cast-count">
+                    {{#if (eq selectedItem.cast.length 1)}}
+                      {{localize "EXALTED-SCENES.GMPanel.CountCharacters" count=selectedItem.cast.length}}
+                    {{else}}
+                      {{localize "EXALTED-SCENES.GMPanel.CountCharactersPlural" count=selectedItem.cast.length}}
+                    {{/if}}
+                  </span>
+                </div>
+                <div class="es-cast-row {{#unless selectedItem.cast.length}}empty{{/unless}}">
+                  {{#if selectedItem.cast.length}}
+                    {{#each selectedItem.cast}}
+                      <div class="es-cast-member"
+                           title="{{name}} - Click to change emotion, drag to reorder"
+                           data-action="cast-click"
+                           data-character-id="{{id}}"
+                           data-index="{{@index}}"
+                           draggable="true">
+                        <img src="{{image}}" alt="{{name}}" style="{{focusStyle}}">
+                        <span class="es-cast-name">{{name}}</span>
+                      </div>
+                    {{/each}}
+                  {{else}}
+                    <div class="es-cast-empty">
+                      <i class="fas fa-user-plus"></i>
+                      <span>{{localize "EXALTED-SCENES.Cast.DragCharactersHere"}}</span>
+                    </div>
+                  {{/if}}
+                  {{#if canAddCurrentFolderToCast}}
+                    <div class="es-cast-member add-new"
+                         data-action="add-current-folder-cast"
+                         data-scene-id="{{selectedItem.id}}"
+                         title="{{localize "EXALTED-SCENES.Cast.AddCurrentFolderToScene" folder=currentFolder.name count=currentCharacterFolderAddCount}}">
+                      <div class="add-btn-circle"><i class="fas fa-folder-plus"></i></div>
+                    </div>
+                  {{/if}}
+                  <div class="es-cast-member add-new" data-action="add-cast" title="{{localize "EXALTED-SCENES.Cast.AddCharacterToScene"}}">
+                    <div class="add-btn-circle"><i class="fas fa-plus"></i></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {{#if selectedItem.tags.length}}
+              <section class="es-scene-inspector-section">
+                <div class="es-scene-inspector-section-header">
+                  <div class="es-scene-inspector-section-title">{{localize "EXALTED-SCENES.CharEditor.Tags"}}</div>
+                </div>
+                <div class="es-inspector-tags">
+                  {{#each selectedItem.tags}}
+                    <span class="es-inspector-tag">{{this}}</span>
+                  {{/each}}
+                </div>
+              </section>
+            {{/if}}
+          </div>
+        {{else}}
+          <div class="es-character-inspector">
+            <div class="es-character-inspector-summary">
+              {{#each selectedItem.characterSummaryStats}}
+                <div class="es-character-inspector-stat {{#if toneClass}}{{toneClass}}{{/if}}">
+                  <div class="es-character-inspector-stat-label">
+                    <i class="fas {{icon}}"></i>
+                    <span>{{label}}</span>
+                  </div>
+                  <div class="es-character-inspector-stat-value" title="{{value}}">{{value}}</div>
+                </div>
+              {{/each}}
+            </div>
+
+            <div class="es-character-inspector-section">
+              <div class="es-character-inspector-section-header">
+                <div class="es-character-inspector-section-title">{{localize "EXALTED-SCENES.CharEditor.EmotionPortraits"}}</div>
+                <div class="es-character-inspector-section-meta">{{selectedItem.emotionCount}}</div>
+              </div>
+              <div class="es-character-gallery es-character-gallery--rail">
+                {{#each selectedItem.emotionEntries}}
+                  <button class="es-character-gallery-item {{#if isActive}}es-character-gallery-item--active{{/if}}"
+                          data-action="set-character-emotion"
+                          data-character-id="{{../selectedItem.id}}"
+                          data-state="{{key}}"
+                          title="{{key}}">
+                    <span class="es-character-gallery-media">
+                      {{#if isFavorite}}
+                        <span class="es-character-gallery-favorite" aria-hidden="true"><i class="fas fa-star"></i></span>
+                      {{/if}}
+                      <img src="{{path}}" alt="{{key}}" style="{{focusStyle}}">
+                    </span>
+                    <span class="es-character-gallery-copy">
+                      <span class="es-character-gallery-label">{{key}}</span>
+                    </span>
+                  </button>
+                {{/each}}
+              </div>
+            </div>
+
+            {{#if selectedItem.heroPoseEntries.length}}
+              <div class="es-character-inspector-section">
+                <div class="es-character-inspector-section-header">
+                  <div class="es-character-inspector-section-title">{{localize "EXALTED-SCENES.CharEditor.HeroPoses"}}</div>
+                  <div class="es-character-inspector-section-meta">{{selectedItem.heroCount}}</div>
+                </div>
+                <div class="es-character-gallery es-character-gallery--hero es-character-gallery--rail">
+                  {{#each selectedItem.heroPoseEntries}}
+                    <button class="es-character-gallery-item es-character-gallery-item--hero {{#if isActive}}es-character-gallery-item--active{{/if}}"
+                            data-action="set-character-hero-pose"
+                            data-character-id="{{../selectedItem.id}}"
+                            data-state="{{key}}"
+                            title="{{key}} - {{typeLabel}}">
+                      <span class="es-character-gallery-media">
+                        <img src="{{path}}" alt="{{key}}">
+                      </span>
+                      <span class="es-character-gallery-copy">
+                        <span class="es-character-gallery-label">{{key}}</span>
+                        <span class="es-character-gallery-type">{{typeLabel}}</span>
+                      </span>
+                    </button>
+                  {{/each}}
+                </div>
+              </div>
+            {{/if}}
+
+            {{#if selectedItem.tags.length}}
+              <div class="es-character-inspector-section">
+                <div class="es-character-inspector-section-header">
+                  <div class="es-character-inspector-section-title">{{localize "EXALTED-SCENES.CharEditor.Tags"}}</div>
+                </div>
+                <div class="es-inspector-tags">
+                  {{#each selectedItem.tags}}
+                    <span class="es-inspector-tag">{{this}}</span>
+                  {{/each}}
+                </div>
+              </div>
+            {{/if}}
+          </div>
+        {{/if}}
+      </div>
     </aside>
   {{/if}}
 
@@ -756,7 +1378,7 @@
                      data-character-id="{{id}}"
                      data-index="{{@index}}"
                      draggable="true">
-                  <img src="{{image}}" alt="{{name}}">
+                  <img src="{{image}}" alt="{{name}}" style="{{focusStyle}}">
                   <span class="es-cast-name">{{name}}</span>
                 </div>
               {{/each}}
@@ -764,6 +1386,14 @@
               <div class="es-cast-empty">
                 <i class="fas fa-user-plus"></i>
                 <span>{{localize "EXALTED-SCENES.Cast.DragCharactersToAdd"}}</span>
+              </div>
+            {{/if}}
+            {{#if canAddCurrentFolderToCast}}
+              <div class="es-cast-member add-new"
+                   data-action="add-current-folder-cast"
+                   data-scene-id="{{floatingCastStrip.sceneId}}"
+                   title="{{localize "EXALTED-SCENES.Cast.AddCurrentFolderToScene" folder=currentFolder.name count=currentCharacterFolderAddCount}}">
+                <div class="add-btn-circle"><i class="fas fa-folder-plus"></i></div>
               </div>
             {{/if}}
             <div class="es-cast-member add-new" data-action="floating-add-cast" title="{{localize "EXALTED-SCENES.Cast.AddCharacterToScene"}}">
@@ -777,21 +1407,37 @@
 
   <!-- Emotion Picker Popover -->
   {{#if emotionPicker}}
-    <div class="es-emotion-picker {{#if (gt emotionPicker.emotions.length 5)}}es-emotion-picker--has-search{{/if}}" style="left: {{emotionPicker.x}}px; top: {{emotionPicker.y}}px;">
+    <div class="es-emotion-picker {{#if (gt emotionPicker.emotions.length 5)}}es-emotion-picker--has-search{{/if}} {{#if emotionPicker.pickerBelow}}es-emotion-picker--below{{/if}}" style="left: {{emotionPicker.x}}px; top: {{emotionPicker.y}}px;">
       <div class="es-picker-header">
-        <span>{{emotionPicker.character.name}}</span>
+        <div class="es-picker-header-copy">
+          <div class="es-picker-header-kicker">
+            <i class="fas {{emotionPicker.pickerModeIcon}}"></i>
+            <span>{{emotionPicker.pickerModeLabel}}</span>
+          </div>
+          <div class="es-picker-header-title">{{emotionPicker.character.name}}</div>
+        </div>
         <div class="es-picker-actions">
           {{#if emotionPicker.linkedActor}}
-            <button class="es-btn-icon es-btn-icon--small es-btn-sheet" data-action="open-actor-sheet" title="Open {{emotionPicker.linkedActor.name}}'s Sheet"><i class="fas fa-address-book"></i></button>
+            <button class="es-btn-icon es-btn-icon--small es-btn-sheet" data-action="open-actor-sheet" title="{{emotionPicker.openActorTitle}}"><i class="fas fa-address-book"></i></button>
           {{/if}}
           <button class="es-btn-icon es-btn-icon--small" data-action="close-picker" title="{{localize "EXALTED-SCENES.Common.Close"}}"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="es-picker-meta">
+        <div class="es-picker-meta-pill es-picker-meta-pill--active" title="{{emotionPicker.activeStateLabel}}">
+          <i class="fas fa-bolt"></i>
+          <span>{{emotionPicker.activeStateLabel}}</span>
+        </div>
+        <div class="es-picker-meta-pill" title="{{emotionPicker.pickerModeLabel}}">
+          <i class="fas fa-layer-group"></i>
+          <span>{{emotionPicker.pickerCount}}</span>
         </div>
       </div>
       {{!-- Search field for 6+ emotions --}}
       {{#if (gt emotionPicker.emotions.length 5)}}
         <div class="es-picker-search">
           <i class="fas fa-search"></i>
-          <input type="text" class="es-picker-search-input" placeholder="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}" aria-label="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}">
+          <input type="text" class="es-picker-search-input" value="{{emotionPicker.emotionSearchQuery}}" placeholder="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}" aria-label="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}">
         </div>
       {{/if}}
       <div class="es-picker-grid">
@@ -805,7 +1451,7 @@
             <button class="es-emotion-fav-btn {{#if isFavorite}}es-emotion-fav-btn--active{{/if}}" data-action="toggle-emotion-favorite" data-state="{{key}}" title="{{#if isFavorite}}{{localize "EXALTED-SCENES.Picker.RemoveFromFavorites"}}{{else}}{{localize "EXALTED-SCENES.Picker.AddToFavorites"}}{{/if}}">
               <i class="{{#if isFavorite}}fas{{else}}far{{/if}} fa-star"></i>
             </button>
-            <img src="{{path}}">
+            <img src="{{path}}" style="{{focusStyle}}">
             <span class="es-picker-label">{{key}}</span>
           </div>
         {{/each}}

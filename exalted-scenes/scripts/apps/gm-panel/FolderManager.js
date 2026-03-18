@@ -9,6 +9,7 @@
 import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
 import { localize, format } from '../../utils/i18n.js';
+import { ExaltedScenesDialog } from '../ThemedDialog.js';
 
 /**
  * Manages folder operations in the GMPanel.
@@ -90,8 +91,7 @@ export class FolderManager extends BaseManager {
   handleOpenFolder(target) {
     const folderId = target.dataset.folderId;
     this.uiState.currentFolderId = folderId;
-    this.uiState.selectedId = null;
-    this.uiState.inspectorOpen = false;
+    this.panel.clearCardSelection();
     this.render();
   }
 
@@ -101,8 +101,7 @@ export class FolderManager extends BaseManager {
   handleNavigateUp() {
     const currentFolder = Store.folders.get(this.uiState.currentFolderId);
     this.uiState.currentFolderId = currentFolder?.parent || null;
-    this.uiState.selectedId = null;
-    this.uiState.inspectorOpen = false;
+    this.panel.clearCardSelection();
     this.render();
   }
 
@@ -114,35 +113,24 @@ export class FolderManager extends BaseManager {
     const activeTab = this.uiState.currentView.startsWith('scenes') ? 'scenes' : 'characters';
     const itemType = activeTab === 'scenes' ? 'scene' : 'character';
 
-    const content = `
-      <form>
-        <div class="form-group">
-          <label>${localize('Dialog.FolderName')}</label>
-          <input type="text" name="name" value="New Folder" autofocus>
-        </div>
-      </form>
-    `;
-
-    new Dialog({
+    const name = await ExaltedScenesDialog.promptText({
       title: localize('Dialog.CreateFolder.Title'),
-      content: content,
-      buttons: {
-        create: {
-          label: localize('Common.Create'),
-          callback: (html) => {
-            const name = html.find('[name="name"]').val() || "New Folder";
-            Store.createFolder({
-              name: name,
-              type: itemType,
-              parent: this.uiState.currentFolderId
-            });
-            this.render();
-          }
-        },
-        cancel: { label: localize('Common.Cancel') }
-      },
-      default: "create"
-    }).render(true);
+      label: localize('Dialog.FolderName'),
+      value: 'New Folder',
+      submitAction: 'create',
+      submitLabel: localize('Common.Create'),
+      submitVariant: 'primary',
+      tone: 'info'
+    });
+
+    if (name === null) return;
+
+    Store.createFolder({
+      name: name || 'New Folder',
+      type: itemType,
+      parent: this.uiState.currentFolderId
+    });
+    this.render();
   }
 
   /**
@@ -172,34 +160,37 @@ export class FolderManager extends BaseManager {
     const folder = Store.folders.get(folderId);
     if (!folder) return;
 
-    new Dialog({
-      title: format('Dialog.DeleteFolder.Title', { name: folder.name.replace(/"/g, '&quot;') }),
+    const result = await ExaltedScenesDialog.show({
+      title: format('Dialog.DeleteFolder.Title', { name: folder.name }),
       content: localize('Dialog.DeleteFolder.Content'),
-      buttons: {
-        move: {
+      tone: 'danger',
+      defaultAction: 'move',
+      buttons: [
+        {
+          id: 'cancel',
+          label: localize('Common.Cancel'),
+          variant: 'secondary'
+        },
+        {
+          id: 'move',
           label: localize('Dialog.DeleteFolder.MoveToRoot'),
-          callback: () => {
-            Store.deleteFolder(folderId, false);
-            if (this.uiState.currentFolderId === folderId) {
-              this.uiState.currentFolderId = null;
-            }
-            this.render();
-          }
+          variant: 'secondary'
         },
-        delete: {
+        {
+          id: 'delete',
           label: localize('Dialog.DeleteFolder.DeleteAll'),
-          callback: () => {
-            Store.deleteFolder(folderId, true);
-            if (this.uiState.currentFolderId === folderId) {
-              this.uiState.currentFolderId = null;
-            }
-            this.render();
-          }
-        },
-        cancel: { label: localize('Common.Cancel') }
-      },
-      default: "move"
-    }).render(true);
+          variant: 'danger'
+        }
+      ]
+    });
+
+    if (!result || result.action === 'cancel') return;
+
+    Store.deleteFolder(folderId, result.action === 'delete');
+    if (this.uiState.currentFolderId === folderId) {
+      this.uiState.currentFolderId = null;
+    }
+    this.render();
   }
 
   /**
@@ -215,30 +206,19 @@ export class FolderManager extends BaseManager {
     const folder = Store.folders.get(folderId);
     if (!folder) return;
 
-    const content = `
-      <form>
-        <div class="form-group">
-          <label>${localize('Dialog.FolderName')}</label>
-          <input type="text" name="name" value="${folder.name.replace(/"/g, '&quot;')}" autofocus>
-        </div>
-      </form>
-    `;
-
-    new Dialog({
+    const name = await ExaltedScenesDialog.promptText({
       title: localize('Dialog.RenameFolder.Title'),
-      content: content,
-      buttons: {
-        rename: {
-          label: localize('Common.Rename'),
-          callback: (html) => {
-            const name = html.find('[name="name"]').val() || folder.name;
-            Store.updateFolder(folderId, { name });
-            this.render();
-          }
-        },
-        cancel: { label: localize('Common.Cancel') }
-      },
-      default: "rename"
-    }).render(true);
+      label: localize('Dialog.FolderName'),
+      value: folder.name,
+      submitAction: 'rename',
+      submitLabel: localize('Common.Rename'),
+      submitVariant: 'primary',
+      tone: 'info'
+    });
+
+    if (name === null) return;
+
+    Store.updateFolder(folderId, { name: name || folder.name });
+    this.render();
   }
 }

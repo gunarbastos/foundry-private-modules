@@ -9,6 +9,7 @@
 import { BaseService } from './BaseService.js';
 import { SceneModel } from '../SceneModel.js';
 import { SocketHandler } from '../SocketHandler.js';
+import { CONFIG, getDefaultSceneLayoutSettings } from '../../config.js';
 
 /**
  * Service for managing scenes and their cast members.
@@ -90,10 +91,59 @@ export class SceneService extends BaseService {
    * @returns {SceneModel} The created scene
    */
   createScene(data) {
-    const scene = new SceneModel(data);
+    const layoutSettings = foundry.utils.mergeObject(
+      getDefaultSceneLayoutSettings(),
+      foundry.utils.deepClone(data.layoutSettings || {}),
+      { inplace: false, insertKeys: true, overwrite: true }
+    );
+    const scene = new SceneModel({
+      ...data,
+      layoutSettings
+    });
     this.scenes.set(scene.id, scene);
     this.saveData();
     return scene;
+  }
+
+  /**
+   * Duplicate an existing scene, preserving its configuration and cast.
+   *
+   * @param {string} id - Scene ID to duplicate
+   * @param {Object} [options={}] - Duplicate options
+   * @param {string} [options.name] - Optional explicit name for the duplicate
+   * @param {string|null} [options.folder] - Optional destination folder override
+   * @returns {SceneModel|undefined} The duplicated scene or undefined if not found
+   */
+  duplicateScene(id, options = {}) {
+    const source = this.scenes.get(id);
+    if (!source) {
+      return undefined;
+    }
+
+    const existingNames = this.scenes.contents.map(scene => scene.name);
+    const duplicateData = foundry.utils.deepClone(source.toJSON());
+    delete duplicateData.id;
+
+    duplicateData.name = options.name?.trim() || this._buildDuplicateName(source.name, existingNames);
+    duplicateData.folder = options.folder !== undefined ? options.folder : source.folder;
+    duplicateData.createdAt = Date.now();
+    duplicateData.lastUsed = null;
+    duplicateData.playCount = 0;
+    duplicateData.cast = (source.cast || []).map(castMember => {
+      const character = this.characters.get(castMember.id);
+      return character
+        ? { id: character.id, name: character.name, image: character.image }
+        : foundry.utils.deepClone(castMember);
+    });
+    duplicateData.sequenceBackgrounds = (duplicateData.sequenceBackgrounds || []).map(bg => ({
+      ...bg,
+      id: foundry.utils.randomID()
+    }));
+
+    const duplicate = new SceneModel(duplicateData);
+    this.scenes.set(duplicate.id, duplicate);
+    this.saveData();
+    return duplicate;
   }
 
   /**
@@ -115,7 +165,7 @@ export class SceneService extends BaseService {
       if (this.activeSceneId === id) {
         import('../../apps/PlayerView.js').then(({ ExaltedScenesPlayerView }) => {
           ExaltedScenesPlayerView.refresh();
-        });
+        }).catch(e => console.error('Exalted Scenes | Failed to load PlayerView:', e));
       }
     }
     return scene;
@@ -178,9 +228,73 @@ export class SceneService extends BaseService {
     // Live Update
     if (this.activeSceneId === sceneId) {
       SocketHandler.emitUpdateCast(sceneId);
+
+      // Play entrance sound if character has one configured (GM triggers, NJ broadcasts)
+      if (game.user.isGM && character.music?.entranceSoundId) {
+        import('../NarratorJukeboxIntegration.js').then(({ NarratorJukeboxIntegration }) => {
+          if (NarratorJukeboxIntegration.isAvailable) {
+            NarratorJukeboxIntegration.playSoundboardSound(character.music.entranceSoundId);
+          }
+        }).catch(e => console.error('Exalted Scenes | Failed to play entrance sound:', e));
+      }
     }
 
     return true;
+  }
+
+  /**
+   * Add multiple characters to a scene's cast in a single save/update cycle.
+   * Duplicates are ignored.
+   *
+   * @param {string} sceneId - Scene ID
+   * @param {string[]} charIds - Character IDs to add
+   * @returns {{added: string[], skipped: string[], missing: string[]}} Result summary
+   */
+  addCastMembers(sceneId, charIds = []) {
+    const scene = this.scenes.get(sceneId);
+    if (!scene) {
+      return { added: [], skipped: [], missing: Array.from(new Set(charIds.filter(Boolean))) };
+    }
+
+    const uniqueCharIds = Array.from(new Set(charIds.filter(Boolean)));
+    const existingCastIds = new Set(scene.cast.map(c => c.id));
+    const added = [];
+    const skipped = [];
+    const missing = [];
+
+    for (const charId of uniqueCharIds) {
+      const character = this.characters.get(charId);
+      if (!character) {
+        missing.push(charId);
+        continue;
+      }
+
+      if (existingCastIds.has(charId)) {
+        skipped.push(charId);
+        continue;
+      }
+
+      scene.cast.push({
+        id: character.id,
+        name: character.name,
+        image: character.image
+      });
+
+      existingCastIds.add(charId);
+      added.push(charId);
+    }
+
+    if (!added.length) {
+      return { added, skipped, missing };
+    }
+
+    this.saveData();
+
+    if (this.activeSceneId === sceneId) {
+      SocketHandler.emitUpdateCast(sceneId);
+    }
+
+    return { added, skipped, missing };
   }
 
   /**
@@ -303,5 +417,140 @@ export class SceneService extends BaseService {
         } : null
       };
     });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     CAST PRESETS
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get all saved cast presets.
+   * @returns {Object[]} Array of cast preset objects
+   */
+  getCastPresets() {
+    return game.settings.get(CONFIG.MODULE_ID, CONFIG.SETTINGS.CAST_PRESETS) || [];
+  }
+
+  /**
+   * Save a cast preset from an existing scene's cast and layout settings.
+   *
+   * @param {string} name - Display name for the preset
+   * @param {string} sceneId - Source scene ID to capture cast + layout from
+   * @returns {{success: boolean, preset?: Object, error?: string}}
+   */
+  saveCastPreset(name, sceneId) {
+    const scene = this.scenes.get(sceneId);
+    if (!scene) {
+      return { success: false, error: 'Scene not found' };
+    }
+    if (!scene.cast.length) {
+      return { success: false, error: 'Scene has no cast' };
+    }
+
+    const preset = {
+      id: foundry.utils.randomID(),
+      name: name.trim(),
+      createdAt: Date.now(),
+      cast: scene.cast.map(c => {
+        const character = this.characters.get(c.id);
+        return character
+          ? { id: character.id, name: character.name, image: character.image }
+          : foundry.utils.deepClone(c);
+      }),
+      layoutSettings: foundry.utils.deepClone(scene.layoutSettings)
+    };
+
+    const presets = this.getCastPresets();
+    presets.push(preset);
+    game.settings.set(CONFIG.MODULE_ID, CONFIG.SETTINGS.CAST_PRESETS, presets);
+
+    return { success: true, preset };
+  }
+
+  /**
+   * Load a cast preset into a scene, replacing its current cast and layout.
+   *
+   * @param {string} presetId - Preset ID to load
+   * @param {string} sceneId - Target scene ID
+   * @returns {{success: boolean, loaded?: number, missing?: string[], error?: string}}
+   */
+  loadCastPreset(presetId, sceneId) {
+    const scene = this.scenes.get(sceneId);
+    if (!scene) {
+      return { success: false, error: 'Scene not found' };
+    }
+
+    const presets = this.getCastPresets();
+    const preset = presets.find(p => p.id === presetId);
+    if (!preset) {
+      return { success: false, error: 'Preset not found' };
+    }
+
+    // Resolve cast — only include characters that still exist
+    const resolvedCast = [];
+    const missing = [];
+    for (const entry of preset.cast) {
+      const character = this.characters.get(entry.id);
+      if (character) {
+        resolvedCast.push({
+          id: character.id,
+          name: character.name,
+          image: character.image
+        });
+      } else {
+        missing.push(entry.name || entry.id);
+      }
+    }
+
+    // Replace cast
+    scene.cast = resolvedCast;
+
+    // Replace layout settings (deep clone to avoid shared references)
+    if (preset.layoutSettings) {
+      Object.assign(scene.layoutSettings, foundry.utils.deepClone(preset.layoutSettings));
+    }
+
+    this.saveData();
+
+    // Live update if active
+    if (this.activeSceneId === sceneId) {
+      SocketHandler.emitUpdateCast(sceneId);
+      import('../../apps/PlayerView.js').then(({ ExaltedScenesPlayerView }) => {
+        ExaltedScenesPlayerView.refresh();
+      }).catch(e => console.error('Exalted Scenes | Failed to load PlayerView:', e));
+    }
+
+    return { success: true, loaded: resolvedCast.length, missing };
+  }
+
+  /**
+   * Delete a cast preset.
+   * @param {string} presetId - Preset ID to delete
+   * @returns {boolean} True if deleted
+   */
+  deleteCastPreset(presetId) {
+    const presets = this.getCastPresets();
+    const idx = presets.findIndex(p => p.id === presetId);
+    if (idx === -1) return false;
+
+    presets.splice(idx, 1);
+    game.settings.set(CONFIG.MODULE_ID, CONFIG.SETTINGS.CAST_PRESETS, presets);
+    return true;
+  }
+
+  /**
+   * Rename a cast preset.
+   * @param {string} presetId - Preset ID
+   * @param {string} newName - New display name
+   * @returns {boolean} True if renamed
+   */
+  renameCastPreset(presetId, newName) {
+    const presets = this.getCastPresets();
+    const preset = presets.find(p => p.id === presetId);
+    if (!preset) return false;
+
+    preset.name = newName.trim();
+    game.settings.set(CONFIG.MODULE_ID, CONFIG.SETTINGS.CAST_PRESETS, presets);
+    return true;
   }
 }

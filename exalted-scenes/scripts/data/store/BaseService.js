@@ -6,7 +6,8 @@
  * @module data/store/BaseService
  */
 
-import { CONFIG } from '../../config.js';
+import { CONFIG, log } from '../../config.js';
+import { localize } from '../../utils/i18n.js';
 
 /**
  * Base class for Store services.
@@ -150,7 +151,7 @@ export class BaseService {
    * @protected
    */
   _log(message) {
-    console.log(`${CONFIG.MODULE_NAME} | ${message}`);
+    log(message);
   }
 
   /**
@@ -161,6 +162,37 @@ export class BaseService {
    */
   _warn(message, ...args) {
     console.warn(`${CONFIG.MODULE_NAME} | ${message}`, ...args);
+  }
+
+  /**
+   * Build a human-friendly duplicate name with an incrementing copy suffix.
+   * Examples: "Forest" -> "Forest (Copy)", "Forest (Copy)" -> "Forest (Copy 2)".
+   *
+   * @param {string} baseName - Original item name
+   * @param {Iterable<string>} existingNames - Existing item names to avoid collisions
+   * @returns {string} Unique duplicate name
+   * @protected
+   */
+  _buildDuplicateName(baseName, existingNames = []) {
+    const fallbackName = String(baseName || '').trim() || 'Untitled';
+    const copyLabel = localize('Common.Copy');
+    const normalizedNames = new Set(Array.from(existingNames).map(name => String(name || '').trim()).filter(Boolean));
+    const escapedCopyLabel = copyLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = fallbackName.match(new RegExp(`^(.*) \\(${escapedCopyLabel}(?: (\\d+))?\\)$`));
+    const rootName = (match?.[1] || fallbackName).trim() || fallbackName;
+    let copyIndex = match?.[2] ? Number(match[2]) + 1 : 1;
+
+    while (true) {
+      const candidate = copyIndex === 1
+        ? `${rootName} (${copyLabel})`
+        : `${rootName} (${copyLabel} ${copyIndex})`;
+
+      if (!normalizedNames.has(candidate)) {
+        return candidate;
+      }
+
+      copyIndex += 1;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════

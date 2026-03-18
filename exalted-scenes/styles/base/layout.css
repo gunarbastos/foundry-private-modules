@@ -10,17 +10,19 @@
    ─────────────────────────────────────────────────────────────── */
 
 .es-layout {
+  --es-sidebar-width: 220px;
+  --es-inspector-width: clamp(312px, 32vw, 360px);
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: var(--es-sidebar-width) 1fr;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: var(--es-bg-app);
-  transition: grid-template-columns var(--es-duration-normal) var(--es-ease-out);
+  /* grid-template-columns transition removed — triggers full layout recalc for all children on every frame */
 }
 
 .es-layout.with-inspector {
-  grid-template-columns: 220px 1fr 320px;
+  grid-template-columns: var(--es-sidebar-width) 1fr var(--es-inspector-width);
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -28,6 +30,9 @@
    ─────────────────────────────────────────────────────────────── */
 
 .es-library {
+  --es-library-fab-clearance: 132px;
+  --es-library-fab-offset-right: calc(var(--es-space-xl) + 10px);
+  --es-library-fab-offset-bottom: calc(var(--es-space-xl) + 10px);
   display: flex;
   flex-direction: column;
   background: var(--es-bg-app);
@@ -37,15 +42,43 @@
 
 /* Library Header / Toolbar */
 .es-library-header {
-  padding: var(--es-space-2) var(--es-space-4);
+  padding: var(--es-space-3) var(--es-space-4);
   background: var(--es-bg-panel);
   border-bottom: 1px solid var(--es-border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--es-space-3);
-  height: 48px;
+  min-height: 56px;
+  height: auto;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: var(--es-z-sticky);
+  overflow: visible;
+}
+
+.es-search-container {
+  flex: 1 1 260px;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.es-search-container .es-search-input {
+  width: 100%;
+  max-width: 100%;
+}
+
+.es-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--es-space-2);
+  flex: 1 1 320px;
+  min-width: 0;
+  margin-left: auto;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -107,8 +140,36 @@
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--es-space-4); /* Increased from space-3 for more breathing room */
   padding: var(--es-space-4);
+  padding-right: calc(var(--es-space-4) + 10px);
+  padding-bottom: calc(var(--es-space-4) + var(--es-library-fab-clearance));
   overflow-y: auto;
   flex: 1;
+  /* Keep sparse grids packed at the top instead of stretching a single row. */
+  align-content: start;
+}
+
+.es-grid--sectioned {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-5);
+}
+
+.es-grid-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--es-space-3);
+  min-width: 0;
+}
+
+.es-grid-section--items {
+  padding-top: 2px;
+}
+
+.es-grid-cluster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--es-space-4);
+  align-items: start;
 }
 
 /* Empty state spans full grid */
@@ -121,6 +182,11 @@
 /* Phase 4: For very small panels, allow smaller cards */
 @media (max-width: 500px) {
   .es-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--es-space-3);
+  }
+
+  .es-grid-cluster {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: var(--es-space-3);
   }

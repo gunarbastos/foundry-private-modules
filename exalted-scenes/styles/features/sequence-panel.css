@@ -65,7 +65,7 @@
   background: transparent;
   border: none;
   border-radius: var(--es-radius-md);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-sequence-header .es-btn-icon:hover {
@@ -101,7 +101,7 @@
   border: 1px solid var(--es-border-default);
   border-radius: var(--es-radius-md);
   color: var(--es-text-primary);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,7 +199,7 @@
   cursor: pointer;
   border: 2px solid transparent;
   background: var(--es-bg-panel);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-sequence-thumb:hover {
@@ -236,7 +236,6 @@
   font-weight: 500;
   padding: 2px 6px;
   border-radius: var(--es-radius-sm);
-  backdrop-filter: blur(4px);
 }
 
 .es-sequence-thumb--active .es-sequence-thumb-num {
@@ -258,11 +257,10 @@
   font-size: 10px;
   cursor: pointer;
   opacity: 0;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
 }
 
 .es-sequence-thumb:hover .es-sequence-thumb-remove {
@@ -362,7 +360,7 @@
   font-size: var(--es-font-size-xs);
   padding: 0 var(--es-space-sm);
   min-width: 80px;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-sequence-setting input[type="number"] {
@@ -418,7 +416,6 @@
   box-shadow: var(--es-shadow-lg);
   padding: var(--es-space-xs);
   min-width: 180px;
-  backdrop-filter: blur(12px);
 }
 
 .es-context-menu-item {
@@ -435,7 +432,7 @@
   text-align: left;
   border-radius: var(--es-radius-md);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-context-menu-item i {
@@ -477,6 +474,17 @@
   height: 1px;
   background: var(--es-border-subtle);
   margin: var(--es-space-xs) 0;
+}
+
+.es-context-submenu-arrow {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--es-text-secondary);
+}
+
+.es-context-submenu {
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 /* ===========================================

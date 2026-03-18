@@ -7,6 +7,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
+    this.targetFolderId = options.folderId ?? null;
     this.uiState = {
       step: 1,
       data: {
@@ -17,6 +18,14 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
       },
       uploadProgress: 0
     };
+  }
+
+  render(...args) {
+    if (this.element) {
+      this._syncPendingRenameInputs();
+    }
+
+    return super.render(...args);
   }
 
   static DEFAULT_OPTIONS = {
@@ -36,7 +45,8 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       'next-step': SmartCreator._onNextStep,
       'prev-step': SmartCreator._onPrevStep,
-      'trigger-upload': SmartCreator._onTriggerUpload,
+      'trigger-upload-images': SmartCreator._onTriggerUploadImages,
+      'trigger-upload-folder': SmartCreator._onTriggerUploadFolder,
       'remove-tag': SmartCreator._onRemoveTag,
       'toggle-exclude': SmartCreator._onToggleExclude,
       'set-default': SmartCreator._onSetDefault,
@@ -62,6 +72,66 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
       emotionCount: Object.keys(this.uiState.data.emotions).length,
       uploadProgress: this.uiState.uploadProgress
     };
+  }
+
+  _renameEmotionKey(originalKey, nextKey, { notify = true } = {}) {
+    const currentKey = String(originalKey || '').trim();
+    const targetKey = String(nextKey || '').trim();
+
+    if (!currentKey || !this.uiState.data.emotions[currentKey]) {
+      return { changed: false, key: currentKey };
+    }
+
+    if (!targetKey || targetKey === currentKey) {
+      return { changed: false, key: currentKey };
+    }
+
+    if (this.uiState.data.emotions[targetKey]) {
+      if (notify) {
+        ui.notifications.warn(format('Notifications.WarnEmotionAlreadyExists', { name: targetKey }));
+      }
+      return { changed: false, key: currentKey, duplicate: true };
+    }
+
+    const entry = this.uiState.data.emotions[currentKey];
+    delete this.uiState.data.emotions[currentKey];
+    this.uiState.data.emotions[targetKey] = { ...entry, key: targetKey };
+
+    if (this.uiState.data.defaultEmotion === currentKey) {
+      this.uiState.data.defaultEmotion = targetKey;
+    }
+
+    return { changed: true, key: targetKey };
+  }
+
+  _commitEmotionRenameInput(input, { notify = true } = {}) {
+    if (!input) {
+      return { changed: false, key: '' };
+    }
+
+    const result = this._renameEmotionKey(input.dataset.originalKey, input.value, { notify });
+    input.value = result.key || input.dataset.originalKey || '';
+    if (result.key) {
+      input.dataset.originalKey = result.key;
+    }
+    return result;
+  }
+
+  _resolveEmotionActionKey(target) {
+    const renameInput = target?.closest('.es-smart-creator__review-card')?.querySelector('input[data-action="rename-emotion"]');
+    if (!renameInput) {
+      return target?.dataset.key || '';
+    }
+
+    return this._commitEmotionRenameInput(renameInput).key || target?.dataset.key || '';
+  }
+
+  _syncPendingRenameInputs() {
+    if (!this.element) return;
+
+    for (const input of this.element.querySelectorAll('input[data-action="rename-emotion"]')) {
+      this._commitEmotionRenameInput(input);
+    }
   }
 
   _onRender(context, options) {
@@ -138,20 +208,27 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
      UPLOAD & PARSING LOGIC
      ═══════════════════════════════════════════════════════════════ */
 
-  static _onTriggerUpload(event, target) {
-    const input = this.element.querySelector('.es-file-input');
+  static _onTriggerUploadImages(event, target) {
+    const input = this.element.querySelector('.es-file-input-images');
     input.click();
-    
-    // Bind change event once
     input.onchange = async (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
-
-      await this._processUpload(files);
+      await this._processUpload(files, { fromFolder: false });
     };
   }
 
-  async _processUpload(files) {
+  static _onTriggerUploadFolder(event, target) {
+    const input = this.element.querySelector('.es-file-input-folder');
+    input.click();
+    input.onchange = async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+      await this._processUpload(files, { fromFolder: true });
+    };
+  }
+
+  async _processUpload(files, { fromFolder = true } = {}) {
     const charName = this.uiState.data.name;
     // Sanitize folder name
     const folderName = charName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -172,18 +249,23 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
 
     let processedCount = 0;
     const emotions = {};
+    let knownUploads = await this._browseUploadedFiles(targetDir);
 
     for (const file of files) {
       // Upload File
       try {
-        // We use FilePicker.upload
-        // Note: 'data' source is usually 'user' data.
-        await FilePicker.upload('data', targetDir, file);
+        const previousUploads = new Set(knownUploads.keys());
+        const uploadResult = await FilePicker.upload('data', targetDir, file);
+        const path = await this._resolveUploadedPath(targetDir, file.name, uploadResult, previousUploads);
+        const uploadedFileName = path.split('/').pop()?.toLowerCase();
+        if (uploadedFileName) {
+          knownUploads.set(uploadedFileName, path);
+        }
         
-        const path = `${targetDir}/${file.name}`;
-        
-        // Smart Parse
-        const emotionKey = this._parseEmotionName(file.name);
+        // Smart Parse — folder mode strips character prefix, image mode keeps full name
+        const emotionKey = fromFolder
+          ? this._parseEmotionName(file.name)
+          : this._parseSimpleEmotionName(file.name);
         
         emotions[emotionKey] = {
           key: emotionKey,
@@ -232,10 +314,68 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  async _browseUploadedFiles(targetDir) {
+    try {
+      const browseResult = await FilePicker.browse('data', targetDir);
+      return new Map(
+        (browseResult?.files || [])
+          .map((path) => {
+            const fileName = path.split('/').pop()?.toLowerCase();
+            return fileName ? [fileName, path] : null;
+          })
+          .filter(Boolean)
+      );
+    } catch (error) {
+      return new Map();
+    }
+  }
+
+  _getUploadBaseName(fileName) {
+    return String(fileName || '')
+      .replace(/\.[^/.]+$/, '')
+      .toLowerCase();
+  }
+
+  async _resolveUploadedPath(targetDir, uploadName, uploadResult, previousFiles = new Set()) {
+    const reportedPath = typeof uploadResult?.path === 'string' ? uploadResult.path.trim() : '';
+    const currentFiles = await this._browseUploadedFiles(targetDir);
+
+    if (reportedPath) {
+      const reportedName = reportedPath.split('/').pop()?.toLowerCase();
+      if (reportedName && currentFiles.has(reportedName)) {
+        return currentFiles.get(reportedName);
+      }
+    }
+
+    const normalizedUploadName = String(uploadName || '').toLowerCase();
+    if (normalizedUploadName && currentFiles.has(normalizedUploadName)) {
+      return currentFiles.get(normalizedUploadName);
+    }
+
+    const expectedBaseName = this._getUploadBaseName(uploadName);
+    const newFiles = Array.from(currentFiles.entries())
+      .filter(([fileName]) => !previousFiles.has(fileName))
+      .map(([fileName, path]) => ({ fileName, path }));
+
+    const newBaseMatches = newFiles.filter(({ fileName }) => this._getUploadBaseName(fileName) === expectedBaseName);
+    if (newBaseMatches.length === 1) {
+      return newBaseMatches[0].path;
+    }
+
+    const allBaseMatches = Array.from(currentFiles.entries())
+      .filter(([fileName]) => this._getUploadBaseName(fileName) === expectedBaseName)
+      .map(([, path]) => path);
+    if (allBaseMatches.length === 1) {
+      return allBaseMatches[0];
+    }
+
+    return reportedPath || `${targetDir}/${uploadName}`;
+  }
+
   _parseEmotionName(filename) {
     const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
     const underscoreIndex = nameWithoutExt.indexOf('_');
-    
+
     if (underscoreIndex !== -1) {
       // "Shura_Happy" -> "Happy"
       // "Shura_Very_Angry" -> "Very Angry"
@@ -244,12 +384,24 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
     return nameWithoutExt; // Fallback
   }
 
+  _parseSimpleEmotionName(filename) {
+    // For individual file uploads — keep full name, replace separators with spaces
+    // "Happy.png" -> "Happy"
+    // "Very_Angry.png" -> "Very Angry"
+    // "sad-smile.png" -> "Sad Smile"
+    return filename
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[_-]/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase())
+      .trim();
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      REVIEW ACTIONS
      ═══════════════════════════════════════════════════════════════ */
 
   static _onToggleExclude(event, target) {
-    const key = target.dataset.key;
+    const key = this._resolveEmotionActionKey(target);
     if (this.uiState.data.emotions[key]) {
       this.uiState.data.emotions[key].excluded = !this.uiState.data.emotions[key].excluded;
       this.render();
@@ -257,7 +409,7 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static _onSetDefault(event, target) {
-    const key = target.dataset.key;
+    const key = this._resolveEmotionActionKey(target);
     if (this.uiState.data.emotions[key] && !this.uiState.data.emotions[key].excluded) {
       this.uiState.data.defaultEmotion = key;
       this.render();
@@ -265,24 +417,8 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static _onRenameEmotion(event, target) {
-    const originalKey = target.dataset.originalKey;
-    const newKey = target.value.trim();
-    
-    if (newKey && newKey !== originalKey) {
-      // We need to update the key in the object. 
-      // This is tricky because we are iterating over the object in HBS.
-      // Ideally we should have used an array.
-      // For now, let's just update a display property if we had one, but we used the key.
-      
-      const entry = this.uiState.data.emotions[originalKey];
-      delete this.uiState.data.emotions[originalKey];
-      entry.key = newKey;
-      this.uiState.data.emotions[newKey] = entry;
-      
-      if (this.uiState.data.defaultEmotion === originalKey) {
-        this.uiState.data.defaultEmotion = newKey;
-      }
-      
+    const result = this._commitEmotionRenameInput(target);
+    if (result.changed) {
       this.render();
     }
   }
@@ -292,6 +428,7 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
      ═══════════════════════════════════════════════════════════════ */
 
   static async _onFinish(event, target) {
+    this._syncPendingRenameInputs();
     const { name, tags, emotions, defaultEmotion } = this.uiState.data;
     
     // Construct States Object
@@ -312,6 +449,7 @@ export class SmartCreator extends HandlebarsApplicationMixin(ApplicationV2) {
       name: name,
       states: finalStates,
       currentState: defaultEmotion || Object.keys(finalStates)[0],
+      folder: this.targetFolderId,
       tags: tags
     });
 

@@ -10,6 +10,7 @@
 import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
 import { localize, format } from '../../utils/i18n.js';
+import { ExaltedScenesDialog } from '../ThemedDialog.js';
 
 /**
  * Manages drag-and-drop interactions in the GMPanel.
@@ -45,21 +46,25 @@ export class DragDropManager extends BaseManager {
       const memberSceneId = parentStrip?.dataset.sceneId || this.uiState.selectedId;
 
       // Right-click context menu to remove from scene
-      member.addEventListener('contextmenu', (e) => {
+      member.addEventListener('contextmenu', async (e) => {
         e.preventDefault();
         const charId = member.dataset.characterId;
 
-        Dialog.confirm({
+        const confirmed = await ExaltedScenesDialog.confirm({
           title: localize('Dialog.RemoveFromScene.Title'),
-          content: `<p>${localize('Dialog.RemoveFromScene.Content')}</p>`,
-          yes: () => {
-            Store.removeCastMember(memberSceneId, charId);
-            if (this.uiState.emotionPicker.characterId === charId) {
-              this.uiState.emotionPicker.open = false;
-            }
-            this.render();
-          }
+          content: localize('Dialog.RemoveFromScene.Content'),
+          tone: 'warning',
+          confirmLabel: localize('Common.Remove'),
+          confirmVariant: 'primary'
         });
+
+        if (!confirmed) return;
+
+        Store.removeCastMember(memberSceneId, charId);
+        if (this.uiState.emotionPicker.characterId === charId) {
+          this.uiState.emotionPicker.open = false;
+        }
+        this.render();
       }, { signal: this.signal });
 
       // Drag Start for Cast Member (Reordering)
@@ -143,6 +148,49 @@ export class DragDropManager extends BaseManager {
     });
   }
 
+  _getSelectedLibraryItemIds(itemType) {
+    const collection = itemType === 'scene' ? Store.scenes : Store.characters;
+    return Array.from(this.uiState.selectedIds || []).filter((id) => collection.has(id));
+  }
+
+  _buildLibraryDragPayload(card, cardIndex) {
+    const itemType = card.dataset.type === 'character' ? 'character' : 'scene';
+    const itemId = card.dataset.id;
+    const selectedIds = this._getSelectedLibraryItemIds(itemType);
+    const isGroupDrag = selectedIds.length > 1 && selectedIds.includes(itemId);
+    const itemIds = isGroupDrag ? selectedIds : [itemId];
+
+    return {
+      type: itemType,
+      id: itemId,
+      itemIds,
+      selectionCount: itemIds.length,
+      isGroupDrag,
+      isLibraryItem: true,
+      cardIndex
+    };
+  }
+
+  _moveLibrarySelection(data, folderId, notificationKey) {
+    if (!data?.isLibraryItem) return false;
+
+    const itemIds = Array.isArray(data.itemIds) && data.itemIds.length
+      ? data.itemIds
+      : [data.id].filter(Boolean);
+    if (!itemIds.length) return false;
+
+    const movedCount = Store.moveItemsToFolder(itemIds, data.type, folderId);
+    if (!movedCount) return false;
+
+    if (itemIds.some((id) => this.uiState.selectedIds.has(id))) {
+      this.panel.clearCardSelection();
+    }
+
+    this.render();
+    ui.notifications.info(localize(notificationKey));
+    return true;
+  }
+
   /**
    * Sets up drag-and-drop for cards (scenes/characters) in the library grid.
    * Handles both moving to folders and reordering.
@@ -152,6 +200,7 @@ export class DragDropManager extends BaseManager {
     const allCards = this.element.querySelectorAll('.es-card');
     const isFavorites = this.uiState.currentView.includes('favorites');
     const isInFolder = this.uiState.currentFolderId !== null;
+    const isListView = this.uiState.viewMode === 'list';
     const canReorder = !isFavorites && !isInFolder; // Can only reorder in "All" view at root
 
     allCards.forEach((card, cardIndex) => {
@@ -159,17 +208,12 @@ export class DragDropManager extends BaseManager {
       card.dataset.cardIndex = cardIndex; // Store index for reordering
 
       card.addEventListener('dragstart', (e) => {
-        const itemType = card.dataset.type;
-        const itemId = card.dataset.id;
+        const dragData = this._buildLibraryDragPayload(card, cardIndex);
 
-        e.dataTransfer.setData('text/plain', JSON.stringify({
-          type: itemType === 'character' ? 'character' : 'scene',
-          id: itemId,
-          isLibraryItem: true, // Flag to identify library items for folder drop
-          cardIndex: cardIndex // For reordering
-        }));
+        e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
         e.dataTransfer.effectAllowed = 'copyMove';
 
+        card.dataset.dragSelectionCount = String(dragData.selectionCount);
         card.classList.add('es-card--dragging');
 
         // Show drop zones on folders
@@ -178,7 +222,7 @@ export class DragDropManager extends BaseManager {
         });
 
         // Show reorder indicators on other cards (only in reorderable views)
-        if (canReorder) {
+        if (canReorder && dragData.selectionCount === 1) {
           allCards.forEach(c => {
             if (c !== card) c.classList.add('es-card--reorder-target');
           });
@@ -186,6 +230,7 @@ export class DragDropManager extends BaseManager {
       }, { signal: this.signal });
 
       card.addEventListener('dragend', (e) => {
+        delete card.dataset.dragSelectionCount;
         card.classList.remove('es-card--dragging');
         // Remove drop zone indicators
         this.element.querySelectorAll('.es-folder-card').forEach(f => {
@@ -193,7 +238,13 @@ export class DragDropManager extends BaseManager {
         });
         // Remove reorder indicators
         allCards.forEach(c => {
-          c.classList.remove('es-card--reorder-target', 'es-card--drag-over-left', 'es-card--drag-over-right');
+          c.classList.remove(
+            'es-card--reorder-target',
+            'es-card--drag-over-left',
+            'es-card--drag-over-right',
+            'es-card--drag-over-top',
+            'es-card--drag-over-bottom'
+          );
         });
       }, { signal: this.signal });
 
@@ -206,33 +257,56 @@ export class DragDropManager extends BaseManager {
           const draggingCard = this.element.querySelector('.es-card--dragging');
           if (!draggingCard || draggingCard === card) return;
           if (draggingCard.dataset.type !== card.dataset.type) return;
+          if (Number(draggingCard.dataset.dragSelectionCount || 1) > 1) return;
 
           e.dataTransfer.dropEffect = 'move';
 
-          // Determine drop position (left or right of target)
+          // Determine drop position based on layout direction.
           const rect = card.getBoundingClientRect();
-          const midpoint = rect.left + rect.width / 2;
-          const isLeft = e.clientX < midpoint;
+          const midpoint = isListView
+            ? rect.top + rect.height / 2
+            : rect.left + rect.width / 2;
+          const insertBefore = isListView ? e.clientY < midpoint : e.clientX < midpoint;
 
           // Update visual indicator
-          card.classList.remove('es-card--drag-over-left', 'es-card--drag-over-right');
-          card.classList.add(isLeft ? 'es-card--drag-over-left' : 'es-card--drag-over-right');
+          card.classList.remove(
+            'es-card--drag-over-left',
+            'es-card--drag-over-right',
+            'es-card--drag-over-top',
+            'es-card--drag-over-bottom'
+          );
+          card.classList.add(
+            isListView
+              ? (insertBefore ? 'es-card--drag-over-top' : 'es-card--drag-over-bottom')
+              : (insertBefore ? 'es-card--drag-over-left' : 'es-card--drag-over-right')
+          );
         }, { signal: this.signal });
 
         card.addEventListener('dragleave', (e) => {
           if (!card.contains(e.relatedTarget)) {
-            card.classList.remove('es-card--drag-over-left', 'es-card--drag-over-right');
+            card.classList.remove(
+              'es-card--drag-over-left',
+              'es-card--drag-over-right',
+              'es-card--drag-over-top',
+              'es-card--drag-over-bottom'
+            );
           }
         }, { signal: this.signal });
 
         card.addEventListener('drop', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          card.classList.remove('es-card--drag-over-left', 'es-card--drag-over-right');
+          card.classList.remove(
+            'es-card--drag-over-left',
+            'es-card--drag-over-right',
+            'es-card--drag-over-top',
+            'es-card--drag-over-bottom'
+          );
 
           try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             if (!data.isLibraryItem) return;
+            if ((data.itemIds?.length || 0) > 1) return;
 
             // Only reorder same type
             const targetType = card.dataset.type === 'scene' ? 'scene' : 'character';
@@ -250,17 +324,19 @@ export class DragDropManager extends BaseManager {
 
             if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
 
-            // Determine if dropping left or right
+            // Determine whether to insert before or after the hovered card.
             const rect = card.getBoundingClientRect();
-            const midpoint = rect.left + rect.width / 2;
-            const isLeft = e.clientX < midpoint;
+            const midpoint = isListView
+              ? rect.top + rect.height / 2
+              : rect.left + rect.width / 2;
+            const insertBefore = isListView ? e.clientY < midpoint : e.clientX < midpoint;
 
             // Create new order
             const newOrder = [...currentOrder];
             newOrder.splice(fromIndex, 1); // Remove from old position
             let insertIndex = currentOrder.indexOf(card.dataset.id);
             if (fromIndex < insertIndex) insertIndex--; // Adjust for removed item
-            if (!isLeft) insertIndex++; // Insert after if dropping on right
+            if (!insertBefore) insertIndex++; // Insert after the target
             newOrder.splice(insertIndex, 0, data.id);
 
             // Save custom order and switch to custom sort
@@ -312,10 +388,7 @@ export class DragDropManager extends BaseManager {
           const data = JSON.parse(e.dataTransfer.getData('text/plain'));
           if (data.isLibraryItem) {
             const folderId = folder.dataset.folderId;
-            const itemType = data.type;
-            Store.moveItemToFolder(data.id, itemType, folderId);
-            this.render();
-            ui.notifications.info(localize('Notifications.MovedToFolder'));
+            this._moveLibrarySelection(data, folderId, 'Notifications.MovedToFolder');
           }
         } catch (err) {
           console.warn('Invalid folder drop', err);
@@ -348,9 +421,7 @@ export class DragDropManager extends BaseManager {
             // Move to parent folder (or root if already at first level)
             const currentFolder = Store.folders.get(this.uiState.currentFolderId);
             const targetFolderId = currentFolder?.parent || null;
-            Store.moveItemToFolder(data.id, data.type, targetFolderId);
-            this.render();
-            ui.notifications.info(localize('Notifications.MovedToParentFolder'));
+            this._moveLibrarySelection(data, targetFolderId, 'Notifications.MovedToParentFolder');
           }
         } catch (err) {
           console.warn('Invalid back-folder drop', err);
@@ -387,6 +458,7 @@ export class DragDropManager extends BaseManager {
 
         try {
           const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          if ((data.itemIds?.length || 0) > 1) return;
           if (data.type === 'character') {
             const targetSceneId = sceneId || this.uiState.selectedId;
             const scene = Store.scenes.get(targetSceneId);
@@ -440,6 +512,7 @@ export class DragDropManager extends BaseManager {
 
       try {
         const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        if ((data.itemIds?.length || 0) > 1) return;
 
         // Only accept scenes (not characters)
         if (data.type !== 'scene' || !data.isLibraryItem) return;

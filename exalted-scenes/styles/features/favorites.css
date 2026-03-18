@@ -14,8 +14,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-default);
   color: var(--es-text-muted);
   display: flex;
   align-items: center;
@@ -23,21 +23,22 @@
   cursor: pointer;
   font-size: var(--es-font-size-sm);
   z-index: 10;
-  opacity: 0;
-  transform: scale(0.9);
-  transition: all var(--es-duration-fast) ease-out;
-  backdrop-filter: blur(4px);
+  opacity: 0.65;
+  transform: scale(1);
+  transition: var(--es-transition-all);
 }
 
 /* Show on hover or when active */
 .es-card:hover .es-favorite-btn,
+.es-card--selected .es-favorite-btn,
 .es-favorite-btn--active {
   opacity: 1;
   transform: scale(1);
 }
 
 .es-favorite-btn:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--es-bg-elevated);
+  border-color: var(--es-border-hover);
   color: var(--es-warning);
 }
 
@@ -119,7 +120,7 @@
   border: none;
   color: var(--es-text-muted);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-favorite-toggle:hover {
@@ -147,16 +148,18 @@
 .es-grid--list-view .es-favorite-btn {
   position: absolute;
   top: 50%;
-  right: var(--es-space-sm);
+  right: 32px;
   left: auto;
   transform: translateY(-50%);
-  opacity: 0;
+  opacity: 0.45;
   background: transparent;
   width: 24px;
   height: 24px;
+  border-color: transparent;
 }
 
 .es-grid--list-view .es-card:hover .es-favorite-btn,
+.es-grid--list-view .es-card--selected .es-favorite-btn,
 .es-grid--list-view .es-favorite-btn--active {
   opacity: 1;
   transform: translateY(-50%);

@@ -4,50 +4,84 @@
        HEADER - Avatar + Name
        ═══════════════════════════════════════════════════════════════ -->
   <header class="es-char-editor__header">
-    <div class="es-char-editor__avatar-wrapper" data-action="change-avatar" title="{{localize "EXALTED-SCENES.CharEditor.ClickToChangeAvatar"}}">
-      <img src="{{character.image}}" class="es-char-editor__avatar" alt="Character avatar">
-      <div class="es-char-editor__avatar-overlay">
-        <i class="fas fa-camera"></i>
+    <div class="es-char-editor__hero-media">
+      {{#if character.heroPreview}}
+        <div class="es-char-editor__hero-preview" aria-hidden="true">
+          <img src="{{character.heroPreview}}" alt="">
+        </div>
+      {{/if}}
+      <div class="es-char-editor__avatar-wrapper" data-action="change-avatar" title="{{localize "EXALTED-SCENES.CharEditor.ClickToChangeAvatar"}}">
+        <img src="{{character.image}}" class="es-char-editor__avatar" alt="Character avatar" style="{{character.focusStyle}}" data-focus-bind="{{character.currentState}}">
+        <div class="es-char-editor__avatar-overlay">
+          <i class="fas fa-camera"></i>
+        </div>
+      </div>
+      {{#if character.heroPreview}}
+        <div class="es-char-editor__hero-media-badge">
+          <i class="fas fa-user"></i>
+          <span>{{heroPoses.length}}</span>
+        </div>
+      {{/if}}
+    </div>
+    <div class="es-char-editor__hero-copy">
+      <div class="es-char-editor__hero-kicker">{{localize "EXALTED-SCENES.PlayerPanel.EditCharacter"}}</div>
+      <div class="es-char-editor__hero-title-row">
+        <input
+          type="text"
+          name="name"
+          value="{{character.name}}"
+          placeholder="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
+          class="es-char-editor__name"
+          aria-label="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
+        >
+      </div>
+      <div class="es-char-editor__hero-stats">
+        {{#each heroHeaderStats}}
+          <div class="es-char-editor__hero-stat {{#if toneClass}}{{toneClass}}{{/if}}">
+            <div class="es-char-editor__hero-stat-label">
+              <i class="fas {{icon}}"></i>
+              <span>{{label}}</span>
+            </div>
+            <div class="es-char-editor__hero-stat-value" title="{{value}}">{{value}}</div>
+          </div>
+        {{/each}}
       </div>
     </div>
-    <input
-      type="text"
-      name="name"
-      value="{{character.name}}"
-      placeholder="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
-      class="es-char-editor__name"
-      aria-label="{{localize "EXALTED-SCENES.CharEditor.CharacterName"}}"
-    >
   </header>
 
   <!-- ═══════════════════════════════════════════════════════════════
        TABS
        ═══════════════════════════════════════════════════════════════ -->
   <nav class="es-char-editor__tabs">
-    <button
-      type="button"
-      class="es-char-editor__tab {{#if (eq activeTab 'identity')}}es-char-editor__tab--active{{/if}}"
-      data-tab="identity"
-      data-action="tab-switch"
-    >
-      <i class="fas fa-id-card"></i>
-      <span>{{localize "EXALTED-SCENES.CharEditor.Identity"}}</span>
-    </button>
-    <button
-      type="button"
-      class="es-char-editor__tab {{#if (eq activeTab 'emotions')}}es-char-editor__tab--active{{/if}}"
-      data-tab="emotions"
-      data-action="tab-switch"
-    >
-      <i class="fas fa-theater-masks"></i>
-      <span>{{localize "EXALTED-SCENES.CharEditor.Emotions"}}</span>
-    </button>
+    <div class="es-char-editor__tabs-track">
+      {{#each tabs}}
+        <button
+          type="button"
+          class="es-char-editor__tab {{#if isActive}}es-char-editor__tab--active{{/if}}"
+          data-tab="{{key}}"
+          data-action="tab-switch"
+        >
+          <i class="fas {{icon}}"></i>
+          <span>{{label}}</span>
+          {{#if badge}}
+            <span class="es-char-editor__tab-badge">{{badge}}</span>
+          {{/if}}
+        </button>
+      {{/each}}
+    </div>
   </nav>
 
   <!-- ═══════════════════════════════════════════════════════════════
        CONTENT
        ═══════════════════════════════════════════════════════════════ -->
   <main class="es-char-editor__content">
+    <div class="es-char-editor__panel-intro">
+      <div class="es-char-editor__panel-intro-copy">
+        <div class="es-char-editor__panel-intro-kicker">{{localize "EXALTED-SCENES.PlayerPanel.EditCharacter"}}</div>
+        <div class="es-char-editor__panel-intro-title">{{activeTabMeta.label}}</div>
+      </div>
+      <div class="es-char-editor__panel-intro-badge" title="{{activeTabMeta.hint}}">{{activeTabMeta.hint}}</div>
+    </div>
 
     <!-- ─────────────────────────────────────────────────────────────
          IDENTITY TAB
@@ -125,6 +159,24 @@
           </button>
         </section>
 
+        <!-- Broadcast Name Section -->
+        <section class="es-char-editor__section">
+          <div class="es-char-editor__section-header">
+            <i class="fas fa-user-secret"></i>
+            <span>{{localize "EXALTED-SCENES.CharEditor.BroadcastName"}}</span>
+          </div>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.BroadcastNameDesc"}}</p>
+
+          <button
+            type="button"
+            class="es-char-editor__visibility-btn {{#if hideNameInBroadcast}}es-char-editor__visibility-btn--active{{/if}}"
+            data-action="toggle-broadcast-name"
+          >
+            <i class="fas {{#if hideNameInBroadcast}}fa-eye-slash{{else}}fa-eye{{/if}}"></i>
+            <span>{{#if hideNameInBroadcast}}{{localize "EXALTED-SCENES.CharEditor.BroadcastNameHidden"}}{{else}}{{localize "EXALTED-SCENES.CharEditor.BroadcastNameVisible"}}{{/if}}</span>
+          </button>
+        </section>
+
         <!-- Permissions Section -->
         <section class="es-char-editor__section">
           <div class="es-char-editor__section-header">
@@ -139,41 +191,75 @@
           </button>
         </section>
 
-        <!-- Music Request Playlist Section -->
+        <!-- Character Theme Section (Playlists + Entrance Sound) -->
         <section class="es-char-editor__section">
           <div class="es-char-editor__section-header">
             <i class="fas fa-music"></i>
-            <span>{{localize "EXALTED-SCENES.CharEditor.MusicRequests"}}</span>
+            <span>{{localize "EXALTED-SCENES.CharEditor.CharacterTheme"}}</span>
           </div>
-          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.MusicRequestsDesc"}}</p>
+          <p class="es-char-editor__section-desc">{{localize "EXALTED-SCENES.CharEditor.CharacterThemeDesc"}}</p>
 
-          {{#if linkedPlaylist}}
-            <div class="es-char-editor__linked-playlist">
-              <div class="es-char-editor__linked-playlist-icon">
-                <i class="fas fa-compact-disc"></i>
-              </div>
-              <div class="es-char-editor__linked-playlist-info">
-                <span class="es-char-editor__linked-playlist-name">{{linkedPlaylist.name}}</span>
-                <span class="es-char-editor__linked-playlist-count">{{linkedPlaylist.trackCount}} tracks</span>
-              </div>
-              <button type="button" class="es-char-editor__linked-playlist-remove" data-action="clear-music-playlist" title="{{localize "EXALTED-SCENES.CharEditor.RemovePlaylist"}}">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          {{else}}
-            {{#if availablePlaylists.length}}
-              <select name="musicPlaylistId" class="es-char-editor__select">
-                <option value="">{{localize "EXALTED-SCENES.CharEditor.NoPlaylistAssigned"}}</option>
-                {{#each availablePlaylists}}
-                  <option value="{{id}}">{{name}} ({{trackCount}} tracks)</option>
+          {{!-- Assigned Playlists --}}
+          <div class="es-char-editor__subsection">
+            <div class="es-char-editor__subsection-label">{{localize "EXALTED-SCENES.CharEditor.AssignedPlaylists"}}</div>
+            {{#if hasPlaylists}}
+              <div class="es-char-editor__playlist-list">
+                {{#each musicPlaylists}}
+                  <div class="es-char-editor__playlist-item">
+                    <i class="fas fa-compact-disc"></i>
+                    <span class="es-char-editor__playlist-name">{{name}}</span>
+                    <span class="es-char-editor__playlist-count">{{localize "EXALTED-SCENES.MusicPicker.CountTracks" count=trackCount}}</span>
+                    <button type="button" class="es-char-editor__playlist-remove" data-action="remove-music-playlist" data-index="{{index}}" title="{{localize "EXALTED-SCENES.CharEditor.RemovePlaylist"}}">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
                 {{/each}}
-              </select>
+              </div>
             {{else}}
-              <div class="es-char-editor__no-playlists">
+              <div class="es-char-editor__empty-hint">
                 <i class="fas fa-info-circle"></i>
-                <span>{{localize "EXALTED-SCENES.CharEditor.NoPlaylistsAvailable"}}</span>
+                <span>{{localize "EXALTED-SCENES.CharEditor.NoPlaylistsAssignedYet"}}</span>
               </div>
             {{/if}}
+            {{!-- Add Playlist dropdown + button --}}
+            {{#if availablePlaylists.length}}
+              <div class="es-char-editor__add-playlist-row">
+                <select name="addPlaylistId" class="es-char-editor__select">
+                  <option value="">{{localize "EXALTED-SCENES.CharEditor.AddPlaylist"}}...</option>
+                  {{#each availablePlaylists}}
+                    <option value="{{id}}">{{name}} ({{trackCount}} tracks)</option>
+                  {{/each}}
+                </select>
+                <button type="button" class="es-char-editor__add-playlist-btn" data-action="add-music-playlist" title="{{localize "EXALTED-SCENES.CharEditor.AddPlaylist"}}">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            {{/if}}
+          </div>
+
+          {{!-- Entrance Sound --}}
+          {{#if hasNarratorJukebox}}
+          <div class="es-char-editor__subsection">
+            <div class="es-char-editor__subsection-label">{{localize "EXALTED-SCENES.CharEditor.EntranceSound"}}</div>
+            <p class="es-char-editor__subsection-desc">{{localize "EXALTED-SCENES.CharEditor.EntranceSoundDesc"}}</p>
+            {{#if entranceSoundName}}
+              <div class="es-char-editor__entrance-sound">
+                <i class="fas fa-drum"></i>
+                <span class="es-char-editor__entrance-sound-name">{{entranceSoundName}}</span>
+                <button type="button" class="es-char-editor__entrance-sound-action" data-action="preview-entrance-sound" title="{{localize "EXALTED-SCENES.CharEditor.PreviewEntranceSound"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button type="button" class="es-char-editor__entrance-sound-action es-char-editor__entrance-sound-action--remove" data-action="clear-entrance-sound" title="{{localize "EXALTED-SCENES.CharEditor.ClearEntranceSound"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            {{else}}
+              <button type="button" class="es-char-editor__select-sound-btn" data-action="select-entrance-sound">
+                <i class="fas fa-volume-up"></i>
+                <span>{{localize "EXALTED-SCENES.CharEditor.SelectEntranceSound"}}</span>
+              </button>
+            {{/if}}
+          </div>
           {{/if}}
         </section>
 
@@ -207,8 +293,8 @@
         {{#if emotions.length}}
           <div class="es-char-editor__emotions-list">
             {{#each emotions}}
-              <div class="es-char-editor__emotion">
-                <img src="{{path}}" class="es-char-editor__emotion-thumb" alt="{{key}}">
+              <div class="es-char-editor__emotion {{#if isDefault}}es-char-editor__emotion--default{{/if}} {{#if isFocusSelected}}es-char-editor__emotion--focus-selected{{/if}}">
+                <img src="{{path}}" class="es-char-editor__emotion-thumb" alt="{{key}}" style="{{focusStyle}}" data-focus-bind="{{key}}">
                 <div class="es-char-editor__emotion-info">
                   <input
                     type="text"
@@ -221,6 +307,24 @@
                 </div>
                 <button
                   type="button"
+                  class="es-char-editor__emotion-focus-btn {{#if isFocusSelected}}es-char-editor__emotion-focus-btn--active{{/if}}"
+                  data-action="select-focus-emotion"
+                  data-key="{{key}}"
+                  title="{{localize "EXALTED-SCENES.CharEditor.AdjustFraming"}}"
+                >
+                  <i class="fas fa-expand-arrows-alt"></i>
+                </button>
+                <button
+                  type="button"
+                  class="es-char-editor__hero-default-btn {{#if isDefault}}es-char-editor__hero-default-btn--active{{/if}}"
+                  data-action="set-default-emotion"
+                  data-key="{{key}}"
+                  title="{{localize "EXALTED-SCENES.SmartCreator.SetAsDefault"}}"
+                >
+                  <i class="fas {{#if isDefault}}fa-star{{else}}fa-star-half-alt{{/if}}"></i>
+                </button>
+                <button
+                  type="button"
                   class="es-char-editor__emotion-delete"
                   data-action="delete-emotion"
                   data-key="{{key}}"
@@ -231,6 +335,131 @@
               </div>
             {{/each}}
           </div>
+
+          {{#if focusEditor}}
+            <div class="es-char-editor__focus-editor">
+              <div class="es-char-editor__focus-header">
+                <div>
+                  <div class="es-char-editor__focus-kicker">{{localize "EXALTED-SCENES.CharEditor.PortraitFraming"}}</div>
+                  <div class="es-char-editor__focus-title">{{focusEditor.key}}</div>
+                </div>
+                <div class="es-char-editor__focus-badge">{{localize "EXALTED-SCENES.CharEditor.LivePreview"}}</div>
+              </div>
+
+              <p class="es-char-editor__focus-desc">{{localize "EXALTED-SCENES.CharEditor.PortraitFramingDesc"}}</p>
+
+              <div class="es-char-editor__focus-layout">
+                <div class="es-char-editor__focus-stage-card">
+                  <div class="es-char-editor__focus-stage" data-focus-stage data-focus-key="{{focusEditor.key}}">
+                    {{#if (isVideo focusEditor.path)}}
+                      <video
+                        src="{{focusEditor.path}}"
+                        class="es-char-editor__focus-media"
+                        style="{{focusEditor.focusStyle}}"
+                        data-focus-media
+                        data-focus-bind="{{focusEditor.key}}"
+                        muted
+                        loop
+                        autoplay
+                        playsinline
+                        disablepictureinpicture
+                      ></video>
+                    {{else}}
+                      <img
+                        src="{{focusEditor.path}}"
+                        class="es-char-editor__focus-media"
+                        alt="{{focusEditor.key}}"
+                        style="{{focusEditor.focusStyle}}"
+                        data-focus-media
+                        data-focus-bind="{{focusEditor.key}}"
+                      >
+                    {{/if}}
+                    <div class="es-char-editor__focus-guides" aria-hidden="true"></div>
+                  </div>
+                  <div class="es-char-editor__focus-hint">
+                    <i class="fas fa-hand-paper"></i>
+                    <span>{{localize "EXALTED-SCENES.CharEditor.DragToFrame"}}</span>
+                  </div>
+                </div>
+
+                <div class="es-char-editor__focus-preview-rail">
+                  <div class="es-char-editor__focus-preview-card">
+                    <span class="es-char-editor__focus-preview-label">{{localize "EXALTED-SCENES.Config.Shapes.Circle"}}</span>
+                    <div class="es-char-editor__focus-mini es-char-editor__focus-mini--circle">
+                      {{#if (isVideo focusEditor.path)}}
+                        <video src="{{focusEditor.path}}" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}" muted loop autoplay playsinline disablepictureinpicture></video>
+                      {{else}}
+                        <img src="{{focusEditor.path}}" alt="" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}">
+                      {{/if}}
+                    </div>
+                  </div>
+
+                  <div class="es-char-editor__focus-preview-card">
+                    <span class="es-char-editor__focus-preview-label">{{localize "EXALTED-SCENES.Config.Shapes.Square"}}</span>
+                    <div class="es-char-editor__focus-mini es-char-editor__focus-mini--square">
+                      {{#if (isVideo focusEditor.path)}}
+                        <video src="{{focusEditor.path}}" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}" muted loop autoplay playsinline disablepictureinpicture></video>
+                      {{else}}
+                        <img src="{{focusEditor.path}}" alt="" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}">
+                      {{/if}}
+                    </div>
+                  </div>
+
+                  <div class="es-char-editor__focus-preview-card">
+                    <span class="es-char-editor__focus-preview-label">{{localize "EXALTED-SCENES.Config.Shapes.Portrait"}}</span>
+                    <div class="es-char-editor__focus-mini es-char-editor__focus-mini--portrait">
+                      {{#if (isVideo focusEditor.path)}}
+                        <video src="{{focusEditor.path}}" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}" muted loop autoplay playsinline disablepictureinpicture></video>
+                      {{else}}
+                        <img src="{{focusEditor.path}}" alt="" style="{{focusEditor.focusStyle}}" data-focus-bind="{{focusEditor.key}}">
+                      {{/if}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="es-char-editor__focus-controls">
+                <label class="es-char-editor__focus-slider">
+                  <span>{{localize "EXALTED-SCENES.CharEditor.HorizontalFrame"}}</span>
+                  <div class="es-char-editor__focus-slider-row">
+                    <input type="range" min="0" max="100" step="1" value="{{focusEditor.x}}" data-focus-axis="x">
+                    <span data-focus-value="x">{{focusEditor.x}}%</span>
+                  </div>
+                </label>
+
+                <label class="es-char-editor__focus-slider">
+                  <span>{{localize "EXALTED-SCENES.CharEditor.VerticalFrame"}}</span>
+                  <div class="es-char-editor__focus-slider-row">
+                    <input type="range" min="0" max="100" step="1" value="{{focusEditor.y}}" data-focus-axis="y">
+                    <span data-focus-value="y">{{focusEditor.y}}%</span>
+                  </div>
+                </label>
+
+                <label class="es-char-editor__focus-slider">
+                  <span>{{localize "EXALTED-SCENES.CharEditor.ZoomFrame"}}</span>
+                  <div class="es-char-editor__focus-slider-row">
+                    <input type="range" min="1" max="2.25" step="0.05" value="{{focusEditor.scale}}" data-focus-axis="scale">
+                    <span data-focus-value="scale">{{focusEditor.scaleLabel}}</span>
+                  </div>
+                </label>
+
+                <label class="es-char-editor__focus-slider">
+                  <span>{{localize "EXALTED-SCENES.CharEditor.TiltFrame"}}</span>
+                  <div class="es-char-editor__focus-slider-row">
+                    <input type="range" min="-12" max="12" step="1" value="{{focusEditor.rotation}}" data-focus-axis="rotation">
+                    <span data-focus-value="rotation">{{focusEditor.rotationLabel}}</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="es-char-editor__focus-actions">
+                <button type="button" class="es-char-editor__focus-action" data-action="apply-focus-preset" data-preset="top">{{localize "EXALTED-SCENES.CharEditor.AlignTop"}}</button>
+                <button type="button" class="es-char-editor__focus-action" data-action="apply-focus-preset" data-preset="center">{{localize "EXALTED-SCENES.CharEditor.AlignCenter"}}</button>
+                <button type="button" class="es-char-editor__focus-action" data-action="apply-focus-preset" data-preset="bottom">{{localize "EXALTED-SCENES.CharEditor.AlignBottom"}}</button>
+                <button type="button" class="es-char-editor__focus-action es-char-editor__focus-action--ghost" data-action="reset-emotion-focus">{{localize "EXALTED-SCENES.CharEditor.ResetFraming"}}</button>
+              </div>
+            </div>
+          {{/if}}
         {{else}}
           <div class="es-char-editor__emotions-empty">
             <i class="fas fa-theater-masks"></i>
@@ -260,7 +489,13 @@
                 placeholder="{{#if canBrowseFiles}}{{localize "EXALTED-SCENES.CharEditor.BrowseOrPaste"}}{{else}}{{localize "EXALTED-SCENES.CharEditor.PasteURL"}}{{/if}}"
               >
               {{#if canBrowseFiles}}
-                <button type="button" class="es-char-editor__file-btn" data-type="image" data-target="newEmotionPath" title="{{localize "EXALTED-SCENES.Common.BrowseFiles"}}">
+                <button
+                  type="button"
+                  class="es-char-editor__file-btn"
+                  data-file-picker-target="newEmotionPath"
+                  data-file-picker-type="imagevideo"
+                  title="{{localize "EXALTED-SCENES.Common.BrowseFiles"}}"
+                >
                   <i class="fas fa-folder-open"></i>
                 </button>
               {{/if}}
@@ -285,6 +520,258 @@
               {{localize "EXALTED-SCENES.CharEditor.AddEmotion"}}
             </button>
           </div>
+
+          {{#if canUploadFiles}}
+            <div class="es-char-editor__import-actions">
+              <button
+                type="button"
+                class="es-char-editor__import-btn"
+                data-action="trigger-asset-import"
+                data-asset-target="emotion"
+                data-import-source="files"
+                {{#if emotionImport}}disabled{{/if}}
+              >
+                <i class="fas fa-images"></i>
+                {{localize "EXALTED-SCENES.SmartCreator.UploadImages"}}
+              </button>
+              <button
+                type="button"
+                class="es-char-editor__import-btn"
+                data-action="trigger-asset-import"
+                data-asset-target="emotion"
+                data-import-source="folder"
+                {{#if emotionImport}}disabled{{/if}}
+              >
+                <i class="fas fa-folder-open"></i>
+                {{localize "EXALTED-SCENES.SmartCreator.UploadFolder"}}
+              </button>
+            </div>
+
+            {{#if emotionImport}}
+              <div class="es-char-editor__import-status">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>{{localize "EXALTED-SCENES.SmartCreator.Uploading"}} {{emotionImport.completed}}/{{emotionImport.total}}</span>
+                <strong>{{emotionImport.percent}}%</strong>
+              </div>
+            {{/if}}
+
+            <input
+              type="file"
+              accept="image/*,video/mp4,video/webm"
+              multiple
+              data-import-input
+              data-asset-target="emotion"
+              data-import-source="files"
+              style="display:none"
+            >
+            <input
+              type="file"
+              accept="image/*,video/mp4,video/webm"
+              webkitdirectory
+              directory
+              multiple
+              data-import-input
+              data-asset-target="emotion"
+              data-import-source="folder"
+              style="display:none"
+            >
+          {{/if}}
+        </div>
+      </section>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         HERO POSES TAB
+         ───────────────────────────────────────────────────────────── -->
+    <div class="es-char-editor__panel {{#if (eq activeTab 'hero')}}es-char-editor__panel--active{{/if}}" data-tab="hero">
+
+      <!-- Hero Poses List -->
+      <section class="es-char-editor__section">
+        <div class="es-char-editor__section-header">
+          <i class="fas fa-person"></i>
+          <span>{{localize "EXALTED-SCENES.CharEditor.HeroPoseList"}}</span>
+          <span class="es-char-editor__section-count">{{heroPoses.length}}</span>
+        </div>
+        <p class="es-char-editor__section-desc">
+          {{localize "EXALTED-SCENES.CharEditor.HeroPosesDesc"}}
+          {{localize "EXALTED-SCENES.CharEditor.HeroPoseTypeToggleHint"}}
+        </p>
+
+        {{#if heroPoses.length}}
+          <div class="es-char-editor__emotions-list">
+            {{#each heroPoses}}
+              <div class="es-char-editor__emotion {{#if isDefault}}es-char-editor__emotion--default{{/if}}">
+                <img src="{{img}}" class="es-char-editor__emotion-thumb" alt="{{key}}">
+                <div class="es-char-editor__emotion-info">
+                  <input
+                    type="text"
+                    value="{{key}}"
+                    class="es-char-editor__emotion-name"
+                    data-action="rename-hero-pose"
+                    data-original-key="{{key}}"
+                  >
+                  <span class="es-char-editor__emotion-path">
+                    {{img}}
+                    <button
+                      type="button"
+                      class="es-char-editor__hero-type-badge es-char-editor__hero-type-badge--{{type}}"
+                      data-action="toggle-hero-pose-type"
+                      data-key="{{key}}"
+                      title="{{toggleTypeLabel}}"
+                      aria-label="{{toggleTypeLabel}}"
+                    >
+                      {{typeName}}
+                    </button>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="es-char-editor__hero-default-btn {{#if isDefault}}es-char-editor__hero-default-btn--active{{/if}}"
+                  data-action="set-default-hero-pose"
+                  data-key="{{key}}"
+                  title="{{localize "EXALTED-SCENES.CharEditor.SetDefaultHeroPose"}}"
+                >
+                  <i class="fas {{#if isDefault}}fa-star{{else}}fa-star-half-alt{{/if}}"></i>
+                </button>
+                <button
+                  type="button"
+                  class="es-char-editor__emotion-delete"
+                  data-action="delete-hero-pose"
+                  data-key="{{key}}"
+                  title="{{localize "EXALTED-SCENES.CharEditor.DeleteHeroPose"}}"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="es-char-editor__emotions-empty">
+            <i class="fas fa-person"></i>
+            <p>{{localize "EXALTED-SCENES.CharEditor.NoHeroPosesYet"}}</p>
+            <span>{{localize "EXALTED-SCENES.CharEditor.NoHeroPosesDesc"}}</span>
+          </div>
+        {{/if}}
+      </section>
+
+      <!-- Add New Hero Pose -->
+      <section class="es-char-editor__section es-char-editor__section--add">
+        <div class="es-char-editor__section-header">
+          <i class="fas fa-plus-circle"></i>
+          <span>{{localize "EXALTED-SCENES.CharEditor.AddNewHeroPose"}}</span>
+        </div>
+
+        <div class="es-char-editor__add-emotion">
+          <div class="es-char-editor__add-emotion-field">
+            <label class="es-char-editor__label">
+              <i class="fas fa-image"></i>
+              {{localize "EXALTED-SCENES.CharEditor.Image"}}
+            </label>
+            <div class="es-char-editor__file-input">
+              <input
+                type="text"
+                name="newHeroPosePath"
+                placeholder="{{#if canBrowseFiles}}{{localize "EXALTED-SCENES.CharEditor.BrowseOrPaste"}}{{else}}{{localize "EXALTED-SCENES.CharEditor.PasteURL"}}{{/if}}"
+              >
+              {{#if canBrowseFiles}}
+                <button
+                  type="button"
+                  class="es-char-editor__file-btn"
+                  data-file-picker-target="newHeroPosePath"
+                  data-file-picker-type="image"
+                  title="{{localize "EXALTED-SCENES.Common.BrowseFiles"}}"
+                >
+                  <i class="fas fa-folder-open"></i>
+                </button>
+              {{/if}}
+            </div>
+          </div>
+
+          <div class="es-char-editor__add-emotion-row">
+            <div class="es-char-editor__add-emotion-field es-char-editor__add-emotion-field--flex">
+              <label class="es-char-editor__label">
+                <i class="fas fa-tag"></i>
+                {{localize "EXALTED-SCENES.CharEditor.HeroPoseName"}}
+              </label>
+              <input
+                type="text"
+                name="newHeroPoseName"
+                placeholder="{{localize "EXALTED-SCENES.CharEditor.HeroPoseNamePlaceholder"}}"
+                class="es-char-editor__input"
+              >
+            </div>
+            <div class="es-char-editor__add-emotion-field">
+              <label class="es-char-editor__label">
+                <i class="fas fa-ruler-vertical"></i>
+                {{localize "EXALTED-SCENES.CharEditor.HeroPoseType"}}
+              </label>
+              <select name="newHeroPoseType" class="es-char-editor__select">
+                {{#each heroTypes}}
+                  <option value="{{key}}">{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <button type="button" class="es-char-editor__add-btn" data-action="add-hero-pose">
+              <i class="fas fa-plus"></i>
+              {{localize "EXALTED-SCENES.CharEditor.AddHeroPose"}}
+            </button>
+          </div>
+
+          {{#if canUploadFiles}}
+            <div class="es-char-editor__import-actions">
+              <button
+                type="button"
+                class="es-char-editor__import-btn"
+                data-action="trigger-asset-import"
+                data-asset-target="hero"
+                data-import-source="files"
+                {{#if heroImport}}disabled{{/if}}
+              >
+                <i class="fas fa-images"></i>
+                {{localize "EXALTED-SCENES.SmartCreator.UploadImages"}}
+              </button>
+              <button
+                type="button"
+                class="es-char-editor__import-btn"
+                data-action="trigger-asset-import"
+                data-asset-target="hero"
+                data-import-source="folder"
+                {{#if heroImport}}disabled{{/if}}
+              >
+                <i class="fas fa-folder-open"></i>
+                {{localize "EXALTED-SCENES.SmartCreator.UploadFolder"}}
+              </button>
+            </div>
+
+            {{#if heroImport}}
+              <div class="es-char-editor__import-status">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>{{localize "EXALTED-SCENES.SmartCreator.Uploading"}} {{heroImport.completed}}/{{heroImport.total}}</span>
+                <strong>{{heroImport.percent}}%</strong>
+              </div>
+            {{/if}}
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              data-import-input
+              data-asset-target="hero"
+              data-import-source="files"
+              style="display:none"
+            >
+            <input
+              type="file"
+              accept="image/*"
+              webkitdirectory
+              directory
+              multiple
+              data-import-input
+              data-asset-target="hero"
+              data-import-source="folder"
+              style="display:none"
+            >
+          {{/if}}
         </div>
       </section>
     </div>

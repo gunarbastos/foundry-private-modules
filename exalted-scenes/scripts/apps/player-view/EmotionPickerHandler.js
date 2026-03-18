@@ -35,6 +35,11 @@ export class EmotionPickerHandler extends BaseHandler {
    */
   constructor(view) {
     super(view);
+
+    this._previewPanel = null;
+    this._previewImg = null;
+    this._previewLabel = null;
+    this._activePreviewItem = null;
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -61,7 +66,18 @@ export class EmotionPickerHandler extends BaseHandler {
     const musicPicker = element.querySelector('.es-music-picker');
     if (musicPicker) {
       this._setupMusicPickerSearch(musicPicker);
+      this._setupMusicPickerAddMode(musicPicker);
+      this._setupYouTubeUrlAutoFill(musicPicker);
     }
+  }
+
+  cleanup() {
+    this._clearPreview();
+    this._previewPanel = null;
+    this._previewImg = null;
+    this._previewLabel = null;
+    this._activePreviewItem = null;
+    super.cleanup();
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -80,6 +96,8 @@ export class EmotionPickerHandler extends BaseHandler {
     if (!searchInput) return;
 
     searchInput.addEventListener('input', (e) => {
+      this._clearPreview();
+
       const query = e.target.value.toLowerCase();
       const items = picker.querySelectorAll('.es-picker-item');
 
@@ -108,18 +126,121 @@ export class EmotionPickerHandler extends BaseHandler {
     const searchInput = picker.querySelector('.es-music-picker__search-input');
     if (!searchInput) return;
 
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const tracks = picker.querySelectorAll('.es-music-picker__track');
+    const trackList = picker.querySelector('[data-music-track-list]');
+    const emptyState = picker.querySelector('[data-music-empty-state]');
+    const emptyQuery = picker.querySelector('[data-music-empty-query]');
+    const countNodes = picker.querySelectorAll('[data-music-visible-count]');
+    const applyFilter = (rawValue = '') => {
+      const query = rawValue.trim().toLowerCase();
+      const tracks = trackList?.querySelectorAll('.es-music-picker__track') || [];
+      let visibleCount = 0;
 
       tracks.forEach(track => {
         const trackName = track.dataset.trackName?.toLowerCase() || '';
-        track.style.display = trackName.includes(query) ? '' : 'none';
+        const playlistName = track.dataset.trackPlaylist?.toLowerCase() || '';
+        const matches = !query || trackName.includes(query) || playlistName.includes(query);
+
+        track.hidden = !matches;
+        if (matches) visibleCount += 1;
       });
+
+      countNodes.forEach(node => {
+        node.textContent = `${visibleCount}`;
+      });
+
+      if (emptyState) {
+        emptyState.classList.toggle('is-hidden', visibleCount > 0);
+      }
+
+      if (emptyQuery) {
+        emptyQuery.textContent = rawValue.trim();
+        emptyQuery.classList.toggle('is-hidden', !query);
+      }
+
+      picker.classList.toggle('es-music-picker--search-active', !!query);
+    };
+
+    applyFilter(searchInput.value || this.view.uiState.musicPicker.searchQuery || '');
+
+    searchInput.addEventListener('input', (e) => {
+      this.view.uiState.musicPicker.searchQuery = e.target.value;
+      applyFilter(e.target.value);
     }, { signal: this.signal });
 
     // Focus on the search input when picker opens
-    setTimeout(() => searchInput.focus(), 50);
+    setTimeout(() => {
+      searchInput.focus();
+      if (searchInput.value) searchInput.select();
+    }, 50);
+  }
+
+  /**
+   * Focuses the YouTube URL field when add mode is open.
+   *
+   * @param {HTMLElement} picker - The music picker element
+   * @private
+   */
+  _setupMusicPickerAddMode(picker) {
+    const urlInput = picker.querySelector('[name="track-url"]');
+    if (!urlInput) return;
+
+    setTimeout(() => urlInput.focus(), 50);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     YOUTUBE URL AUTO-FILL
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Sets up auto-fill for the track name when a YouTube URL is pasted/typed.
+   * Uses the YouTube oEmbed API to fetch the video title.
+   *
+   * @param {HTMLElement} picker - The music picker element
+   * @private
+   */
+  _setupYouTubeUrlAutoFill(picker) {
+    const urlInput = picker.querySelector('[name="track-url"]');
+    const nameInput = picker.querySelector('[name="track-name"]');
+    if (!urlInput || !nameInput) return;
+
+    let debounceTimer = null;
+
+    const handleUrlChange = () => {
+      const url = urlInput.value.trim();
+      if (!url || !url.match(/(?:youtube\.com|youtu\.be)/i)) return;
+      // Only auto-fill if the name field is empty
+      if (nameInput.value.trim()) return;
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => this._fetchYouTubeTitle(url, nameInput), 400);
+    };
+
+    urlInput.addEventListener('input', handleUrlChange, { signal: this.signal });
+    urlInput.addEventListener('paste', () => {
+      // Small delay so the pasted value is in the input
+      setTimeout(handleUrlChange, 50);
+    }, { signal: this.signal });
+  }
+
+  /**
+   * Fetches a YouTube video title via the oEmbed API.
+   *
+   * @param {string} url - YouTube URL
+   * @param {HTMLInputElement} nameInput - The track name input to fill
+   * @private
+   */
+  async _fetchYouTubeTitle(url, nameInput) {
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const response = await fetch(oembedUrl);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.title && !nameInput.value.trim()) {
+        nameInput.value = data.title;
+      }
+    } catch (e) {
+      // Silently fail — user can type the name manually
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -144,17 +265,44 @@ export class EmotionPickerHandler extends BaseHandler {
     const previewLabel = previewPanel.querySelector('.es-picker-preview-label');
     if (!previewImg || !previewLabel) return;
 
-    const items = picker.querySelectorAll('.es-picker-item');
+    this._previewPanel = previewPanel;
+    this._previewImg = previewImg;
+    this._previewLabel = previewLabel;
 
-    items.forEach(item => {
-      item.addEventListener('mouseenter', () => {
-        this._showPreview(item, picker, previewPanel, previewImg, previewLabel);
-      }, { signal: this.signal });
+    const grid = picker.querySelector('.es-picker-grid') || picker;
+    const hidePreview = () => this._clearPreview();
 
-      item.addEventListener('mouseleave', () => {
-        this._hidePreview(previewPanel);
-      }, { signal: this.signal });
-    });
+    grid.addEventListener('pointerover', (event) => {
+      const item = this._getPickerItem(event.target, grid);
+      if (!item || item.hidden || item.style.display === 'none') return;
+      if (item === this._activePreviewItem) return;
+      this._activePreviewItem = item;
+      this._showPreview(item, picker, previewPanel, previewImg, previewLabel);
+    }, { signal: this.signal });
+
+    grid.addEventListener('pointerout', (event) => {
+      const currentItem = this._getPickerItem(event.target, grid);
+      if (!currentItem || currentItem !== this._activePreviewItem) return;
+
+      const nextItem = this._getPickerItem(event.relatedTarget, grid);
+      if (nextItem === currentItem) return;
+
+      if (nextItem) {
+        this._activePreviewItem = nextItem;
+        this._showPreview(nextItem, picker, previewPanel, previewImg, previewLabel);
+        return;
+      }
+
+      hidePreview();
+    }, { signal: this.signal });
+
+    picker.addEventListener('pointerleave', hidePreview, { signal: this.signal });
+    grid.addEventListener('scroll', hidePreview, { signal: this.signal, passive: true });
+    picker.addEventListener('wheel', hidePreview, { signal: this.signal, passive: true });
+    document.addEventListener('pointerdown', (event) => {
+      if (!picker.contains(event.target)) hidePreview();
+    }, { signal: this.signal });
+    window.addEventListener('blur', hidePreview, { signal: this.signal });
   }
 
   /**
@@ -177,12 +325,8 @@ export class EmotionPickerHandler extends BaseHandler {
     const position = this._calculatePreviewPosition(picker);
 
     // Apply position classes
-    panel.classList.remove('preview-left', 'preview-below', 'preview-above');
-    if (position.above) {
-      panel.classList.add('preview-above');
-    } else {
-      panel.classList.add('preview-below');
-    }
+    panel.classList.toggle('es-picker-preview--above', position.above);
+    panel.classList.toggle('es-picker-preview--below', !position.above);
 
     panel.style.left = `${position.left}px`;
     panel.style.top = `${position.top}px`;
@@ -197,6 +341,35 @@ export class EmotionPickerHandler extends BaseHandler {
    */
   _hidePreview(panel) {
     panel.style.display = 'none';
+    panel.classList.remove('es-picker-preview--above', 'es-picker-preview--below');
+  }
+
+  /**
+   * Clear the current hover preview state.
+   *
+   * @private
+   */
+  _clearPreview() {
+    this._activePreviewItem = null;
+    if (this._previewPanel) {
+      this._hidePreview(this._previewPanel);
+    }
+  }
+
+  /**
+   * Resolve an emotion picker item from an arbitrary event target.
+   *
+   * @param {EventTarget|null} target - Event target or related target
+   * @param {HTMLElement} scope - Picker grid scope
+   * @returns {HTMLElement|null}
+   * @private
+   */
+  _getPickerItem(target, scope) {
+    if (!(target instanceof Element)) return null;
+
+    const item = target.closest('.es-picker-item');
+    if (!item || !scope.contains(item)) return null;
+    return item;
   }
 
   /**

@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-cast-header-actions button:hover {
@@ -142,11 +142,27 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  object-position: var(--es-media-pos-x, 50%) var(--es-media-pos-y, 50%);
   border: 2px solid var(--es-border-default);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
+}
+
+.es-cast-member > img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: var(--es-media-pos-x, 50%) var(--es-media-pos-y, 50%);
+  border: 2px solid var(--es-border-default);
+  transition: var(--es-transition-all);
 }
 
 .es-cast-member:hover .es-cast-member-avatar img {
+  border-color: var(--es-accent-base);
+  box-shadow: 0 0 0 2px var(--es-accent-subtle);
+}
+
+.es-cast-member:hover > img {
   border-color: var(--es-accent-base);
   box-shadow: 0 0 0 2px var(--es-accent-subtle);
 }
@@ -230,7 +246,7 @@
   justify-content: center;
   color: var(--es-text-muted);
   font-size: 16px;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-cast-member--add-new:hover .es-cast-add-circle {

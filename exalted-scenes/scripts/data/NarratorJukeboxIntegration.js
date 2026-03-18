@@ -1,36 +1,114 @@
 /**
  * @file NarratorJukeboxIntegration.js
  * @description Integration service for Narrator Jukebox module.
- * Provides access to playlists, ambience presets, and playback controls.
+ * Provides access to playlists, tracks, ambience layers, soundboard, and playback controls.
  *
  * @module data/NarratorJukeboxIntegration
  */
 
-import { CONFIG } from '../config.js';
+import { CONFIG, log, logWarn } from '../config.js';
+import { extractYouTubeVideoId, normalizeYouTubeUrl } from '../utils/youtube-embed-validator.js';
 
 /**
  * Integration service for Narrator Jukebox module.
  * Handles API access, availability checks, and playback control.
+ * All methods guard against NJ being unavailable.
  *
  * @class NarratorJukeboxIntegration
  */
 export class NarratorJukeboxIntegration {
+  /** @type {Object} Internal cache for NJ API data to avoid repeated lookups */
+  static _cache = {
+    available: undefined,
+    api: undefined,
+    jukebox: undefined,
+    playlists: null,
+    playlistIndex: null,
+    music: null,
+    musicIndex: null,
+    ambiencePresets: null,
+    ambienceSounds: null,
+    soundboardSounds: null,
+    playlistTracks: null
+  };
+
+  /**
+   * Clear cached NJ library data. Call when NJ content may have changed
+   * (e.g., when opening AudioBrowser).
+   */
+  static invalidateCache() {
+    this._cache.playlists = null;
+    this._cache.playlistIndex = null;
+    this._cache.music = null;
+    this._cache.musicIndex = null;
+    this._cache.ambiencePresets = null;
+    this._cache.ambienceSounds = null;
+    this._cache.soundboardSounds = null;
+    this._cache.playlistTracks = null;
+  }
+
   /**
    * Check if Narrator Jukebox module is available and active.
+   * Cached — module state doesn't change during a session.
    * @returns {boolean}
    */
   static get isAvailable() {
-    return !!game.modules.get('narrator-jukebox')?.active;
+    if (this._cache.available !== undefined) return this._cache.available;
+    this._cache.available = !!game.modules.get('narrator-jukebox')?.active;
+    return this._cache.available;
   }
 
   /**
    * Get the Narrator Jukebox API instance.
-   * Uses the official module API pattern: game.modules.get('narrator-jukebox').api
+   * Cached — the API object persists once NJ is ready.
    * @returns {Object|null} The API object or null if unavailable
    */
   static get api() {
+    if (this._cache.api !== undefined) return this._cache.api;
     if (!this.isAvailable) return null;
-    return game.modules.get('narrator-jukebox')?.api ?? null;
+    const api = game.modules.get('narrator-jukebox')?.api ?? null;
+    if (api) this._cache.api = api;
+    return api;
+  }
+
+  /**
+   * Get the underlying Narrator Jukebox singleton.
+   * Prefer this for player-requested add/play flows so we mirror the module's
+   * own UI behavior instead of going through the API normalization layer.
+   * @returns {Object|null}
+   */
+  static get jukebox() {
+    if (this._cache.jukebox !== undefined) return this._cache.jukebox;
+    if (!this.isAvailable) return null;
+
+    const jukebox = globalThis.NarratorJukebox?.instance ?? null;
+    if (jukebox) this._cache.jukebox = jukebox;
+    return jukebox;
+  }
+
+  /**
+   * Build track data that matches the NJ add dialog payload shape.
+   * @param {Object} trackData
+   * @returns {Object}
+   */
+  static _buildManualMusicTrackData(trackData) {
+    const rawUrl = String(trackData?.url ?? '').trim();
+    const inferredYoutubeId = extractYouTubeVideoId(rawUrl);
+    const source = String(trackData?.source || (inferredYoutubeId ? 'youtube' : 'local')).trim().toLowerCase();
+    const url = source === 'youtube' ? normalizeYouTubeUrl(rawUrl) : rawUrl;
+    const videoId = extractYouTubeVideoId(url);
+    const thumbnail = trackData?.thumbnail
+      ? String(trackData.thumbnail).trim()
+      : (videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : '');
+
+    return {
+      id: foundry.utils.randomID(),
+      name: String(trackData?.name ?? '').trim(),
+      source,
+      url,
+      tags: Array.isArray(trackData?.tags) ? trackData.tags : [],
+      thumbnail
+    };
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -42,30 +120,37 @@ export class NarratorJukeboxIntegration {
    * @returns {Array<{id: string, name: string}>} Array of playlist objects
    */
   static getAllPlaylists() {
+    if (this._cache.playlists) return this._cache.playlists;
+
     const api = this.api;
     if (!api?.getAllPlaylists) return [];
 
     try {
       const playlists = api.getAllPlaylists();
-      return playlists.map(p => ({
+      this._cache.playlists = playlists.map(p => ({
         id: p._id ?? p.id,
-        name: p.name
+        name: p.name,
+        musicIds: p.musicIds ?? []
       }));
+      this._cache.playlistIndex = new Map(
+        this._cache.playlists.map(p => [p.id, p])
+      );
+      return this._cache.playlists;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to get playlists:`, e);
+      logWarn('Failed to get playlists:', e);
       return [];
     }
   }
 
   /**
-   * Get a specific playlist by ID.
+   * Get a specific playlist by ID. Uses cached Map index for O(1) lookup.
    * @param {string} id - Playlist ID
    * @returns {Object|null} Playlist object or null if not found
    */
   static getPlaylist(id) {
     if (!id) return null;
-    const playlists = this.getAllPlaylists();
-    return playlists.find(p => p.id === id) ?? null;
+    if (!this._cache.playlistIndex) this.getAllPlaylists();
+    return this._cache.playlistIndex?.get(id) ?? null;
   }
 
   /**
@@ -79,10 +164,10 @@ export class NarratorJukeboxIntegration {
 
     try {
       await api.playPlaylist(playlistId);
-      console.log(`${CONFIG.MODULE_NAME} | Playing playlist: ${playlistId}`);
+      log(`Playing playlist: ${playlistId}`);
       return true;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to play playlist:`, e);
+      logWarn('Failed to play playlist:', e);
       return false;
     }
   }
@@ -99,13 +184,13 @@ export class NarratorJukeboxIntegration {
       await api.stop();
       return true;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to stop music:`, e);
+      logWarn('Failed to stop music:', e);
       return false;
     }
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     AMBIENCE METHODS
+     AMBIENCE PRESET METHODS (legacy — single preset at a time)
      ═══════════════════════════════════════════════════════════════ */
 
   /**
@@ -113,17 +198,20 @@ export class NarratorJukeboxIntegration {
    * @returns {Array<{id: string, name: string}>} Array of preset objects
    */
   static getAmbiencePresets() {
+    if (this._cache.ambiencePresets) return this._cache.ambiencePresets;
+
     const api = this.api;
     if (!api?.getAmbiencePresets) return [];
 
     try {
       const presets = api.getAmbiencePresets();
-      return presets.map(p => ({
+      this._cache.ambiencePresets = presets.map(p => ({
         id: p.id,
         name: p.name
       }));
+      return this._cache.ambiencePresets;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to get ambience presets:`, e);
+      logWarn('Failed to get ambience presets:', e);
       return [];
     }
   }
@@ -135,8 +223,8 @@ export class NarratorJukeboxIntegration {
    */
   static getAmbiencePreset(id) {
     if (!id) return null;
-    const presets = this.getAmbiencePresets();
-    return presets.find(p => p.id === id) ?? null;
+    this.getAmbiencePresets();
+    return this._cache.ambiencePresets?.find(p => p.id === id) ?? null;
   }
 
   /**
@@ -150,10 +238,10 @@ export class NarratorJukeboxIntegration {
 
     try {
       await api.loadAmbiencePreset(presetId);
-      console.log(`${CONFIG.MODULE_NAME} | Loaded ambience preset: ${presetId}`);
+      log(`Loaded ambience preset: ${presetId}`);
       return true;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to load ambience preset:`, e);
+      logWarn('Failed to load ambience preset:', e);
       return false;
     }
   }
@@ -170,13 +258,571 @@ export class NarratorJukeboxIntegration {
       await api.stopAllAmbienceLayers();
       return true;
     } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to stop ambience:`, e);
+      logWarn('Failed to stop ambience:', e);
       return false;
     }
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     COMBINED METHODS
+     AMBIENCE LAYER CONTROL (v6.0 — individual layer management)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get all available ambience sounds that can be used as layers.
+   * @returns {Array<{id: string, name: string, path: string}>} Array of ambience sound objects
+   */
+  static getAllAmbienceSounds() {
+    if (this._cache.ambienceSounds) return this._cache.ambienceSounds;
+
+    const api = this.api;
+    if (!api?.getAllAmbience) return [];
+
+    try {
+      const sounds = api.getAllAmbience();
+      this._cache.ambienceSounds = sounds.map(s => ({
+        id: s._id ?? s.id,
+        name: s.name ?? s.title ?? 'Unknown',
+        path: s.path ?? s.src ?? ''
+      }));
+      return this._cache.ambienceSounds;
+    } catch (e) {
+      logWarn('Failed to get ambience sounds:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Add an ambience layer by sound ID.
+   * NJ supports up to MAX_AMBIENCE_LAYERS simultaneous layers.
+   * @param {string} soundId - The ambience sound ID to add as a layer
+   * @param {number} [volume=1.0] - Volume level (0-1)
+   * @returns {Promise<boolean>} True if layer was added
+   */
+  static async addAmbienceLayer(soundId, volume = 1.0) {
+    const api = this.api;
+    if (!api?.playAmbienceLayer || !soundId) return false;
+
+    try {
+      await api.playAmbienceLayer(soundId);
+      // Set volume after starting the layer (NJ API doesn't accept volume in playAmbienceLayer)
+      const clamped = Math.max(0, Math.min(1, volume));
+      if (clamped !== 1.0 && api.setAmbienceLayerVolume) {
+        api.setAmbienceLayerVolume(soundId, clamped);
+      }
+      log(`Added ambience layer: ${soundId} at volume ${volume}`);
+      return true;
+    } catch (e) {
+      logWarn('Failed to add ambience layer:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Remove an active ambience layer by its index or ID.
+   * @param {number|string} layerRef - Layer index (0-based) or layer ID
+   * @returns {Promise<boolean>} True if layer was removed
+   */
+  static async removeAmbienceLayer(layerRef) {
+    const api = this.api;
+    if (!api?.stopAmbienceLayer) return false;
+
+    try {
+      api.stopAmbienceLayer(layerRef);
+      log(`Removed ambience layer: ${layerRef}`);
+      return true;
+    } catch (e) {
+      logWarn('Failed to remove ambience layer:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Set the volume of an active ambience layer.
+   * @param {number|string} layerRef - Layer index (0-based) or layer ID
+   * @param {number} volume - Volume level (0-1)
+   * @returns {Promise<boolean>} True if volume was set
+   */
+  static async setAmbienceLayerVolume(layerRef, volume) {
+    const api = this.api;
+    if (!api?.setAmbienceLayerVolume) return false;
+
+    try {
+      await api.setAmbienceLayerVolume(layerRef, Math.max(0, Math.min(1, volume)));
+      return true;
+    } catch (e) {
+      logWarn('Failed to set ambience layer volume:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Get the master volume for all ambience layers.
+   * @returns {number} Volume level 0-1, defaults to 0.5
+   */
+  static getAmbienceMasterVolume() {
+    const api = this.api;
+    if (!api?.getAmbienceMasterVolume) return 0.5;
+
+    try {
+      return api.getAmbienceMasterVolume() ?? 0.5;
+    } catch (e) {
+      logWarn('Failed to get ambience master volume:', e);
+      return 0.5;
+    }
+  }
+
+  /**
+   * Set the master volume for all ambience layers.
+   * @param {number} volume - Volume level (0-1)
+   * @returns {boolean} True if volume was set
+   */
+  static setAmbienceMasterVolume(volume) {
+    const api = this.api;
+    if (!api?.setAmbienceMasterVolume) return false;
+
+    try {
+      api.setAmbienceMasterVolume(Math.max(0, Math.min(1, volume)));
+      log(`Set ambience master volume: ${volume}`);
+      return true;
+    } catch (e) {
+      logWarn('Failed to set ambience master volume:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Get currently active ambience layers.
+   * @returns {Array<{id: string, name: string, volume: number}>} Active layer info
+   */
+  static getActiveAmbienceLayers() {
+    const api = this.api;
+    if (!api?.getActiveAmbienceLayers) return [];
+
+    try {
+      const layers = api.getActiveAmbienceLayers();
+      return (layers ?? []).map(l => ({
+        id: l.trackId ?? l._id ?? l.id ?? '',
+        name: l.track?.name ?? l.name ?? 'Unknown',
+        volume: l.volume ?? 1.0
+      }));
+    } catch (e) {
+      logWarn('Failed to get active ambience layers:', e);
+      return [];
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SOUNDBOARD METHODS (v6.0)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get all available soundboard sounds from Narrator Jukebox.
+   * @returns {Array<{id: string, name: string, path: string}>} Array of sound objects
+   */
+  static getSoundboardSounds() {
+    if (this._cache.soundboardSounds) return this._cache.soundboardSounds;
+
+    const api = this.api;
+    if (!api?.getAllSoundboardSounds) return [];
+
+    try {
+      const sounds = api.getAllSoundboardSounds();
+      this._cache.soundboardSounds = sounds.map(s => ({
+        id: s._id ?? s.id,
+        name: s.name ?? s.title ?? 'Unknown',
+        path: s.path ?? s.src ?? ''
+      }));
+      return this._cache.soundboardSounds;
+    } catch (e) {
+      logWarn('Failed to get soundboard sounds:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Play a soundboard sound by ID.
+   * @param {string} soundId - The soundboard sound ID to play
+   * @returns {Promise<boolean>} True if sound played successfully
+   */
+  static async playSoundboardSound(soundId) {
+    const api = this.api;
+    if (!api?.playSoundboardSound || !soundId) return false;
+
+    try {
+      await api.playSoundboardSound(soundId);
+      log(`Played soundboard sound: ${soundId}`);
+      return true;
+    } catch (e) {
+      logWarn('Failed to play soundboard sound:', e);
+      return false;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PLAYBACK STATE (v6.0)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get the current NJ playback state.
+   * @returns {{isPlaying: boolean, currentTrack: Object|null, isPreviewMode: boolean}|null}
+   */
+  static getPlaybackState() {
+    const api = this.api;
+    if (!api?.getState) return null;
+
+    try {
+      const state = api.getState();
+      return {
+        isPlaying: !!state?.isPlaying,
+        currentTrack: state?.currentTrack ?? null,
+        isPreviewMode: !!state?.isPreviewMode
+      };
+    } catch (e) {
+      logWarn('Failed to get playback state:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Check if NJ is currently playing music.
+   * @returns {boolean}
+   */
+  static isPlaying() {
+    return !!this.getPlaybackState()?.isPlaying;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TRACK BROWSING (v6.0 — expanded from existing)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get all music tracks from Narrator Jukebox's library.
+   * @returns {Array<{id: string, name: string, path: string}>} All available tracks
+   */
+  static getAllMusic() {
+    if (this._cache.music) return this._cache.music;
+
+    const api = this.api;
+    if (!api?.getAllMusic) return [];
+
+    try {
+      const music = api.getAllMusic();
+      this._cache.music = (music ?? []).map(m => ({
+        id: m._id ?? m.id,
+        name: m.name ?? m.title ?? 'Unknown Track',
+        path: m.path ?? m.src ?? ''
+      }));
+      this._cache.musicIndex = new Map(
+        this._cache.music.map(m => [m.id, m])
+      );
+      return this._cache.music;
+    } catch (e) {
+      logWarn('Failed to get all music:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Search tracks by name across all playlists.
+   * @param {string} query - Search string (case-insensitive)
+   * @returns {Array<{id: string, name: string, path: string}>} Matching tracks
+   */
+  static searchTracks(query) {
+    if (!query) return [];
+    const allMusic = this.getAllMusic();
+    const lowerQuery = query.toLowerCase();
+    return allMusic.filter(t => t.name.toLowerCase().includes(lowerQuery));
+  }
+
+  /**
+   * Get all tracks from a specific playlist via Narrator Jukebox API.
+   * NJ playlists have their own structure with musicIds that reference tracks.
+   * @param {string} playlistId - Playlist ID
+   * @returns {Array<{id: string, name: string, path: string}>} Array of track objects
+   */
+  static getPlaylistTracks(playlistId) {
+    if (!playlistId || !this.isAvailable) return [];
+
+    // Check per-playlist cache
+    if (!this._cache.playlistTracks) this._cache.playlistTracks = new Map();
+    if (this._cache.playlistTracks.has(playlistId)) {
+      return this._cache.playlistTracks.get(playlistId);
+    }
+
+    try {
+      // Use cached playlist (includes musicIds from getAllPlaylists)
+      const playlist = this.getPlaylist(playlistId);
+      if (!playlist) {
+        logWarn('NJ Playlist not found:', playlistId);
+        this._cache.playlistTracks.set(playlistId, []);
+        return [];
+      }
+
+      const musicIds = playlist.musicIds ?? [];
+      if (musicIds.length === 0) {
+        log('NJ Playlist has no musicIds');
+        this._cache.playlistTracks.set(playlistId, []);
+        return [];
+      }
+
+      // Use cached music index for O(1) lookups per track
+      this.getAllMusic();
+      if (this._cache.musicIndex?.size > 0) {
+        const tracks = [];
+        for (const musicId of musicIds) {
+          const track = this._cache.musicIndex.get(musicId);
+          if (track) tracks.push(track);
+        }
+        log(`Found ${tracks.length} tracks for playlist ${playlist.name}`);
+        this._cache.playlistTracks.set(playlistId, tracks);
+        return tracks;
+      }
+
+      // Fallback: Try getting tracks from Foundry playlists
+      const tracks = [];
+      for (const musicId of musicIds) {
+        for (const foundryPlaylist of game.playlists) {
+          const sound = foundryPlaylist.sounds.get(musicId);
+          if (sound) {
+            tracks.push({ id: sound.id, name: sound.name, path: sound.path });
+            break;
+          }
+        }
+      }
+
+      if (tracks.length > 0) {
+        log(`Found ${tracks.length} tracks via Foundry fallback`);
+      } else {
+        log('Could not resolve tracks. musicIds:', musicIds);
+      }
+
+      this._cache.playlistTracks.set(playlistId, tracks);
+      return tracks;
+    } catch (e) {
+      logWarn('Failed to get playlist tracks:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Play a specific track via Narrator Jukebox API.
+   * Uses the NJ API playMusic(id, channel) method.
+   * @param {string} playlistId - The playlist ID (not used, kept for compatibility)
+   * @param {string} trackId - The track ID to play (from NJ's music library)
+   * @returns {Promise<boolean>} True if playback started successfully
+   */
+  static async playTrack(playlistId, trackId) {
+    const api = this.api;
+    const jukebox = this.jukebox;
+    if (!trackId) return false;
+
+    try {
+      log(`Attempting to play track via NJ API: trackId=${trackId}`);
+
+      // Ensure preview mode is OFF so the track is broadcast to players
+      if (api?.setPreviewMode) {
+        const state = api.getState?.();
+        if (state?.isPreviewMode) {
+          log('Disabling preview mode for broadcast');
+          api.setPreviewMode(false);
+        }
+      }
+
+      // Prefer the singleton path used by NJ's own UI.
+      if (jukebox?.playMusic) {
+        const track = await jukebox.playMusic(trackId, 'music');
+        log('Playing track via NJ singleton playMusic:', track?.name || trackId);
+        return true;
+      }
+
+      // Fall back to the public API when needed.
+      if (api?.playMusic) {
+        const track = await api.playMusic(trackId, 'music');
+        log('Playing track via NJ API playMusic:', track?.name || trackId);
+        return true;
+      }
+
+      logWarn('NJ playMusic method not available');
+      return false;
+    } catch (e) {
+      logWarn('Failed to play track:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Add a music track to an NJ playlist. GM-only.
+   * @param {string} playlistId - Target playlist ID
+   * @param {Object} trackData - { name, url, source }
+   * @returns {Promise<Object|null>} { track, playlist, created, reusedExisting } or null
+   */
+  static async addMusicToPlaylist(playlistId, trackData) {
+    const api = this.api;
+    const jukebox = this.jukebox;
+    if (!playlistId || !trackData?.url) return null;
+
+    try {
+      const manualTrackData = this._buildManualMusicTrackData(trackData);
+
+      // Mirror the NJ UI flow as closely as possible: use the singleton's
+      // raw addMusic/addToPlaylist methods before falling back to API helpers.
+      let track = null;
+      if (jukebox?.addMusic) {
+        track = await jukebox.addMusic(manualTrackData);
+      } else if (api?.addMusic) {
+        track = await api.addMusic(manualTrackData);
+      } else {
+        logWarn('NJ addMusic method not available');
+        return null;
+      }
+
+      const created = true;
+
+      const trackId = track?.id || track?._id;
+      if (!trackId) {
+        logWarn('NJ track add returned no track ID');
+        return null;
+      }
+
+      let playlist = null;
+      if (jukebox?.addToPlaylist) {
+        playlist = await jukebox.addToPlaylist(playlistId, trackId);
+      } else if (api?.addToPlaylist) {
+        playlist = await api.addToPlaylist(playlistId, trackId);
+      } else if (api?.addMusicToPlaylist) {
+        const fallbackResult = await api.addMusicToPlaylist(playlistId, manualTrackData, { reuseExisting: false });
+        playlist = fallbackResult?.playlist ?? null;
+        track = fallbackResult?.track ?? track;
+      } else {
+        logWarn('NJ addToPlaylist method not available');
+        return null;
+      }
+
+      const result = {
+        track,
+        playlist,
+        created,
+        reusedExisting: false
+      };
+      log('Added music to playlist:', result?.track?.name);
+      return result;
+    } catch (e) {
+      logWarn('Failed to add music to playlist:', e);
+      return null;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PLAYBACK CONTROLS (v6.0 — new scene-level playback)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Play a scene's soundtrack using the new tracks[] array.
+   * Plays the first track in the array (future phases will add playback mode support).
+   * @param {Array<{id: string, playlistId?: string}>} tracks - Soundtrack tracks
+   * @param {string} [playbackMode='sequential'] - How to play tracks
+   * @returns {Promise<boolean>} True if playback started
+   */
+  static async playSoundtrack(tracks, playbackMode = 'sequential') {
+    if (!tracks?.length || !this.isAvailable) return false;
+
+    // For now, play the first track's playlist. Future phases will add full multi-track support.
+    const firstTrack = tracks[0];
+    if (firstTrack.playlistId) {
+      return this.playPlaylist(firstTrack.playlistId);
+    }
+    if (firstTrack.id) {
+      return this.playTrack(null, firstTrack.id);
+    }
+    return false;
+  }
+
+  /**
+   * Play a scene's ambience layers from the layers[] array.
+   * Stops existing layers first, then adds each configured layer.
+   * @param {Array<{id: string, name: string, volume?: number}>} layers - Ambience layers to activate
+   * @returns {Promise<boolean>} True if at least one layer was activated
+   */
+  static async playAmbienceLayers(layers) {
+    if (!layers?.length || !this.isAvailable) return false;
+
+    // Stop existing layers first for clean slate
+    await this.stopAmbience();
+
+    let anySuccess = false;
+    for (const layer of layers.slice(0, CONFIG.MAX_AMBIENCE_LAYERS)) {
+      const success = await this.addAmbienceLayer(layer.id, layer.volume ?? 1.0);
+      if (success) anySuccess = true;
+    }
+    return anySuccess;
+  }
+
+  /**
+   * Fade out and stop all audio.
+   * @param {number} [fadeDuration=0] - Fade-out duration in seconds (0 = instant)
+   * @returns {Promise<boolean>} True if stopped
+   */
+  static async fadeOutAndStop(fadeDuration = 0) {
+    const api = this.api;
+    if (!this.isAvailable) return false;
+
+    // If NJ supports fade and duration > 0, use it
+    if (fadeDuration > 0 && api?.fadeOut) {
+      try {
+        await api.fadeOut(fadeDuration);
+        log(`Fading out audio over ${fadeDuration}s`);
+        return true;
+      } catch (e) {
+        logWarn('Fade out failed, falling back to instant stop:', e);
+      }
+    }
+
+    // Instant stop fallback
+    return this.stopAll();
+  }
+
+  /**
+   * Set the music channel volume.
+   * @param {number} volume - Volume level (0-1)
+   * @returns {boolean} True if volume was set
+   */
+  static setMusicVolume(volume) {
+    const api = this.api;
+    if (!api) return false;
+    const clamped = Math.max(0, Math.min(1, volume));
+
+    if (api.setVolume) {
+      try {
+        api.setVolume(clamped, 'music');
+        log(`Set music volume: ${clamped}`);
+        return true;
+      } catch (e) {
+        logWarn('Failed to set music volume:', e);
+      }
+    }
+
+    logWarn('No volume control method available in NJ API');
+    return false;
+  }
+
+  /**
+   * Get the current music channel volume.
+   * @returns {number} Volume level 0-1, defaults to 1.0
+   */
+  static getMusicVolume() {
+    const api = this.api;
+    if (api?.getVolume) {
+      try {
+        return api.getVolume('music') ?? 1.0;
+      } catch (e) {
+        logWarn('Failed to get music volume:', e);
+      }
+    }
+    return 1.0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     COMBINED / SCENE METHODS
      ═══════════════════════════════════════════════════════════════ */
 
   /**
@@ -185,8 +831,6 @@ export class NarratorJukeboxIntegration {
    * @returns {Promise<boolean>} True if at least one was stopped successfully
    */
   static async stopAll() {
-    // Always stop both individually to ensure both music AND ambience are stopped
-    // The api.stopAll method (if it exists) may only stop music, not ambience layers
     const musicStopped = await this.stopMusic();
     const ambienceStopped = await this.stopAmbience();
     return musicStopped || ambienceStopped;
@@ -194,6 +838,8 @@ export class NarratorJukeboxIntegration {
 
   /**
    * Play scene audio based on scene configuration.
+   * Supports both new v6.0 schema (tracks[], layers[]) and legacy (playlistId, ambiencePresetId).
+   * Checks auto-play flags before playing.
    * @param {Object} scene - Scene object with audio settings
    * @param {Object} [options={}] - Playback options
    * @param {boolean} [options.music=true] - Whether to play music if configured
@@ -208,16 +854,31 @@ export class NarratorJukeboxIntegration {
       return result;
     }
 
-    const { playlistId, ambiencePresetId, autoPlayMusic, autoPlayAmbience } = scene.audio;
+    const audio = scene.audio;
 
-    // Play playlist if configured and enabled
-    if (music && playlistId && autoPlayMusic) {
-      result.music = await this.playPlaylist(playlistId);
+    // Music: prefer playlists[] > tracks[] > legacy _legacyPlaylistId
+    if (music && audio.autoPlayMusic) {
+      // Stop current music first to prevent stacking (NJ crossfade orphans old elements)
+      await this.stopMusic();
+      if (audio.playlists?.length > 0) {
+        result.music = await this.playPlaylist(audio.playlists[0].id);
+      } else if (audio.tracks?.length > 0) {
+        result.music = await this.playSoundtrack(audio.tracks, audio.playbackMode);
+      } else if (audio._legacyPlaylistId) {
+        result.music = await this.playPlaylist(audio._legacyPlaylistId);
+      }
+      if (result.music && audio.volume !== 1.0) {
+        this.setMusicVolume(audio.volume);
+      }
     }
 
-    // Load ambience preset if configured and enabled
-    if (ambience && ambiencePresetId && autoPlayAmbience) {
-      result.ambience = await this.loadAmbiencePreset(ambiencePresetId);
+    // Ambience: prefer new layers[] over legacy _legacyAmbiencePresetId
+    if (ambience && audio.autoPlayAmbience) {
+      if (audio.layers?.length > 0) {
+        result.ambience = await this.playAmbienceLayers(audio.layers);
+      } else if (audio._legacyAmbiencePresetId) {
+        result.ambience = await this.loadAmbiencePreset(audio._legacyAmbiencePresetId);
+      }
     }
 
     return result;
@@ -226,6 +887,7 @@ export class NarratorJukeboxIntegration {
   /**
    * Restore scene audio without checking auto-play settings.
    * Used for manual restore buttons.
+   * Supports both new v6.0 schema and legacy fallback.
    * @param {Object} scene - Scene object with audio settings
    * @param {Object} [options={}] - Playback options
    * @param {boolean} [options.music=true] - Whether to play music if configured
@@ -240,16 +902,31 @@ export class NarratorJukeboxIntegration {
       return result;
     }
 
-    const { playlistId, ambiencePresetId } = scene.audio;
+    const audio = scene.audio;
 
-    // Play playlist if configured
-    if (music && playlistId) {
-      result.music = await this.playPlaylist(playlistId);
+    // Music: prefer playlists[] > tracks[] > legacy
+    if (music) {
+      // Stop current music first to prevent stacking (NJ crossfade orphans old elements)
+      await this.stopMusic();
+      if (audio.playlists?.length > 0) {
+        result.music = await this.playPlaylist(audio.playlists[0].id);
+      } else if (audio.tracks?.length > 0) {
+        result.music = await this.playSoundtrack(audio.tracks, audio.playbackMode);
+      } else if (audio._legacyPlaylistId) {
+        result.music = await this.playPlaylist(audio._legacyPlaylistId);
+      }
+      if (result.music && audio.volume !== 1.0) {
+        this.setMusicVolume(audio.volume);
+      }
     }
 
-    // Load ambience preset if configured
-    if (ambience && ambiencePresetId) {
-      result.ambience = await this.loadAmbiencePreset(ambiencePresetId);
+    // Ambience: prefer new layers[] over legacy
+    if (ambience) {
+      if (audio.layers?.length > 0) {
+        result.ambience = await this.playAmbienceLayers(audio.layers);
+      } else if (audio._legacyAmbiencePresetId) {
+        result.ambience = await this.loadAmbiencePreset(audio._legacyAmbiencePresetId);
+      }
     }
 
     return result;
@@ -262,11 +939,12 @@ export class NarratorJukeboxIntegration {
   /**
    * Get display-friendly name for a playlist ID.
    * @param {string} playlistId - Playlist ID
+   * @param {string|null} [fallbackName=null] - Stored fallback name when NJ lookup is unavailable
    * @returns {string} Playlist name or 'Unknown' if not found
    */
-  static getPlaylistName(playlistId) {
+  static getPlaylistName(playlistId, fallbackName = null) {
     const playlist = this.getPlaylist(playlistId);
-    return playlist?.name ?? 'Unknown Playlist';
+    return playlist?.name ?? fallbackName ?? 'Unknown Playlist';
   }
 
   /**
@@ -277,132 +955,5 @@ export class NarratorJukeboxIntegration {
   static getAmbiencePresetName(presetId) {
     const preset = this.getAmbiencePreset(presetId);
     return preset?.name ?? 'Unknown Preset';
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-     TRACK METHODS
-     ═══════════════════════════════════════════════════════════════ */
-
-  /**
-   * Get all tracks from a specific playlist via Narrator Jukebox API.
-   * NJ playlists have their own structure with musicIds that reference tracks.
-   * @param {string} playlistId - Playlist ID
-   * @returns {Array<{id: string, name: string, path: string}>} Array of track objects
-   */
-  static getPlaylistTracks(playlistId) {
-    if (!playlistId || !this.isAvailable) return [];
-
-    try {
-      const api = this.api;
-
-      // First, get the NJ playlist object which contains musicIds
-      const njPlaylists = api?.getAllPlaylists?.() ?? [];
-      const njPlaylist = njPlaylists.find(p => (p._id ?? p.id) === playlistId);
-
-      if (!njPlaylist) {
-        console.warn(`${CONFIG.MODULE_NAME} | NJ Playlist not found:`, playlistId);
-        return [];
-      }
-
-      // NJ playlists have musicIds array
-      const musicIds = njPlaylist.musicIds ?? [];
-
-      if (musicIds.length === 0) {
-        console.log(`${CONFIG.MODULE_NAME} | NJ Playlist has no musicIds`);
-        return [];
-      }
-
-      // Try to get music data from NJ API
-      const allMusic = api?.getAllMusic?.() ?? [];
-      console.log(`${CONFIG.MODULE_NAME} | NJ getAllMusic returned:`, allMusic.length, 'tracks');
-
-      if (allMusic.length > 0) {
-        // Filter music by the playlist's musicIds
-        const tracks = [];
-        for (const musicId of musicIds) {
-          const track = allMusic.find(m => (m._id ?? m.id) === musicId);
-          if (track) {
-            tracks.push({
-              id: track._id ?? track.id,
-              name: track.name ?? track.title ?? 'Unknown Track',
-              path: track.path ?? track.src ?? ''
-            });
-          }
-        }
-        console.log(`${CONFIG.MODULE_NAME} | Found ${tracks.length} tracks for playlist ${njPlaylist.name}`);
-        return tracks;
-      }
-
-      // Fallback: Try getting tracks from Foundry playlists
-      // The musicIds might be Foundry PlaylistSound IDs
-      const tracks = [];
-      for (const musicId of musicIds) {
-        for (const foundryPlaylist of game.playlists) {
-          const sound = foundryPlaylist.sounds.get(musicId);
-          if (sound) {
-            tracks.push({
-              id: sound.id,
-              name: sound.name,
-              path: sound.path
-            });
-            break;
-          }
-        }
-      }
-
-      if (tracks.length > 0) {
-        console.log(`${CONFIG.MODULE_NAME} | Found ${tracks.length} tracks via Foundry fallback`);
-        return tracks;
-      }
-
-      // Debug: Log what we have to help troubleshoot
-      console.log(`${CONFIG.MODULE_NAME} | Could not resolve tracks. musicIds:`, musicIds);
-      console.log(`${CONFIG.MODULE_NAME} | Available API methods:`, api ? Object.keys(api) : 'none');
-
-      return [];
-    } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to get playlist tracks:`, e);
-      return [];
-    }
-  }
-
-  /**
-   * Play a specific track via Narrator Jukebox API.
-   * Uses the NJ API playMusic(id, channel) method.
-   * @param {string} playlistId - The playlist ID (not used, kept for compatibility)
-   * @param {string} trackId - The track ID to play (from NJ's music library)
-   * @returns {Promise<boolean>} True if playback started successfully
-   */
-  static async playTrack(playlistId, trackId) {
-    const api = this.api;
-    if (!trackId) return false;
-
-    try {
-      console.log(`${CONFIG.MODULE_NAME} | Attempting to play track via NJ API: trackId=${trackId}`);
-
-      // Ensure preview mode is OFF so the track is broadcast to players
-      // Preview mode prevents sync to players - we want all players to hear the music
-      if (api?.setPreviewMode) {
-        const state = api.getState?.();
-        if (state?.isPreviewMode) {
-          console.log(`${CONFIG.MODULE_NAME} | Disabling preview mode for broadcast`);
-          api.setPreviewMode(false);
-        }
-      }
-
-      // Use Narrator Jukebox API playMusic(id, channel) method
-      // This is the correct method according to the NJ API (line 312-338 of narrator-jukebox-api.js)
-      if (api?.playMusic) {
-        const track = await api.playMusic(trackId, 'music');
-        console.log(`${CONFIG.MODULE_NAME} | Playing track via NJ playMusic:`, track?.name || trackId);
-        return true;
-      }
-
-      console.warn(`${CONFIG.MODULE_NAME} | NJ playMusic method not available`);
-      return false;
-    } catch (e) {
-      console.warn(`${CONFIG.MODULE_NAME} | Failed to play track:`, e);
-      return false;
-    }
   }
 }

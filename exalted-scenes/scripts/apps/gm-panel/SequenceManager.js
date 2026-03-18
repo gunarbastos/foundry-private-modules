@@ -10,6 +10,7 @@ import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
 import { SocketHandler } from '../../data/SocketHandler.js';
 import { localize, format } from '../../utils/i18n.js';
+import { ExaltedScenesDialog } from '../ThemedDialog.js';
 
 /**
  * Manages scene sequence operations in the GMPanel.
@@ -139,25 +140,29 @@ export class SequenceManager extends BaseManager {
   /**
    * Converts a sequence back to a regular scene.
    */
-  handleRemoveSequence() {
+  async handleRemoveSequence() {
     const sceneId = this.uiState.selectedId;
     const scene = Store.scenes.get(sceneId);
     if (!scene) return;
 
-    Dialog.confirm({
+    const confirmed = await ExaltedScenesDialog.confirm({
       title: localize('Dialog.ConvertToRegular.Title'),
       content: localize('Dialog.ConvertToRegular.Content'),
-      yes: () => {
-        // Stop sequence if it's playing
-        if (Store.sequenceState.isActive && Store.sequenceState.sceneId === sceneId) {
-          Store.stopSequence();
-        }
-        scene.convertToRegular();
-        Store.saveData();
-        this.render();
-        ui.notifications.info(format('Notifications.SequenceRevertedName', { name: scene.name }));
-      }
+      tone: 'warning',
+      confirmLabel: localize('Common.Change'),
+      confirmVariant: 'primary'
     });
+
+    if (!confirmed) return;
+
+    // Stop sequence if it's playing
+    if (Store.sequenceState.isActive && Store.sequenceState.sceneId === sceneId) {
+      Store.stopSequence();
+    }
+    scene.convertToRegular();
+    Store.saveData();
+    this.render();
+    ui.notifications.info(format('Notifications.SequenceRevertedName', { name: scene.name }));
   }
 
   /* ═══════════════════════════════════════════════════════════════

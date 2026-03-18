@@ -1,4 +1,4 @@
-<div class="es-player-view {{#if active}}es-player-view--active{{/if}} {{#if castOnlyMode}}es-player-view--cast-only{{/if}} {{#if previewMode}}es-player-view--preview{{/if}} {{#if cinematicMode}}es-player-view--cinematic{{/if}}" data-scene-id="{{scene.id}}">
+<div class="es-player-view {{#if active}}es-player-view--active{{/if}} {{#if castOnlyMode}}es-player-view--cast-only{{/if}} {{#if previewMode}}es-player-view--preview{{/if}} {{#if cinematicMode}}es-player-view--cinematic{{/if}} {{#if isTheaterMode}}es-player-view--theater{{/if}}" data-scene-id="{{scene.id}}">
 
   <!-- ═══════════════════════════════════════════════════════════════
        PREVIEW MODE BANNER (GM Only - Shows when previewing before broadcast)
@@ -28,6 +28,89 @@
        BACKGROUND LAYER (com suporte a transições)
        Hidden in Cast-Only Mode for transparent overlay on battlemap
        ═══════════════════════════════════════════════════════════════ -->
+  {{#if theater}}
+  <aside class="es-theater-strip" style="left: {{theater.position.x}}px; top: {{theater.position.y}}px;{{#if theater.height}} height: {{theater.height}}px;{{/if}}">
+    <div class="es-theater-strip__header">
+      <div class="es-theater-strip__drag-handle" data-theater-drag-handle>
+        <i class="fas fa-grip-lines"></i>
+        <span>{{localize "EXALTED-SCENES.PlayerView.TheaterStrip"}}</span>
+      </div>
+      <button type="button" class="es-theater-strip__add" data-action="add-theater-shot" title="{{localize "EXALTED-SCENES.PlayerView.AddShot"}}">
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+    <div class="es-theater-strip__shots">
+      {{#each theater.shots}}
+      <section class="es-theater-shot {{#if isActive}}es-theater-shot--active{{/if}}" data-shot-id="{{id}}">
+        <button type="button" class="es-theater-shot__header" data-action="activate-theater-shot" data-shot-id="{{id}}">
+          <span class="es-theater-shot__header-copy">
+            <span class="es-theater-shot__name">{{name}}</span>
+            <span class="es-theater-shot__count">{{visibleSummary}}</span>
+          </span>
+          <span class="es-theater-shot__state" aria-hidden="true"></span>
+        </button>
+        <div class="es-theater-shot__toggles">
+          {{#each characterToggles}}
+          <button type="button"
+                  class="es-theater-shot__toggle {{#if visible}}es-theater-shot__toggle--visible{{/if}}"
+                  data-action="toggle-theater-character"
+                  data-shot-id="{{../id}}"
+                  data-character-id="{{id}}"
+                  title="{{name}}">
+            {{#if image}}
+              <img src="{{image}}" alt="{{name}}">
+            {{else}}
+              <span>{{initials}}</span>
+            {{/if}}
+          </button>
+          {{/each}}
+        </div>
+        <button type="button" class="es-theater-shot__preview" data-action="activate-theater-shot" data-shot-id="{{id}}">
+          <span class="es-theater-shot__preview-media" style="{{previewViewportStyle}}">
+            <span class="es-theater-shot__preview-stage">
+              <span class="es-theater-shot__preview-scene">
+                <span class="es-pv-background es-pv-background--{{backgroundFitMode}} {{backgroundFitClass}}">
+                  {{#if (eq bgType 'video')}}
+                    <video class="es-pv-bg-media" src="{{background}}" muted loop autoplay playsinline></video>
+                  {{else}}
+                    <img src="{{background}}" class="es-pv-bg-media" alt="{{name}}">
+                  {{/if}}
+                </span>
+                <span class="es-pv-overlay"></span>
+                <span class="es-pv-cast es-theater-shot__preview-cast"
+                      data-preset="{{previewLayout.preset}}"
+                      data-shape="{{previewLayout.shape}}"
+                      data-display-mode="{{previewLayout.displayMode}}"
+                      style="--cast-size: {{previewLayout.size}}; --cast-spacing: {{previewLayout.spacing}}px; --cast-offset-x: {{previewLayout.offsetX}}vh; --cast-offset-y: {{previewLayout.offsetY}}vh;">
+                  {{#each previewCast}}
+                    <span class="es-pv-character {{#if locked}}es-pv-character--locked{{/if}} {{#if isHeroMode}}es-pv-character--hero{{/if}} {{#if isHeroFull}}es-pv-character--hero-full{{/if}}" style="{{positionStyle}}">
+                      {{#if isHeroMode}}
+                        <span class="es-pv-hero-visual">
+                          <img src="{{heroImage}}" class="es-pv-hero-sprite" alt="{{name}}">
+                        </span>
+                      {{else}}
+                        <span class="es-pv-portrait" data-effect="{{borderStyle.effect}}" style="{{borderInlineStyle borderStyle}}">
+                          {{#if (isVideo image)}}
+                            <video src="{{image}}" muted loop autoplay playsinline disablepictureinpicture style="{{focusStyle}}"></video>
+                          {{else}}
+                            <img src="{{image}}" alt="{{name}}" style="{{focusStyle}}">
+                          {{/if}}
+                        </span>
+                      {{/if}}
+                    </span>
+                  {{/each}}
+                </span>
+              </span>
+            </span>
+          </span>
+        </button>
+      </section>
+      {{/each}}
+    </div>
+    <div class="es-theater-strip__resize-handle" data-theater-resize-handle></div>
+  </aside>
+  {{/if}}
+
   {{#unless castOnlyMode}}
   <div class="es-pv-background es-pv-background--{{backgroundFitMode}}" data-fit-mode="{{backgroundFitMode}}">
     {{#if scene}}
@@ -50,20 +133,100 @@
   <!-- ═══════════════════════════════════════════════════════════════
        CAST LAYER
        ═══════════════════════════════════════════════════════════════ -->
-  <div class="es-pv-cast"
+  <div class="es-pv-cast {{#if isGMFreeform}}es-gm-freeform{{/if}} {{#if isHeroLayoutEnabled}}es-hero-layout-enabled{{/if}}"
        data-preset="{{layout.preset}}"
+       data-shape="{{layout.shape}}"
+       data-display-mode="{{layout.displayMode}}"
        style="--cast-size: {{layout.size}}; --cast-spacing: {{layout.spacing}}px; --cast-offset-x: {{layout.offsetX}}vh; --cast-offset-y: {{layout.offsetY}}vh;">
     {{#each cast}}
-      <div class="es-pv-character {{#if locked}}es-pv-character--locked{{/if}}"
+      <div class="es-pv-character {{#if locked}}es-pv-character--locked{{/if}} {{#if isHeroMode}}es-pv-character--hero{{/if}} {{#if isHeroFull}}es-pv-character--hero-full{{/if}} {{#if canControlLayout}}es-pv-character--hero-controllable{{/if}}"
            data-id="{{id}}"
-           data-action="character-click">
-        <div class="es-pv-portrait" data-border="{{borderStyle}}">
-          {{#if (isVideo image)}}
-            <video src="{{image}}" muted loop autoplay playsinline disablepictureinpicture></video>
-          {{else}}
-            <img src="{{image}}" alt="{{name}}">
+            data-action="character-click"
+            data-cast-index="{{castIndex}}"
+            {{#if isHeroMode}}{{#unless isHeroFull}}data-hero-half-index="{{heroHalfIndex}}"{{/unless}}{{/if}}
+            {{#if isHeroMode}}title="{{localize "EXALTED-SCENES.CharEditor.HeroPoses"}}"{{/if}}
+            style="{{positionStyle}}">
+
+        {{#if isHeroMode}}
+          {{!-- Hero Mode: transparent sprite, no border/shape clipping --}}
+          <div class="es-pv-hero-visual">
+            <img src="{{heroImage}}" class="es-pv-hero-sprite" alt="{{name}}">
+          </div>
+
+          {{#if canControlLayout}}
+            <div class="es-hero-toolbar">
+              {{#if showHeroDragLabel}}
+                <div class="es-hero-toolbar__label" title="{{localize "EXALTED-SCENES.PlayerView.DragHero"}}">
+                  <i class="fa-solid fa-arrows-left-right"></i>
+                  <span>{{localize "EXALTED-SCENES.PlayerView.DragHero"}}</span>
+                </div>
+              {{/if}}
+
+              {{#if showDepthControls}}
+                <button type="button"
+                        class="es-hero-control es-hero-control--layer"
+                        data-action="move-hero-backward"
+                        title="{{localize "EXALTED-SCENES.PlayerView.MoveHeroBackward"}}">
+                  <i class="fa-solid fa-arrow-down"></i>
+                </button>
+              {{/if}}
+
+              <button type="button"
+                      class="es-flip-btn es-hero-control es-hero-control--flip"
+                      data-action="flip-character"
+                      title="{{localize "EXALTED-SCENES.Config.Layouts.FlipCharacter"}}">
+                <i class="fa-solid fa-right-left"></i>
+              </button>
+
+              {{#if showDepthControls}}
+                <button type="button"
+                        class="es-hero-control es-hero-control--layer"
+                        data-action="move-hero-forward"
+                        title="{{localize "EXALTED-SCENES.PlayerView.MoveHeroForward"}}">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              {{/if}}
+            </div>
           {{/if}}
-        </div>
+        {{else}}
+          {{!-- Token Mode: bordered portrait --}}
+          <div class="es-pv-portrait" data-effect="{{borderStyle.effect}}" style="{{borderInlineStyle borderStyle}}">
+            {{#if (isVideo image)}}
+              <video src="{{image}}" muted loop autoplay playsinline disablepictureinpicture style="{{focusStyle}}"></video>
+            {{else}}
+              <img src="{{image}}" alt="{{name}}" style="{{focusStyle}}">
+            {{/if}}
+          </div>
+
+          {{#if canControlLayout}}
+            <div class="es-hero-toolbar">
+              {{#if showDepthControls}}
+                <button type="button"
+                        class="es-hero-control es-hero-control--layer"
+                        data-action="move-hero-backward"
+                        title="{{localize "EXALTED-SCENES.PlayerView.MoveHeroBackward"}}">
+                  <i class="fa-solid fa-arrow-down"></i>
+                </button>
+              {{/if}}
+
+              <button type="button"
+                      class="es-flip-btn es-hero-control es-hero-control--flip"
+                      data-action="flip-character"
+                      title="{{localize "EXALTED-SCENES.Config.Layouts.FlipCharacter"}}">
+                <i class="fa-solid fa-right-left"></i>
+              </button>
+
+              {{#if showDepthControls}}
+                <button type="button"
+                        class="es-hero-control es-hero-control--layer"
+                        data-action="move-hero-forward"
+                        title="{{localize "EXALTED-SCENES.PlayerView.MoveHeroForward"}}">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </button>
+              {{/if}}
+            </div>
+          {{/if}}
+        {{/if}}
 
         <!-- Lock Indicator -->
         {{#if locked}}
@@ -77,76 +240,178 @@
           {{#if locked}}
             <i class="fas fa-lock"></i>
           {{else}}
-            <i class="fas fa-theater-masks"></i>
+            {{#if isHeroMode}}
+              <i class="fas {{hintIconClass}}"></i>
+            {{else}}
+              <i class="fas fa-theater-masks"></i>
+            {{/if}}
           {{/if}}
         </div>
 
-        <div class="es-pv-name">{{name}}</div>
+        {{#if showNameLabel}}
+          <div class="es-pv-name">{{name}}</div>
+        {{/if}}
       </div>
     {{/each}}
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       AUDIO RESTORE BUTTONS (GM Only - Narrator Jukebox Integration)
+       GM AUDIO PANEL (GM Only - Narrator Jukebox Integration)
+       Collapsible panel with now-playing status, restore, and stop
        ═══════════════════════════════════════════════════════════════ -->
   {{#if isGM}}
-  {{#if audioControls}}
-  <div class="es-pv-audio-controls">
-    {{#if audioControls.hasPlaylist}}
-    <button class="es-pv-audio-btn" data-action="restore-playlist" title="Play: {{audioControls.playlistName}}">
-      <i class="fas fa-music"></i>
-    </button>
-    {{/if}}
-    {{#if audioControls.hasAmbience}}
-    <button class="es-pv-audio-btn" data-action="restore-ambience" title="Load: {{audioControls.ambienceName}}">
-      <i class="fas fa-cloud-rain"></i>
-    </button>
-    {{/if}}
-    <button class="es-pv-audio-btn es-pv-audio-btn--stop" data-action="stop-all-audio" title="{{localize "EXALTED-SCENES.PlayerView.StopAllAudio"}}">
-      <i class="fas fa-stop"></i>
-    </button>
+  {{#if audioPanel}}
+  <div class="es-audio-panel {{#if audioPanel.collapsed}}es-audio-panel--collapsed{{/if}}" style="{{audioPanel.positionStyle}}">
+    {{!-- Header: title + collapse toggle --}}
+    <div class="es-audio-panel__header" data-audio-panel-drag-handle>
+      <div class="es-audio-panel__title">
+        <i class="fas fa-headphones"></i>
+        <span class="es-audio-panel__title-text">{{localize "EXALTED-SCENES.AudioPanel.Title"}}</span>
+      </div>
+      <button class="es-audio-panel__toggle" title="{{localize "EXALTED-SCENES.AudioPanel.Toggle"}}">
+        <i class="fas {{#if audioPanel.collapsed}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i>
+      </button>
+    </div>
+
+    {{!-- Body: now playing + action buttons --}}
+    <div class="es-audio-panel__body">
+      {{!-- Now Playing status --}}
+      <div class="es-audio-panel__now-playing">
+        <i class="fas fa-volume-up es-audio-panel__now-playing-icon {{#if audioPanel.nowPlaying.isPlaying}}es-audio-panel__now-playing-icon--active{{/if}}"></i>
+        <span class="es-audio-panel__now-playing-text">{{audioPanel.nowPlaying.text}}</span>
+      </div>
+
+      {{!-- Volume control --}}
+      <div class="es-audio-panel__volume">
+        <i class="fas fa-volume-down es-audio-panel__volume-icon"></i>
+        <input type="range" class="es-audio-panel__volume-slider"
+               min="0" max="1" step="0.05" value="{{audioPanel.volume}}">
+        <span class="es-audio-panel__volume-value">{{audioPanel.volumePercent}}</span>
+      </div>
+
+      {{!-- Mixer toggle + section --}}
+      <button class="es-audio-panel__btn es-audio-panel__btn--mixer" data-action="toggle-mixer" title="{{localize "EXALTED-SCENES.AudioPanel.Mixer"}}">
+        <i class="fas fa-sliders-h"></i>
+        <span class="es-audio-panel__btn-label">{{localize "EXALTED-SCENES.AudioPanel.Mixer"}}</span>
+      </button>
+      <div class="es-audio-panel__mixer es-audio-panel__mixer--hidden"></div>
+
+      {{!-- Action buttons --}}
+      <div class="es-audio-panel__actions">
+        {{#if audioPanel.hasPlaylist}}
+        <button class="es-audio-panel__btn" data-action="restore-playlist" title="{{localize "EXALTED-SCENES.AudioPanel.RestoreSoundtrack"}}">
+          <i class="fas fa-music"></i>
+          <span class="es-audio-panel__btn-label">{{localize "EXALTED-SCENES.AudioPanel.RestoreSoundtrack"}}</span>
+          <span class="es-audio-panel__btn-hint">{{audioPanel.playlistName}}</span>
+        </button>
+        {{/if}}
+        {{#if audioPanel.hasAmbience}}
+        <button class="es-audio-panel__btn" data-action="restore-ambience" title="{{localize "EXALTED-SCENES.AudioPanel.RestoreAmbience"}}">
+          <i class="fas fa-cloud-rain"></i>
+          <span class="es-audio-panel__btn-label">{{localize "EXALTED-SCENES.AudioPanel.RestoreAmbience"}}</span>
+          <span class="es-audio-panel__btn-hint">{{audioPanel.ambienceName}}</span>
+        </button>
+        {{/if}}
+        <button class="es-audio-panel__btn es-audio-panel__btn--stop" data-action="stop-all-audio" title="{{localize "EXALTED-SCENES.PlayerView.StopAllAudio"}}">
+          <i class="fas fa-stop"></i>
+          <span class="es-audio-panel__btn-label">{{localize "EXALTED-SCENES.PlayerView.StopAllAudio"}}</span>
+        </button>
+      </div>
+
+      {{!-- Soundboard Quick Sounds --}}
+      {{#if audioPanel.hasSounds}}
+      <div class="es-audio-panel__soundboard">
+        <div class="es-audio-panel__soundboard-label">
+          <i class="fas fa-drum"></i>
+          <span>{{localize "EXALTED-SCENES.AudioPanel.QuickSounds"}}</span>
+        </div>
+        <div class="es-audio-panel__soundboard-grid">
+          {{#each audioPanel.sounds}}
+          <button class="es-audio-panel__sound-btn" data-action="play-soundboard-sound" data-sound-id="{{id}}" title="{{name}}">
+            <i class="fas fa-play"></i>
+            <span>{{name}}</span>
+          </button>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    </div>
   </div>
   {{/if}}
   {{/if}}
 
+  <!-- ═══════════════════════════════════════════════════════════════
+       PLAYER NOW PLAYING INDICATOR (Players Only - Read-only)
+       Small bar showing current track name from Narrator Jukebox
+       ═══════════════════════════════════════════════════════════════ -->
+  {{#unless isGM}}
+  {{#if audioPanel}}
+  {{#if audioPanel.isPlayerMode}}
+  <div class="es-now-playing {{#if audioPanel.nowPlaying.isPlaying}}es-now-playing--active{{/if}}">
+    <i class="fas fa-music es-now-playing__icon {{#if audioPanel.nowPlaying.isPlaying}}es-now-playing__icon--active{{/if}}"></i>
+    <span class="es-now-playing__text">{{audioPanel.nowPlaying.text}}</span>
+  </div>
+  {{/if}}
+  {{/if}}
+  {{/unless}}
+
   <!-- Emotion Picker Popover -->
   {{#if emotionPicker}}
-    <div class="es-emotion-picker {{#if (gt emotionPicker.emotions.length 5)}}es-emotion-picker--has-search{{/if}} {{#if emotionPicker.pickerBelow}}es-emotion-picker--below{{/if}}" style="left: {{emotionPicker.x}}px; top: {{emotionPicker.y}}px;">
+    <div class="es-emotion-picker {{#if emotionPicker.isHeroMode}}es-emotion-picker--hero{{/if}} {{#if (gt emotionPicker.emotions.length 5)}}es-emotion-picker--has-search{{/if}} {{#if emotionPicker.pickerBelow}}es-emotion-picker--below{{/if}}" style="left: {{emotionPicker.x}}px; top: {{emotionPicker.y}}px;">
       <div class="es-picker-header">
-        <span>{{emotionPicker.character.name}}</span>
+        <div class="es-picker-header-copy">
+          <div class="es-picker-header-kicker">
+            <i class="fas {{emotionPicker.pickerModeIcon}}"></i>
+            <span>{{emotionPicker.pickerModeLabel}}</span>
+          </div>
+          <div class="es-picker-header-title">{{emotionPicker.character.name}}</div>
+        </div>
         <div class="es-picker-actions">
           {{#if emotionPicker.linkedActor}}
-            <button class="es-btn-icon es-btn-icon--small es-btn-sheet" data-action="open-actor-sheet" title="Open {{emotionPicker.linkedActor.name}}'s Sheet"><i class="fas fa-address-book"></i></button>
+            <button class="es-btn-icon es-btn-icon--small es-btn-sheet" data-action="open-actor-sheet" title="{{emotionPicker.openActorTitle}}"><i class="fas fa-address-book"></i></button>
           {{/if}}
           {{#if emotionPicker.hasMusicPlaylist}}
             <button class="es-btn-icon es-btn-icon--small es-btn-music" data-action="open-music-picker" title="{{localize "EXALTED-SCENES.Picker.RequestMusic"}}"><i class="fas fa-music"></i></button>
           {{/if}}
+          {{#if emotionPicker.canEditBorder}}
           <button class="es-btn-icon es-btn-icon--small es-btn-palette" data-action="open-border-picker" title="{{localize "EXALTED-SCENES.Picker.BorderStyle"}}"><i class="fas fa-palette"></i></button>
-          <button class="es-btn-icon es-btn-icon--small" data-action="close-picker"><i class="fas fa-times"></i></button>
+          {{/if}}
+          <button class="es-btn-icon es-btn-icon--small" data-action="close-picker" title="{{localize "EXALTED-SCENES.Common.Close"}}"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="es-picker-meta">
+        <div class="es-picker-meta-pill es-picker-meta-pill--active" title="{{emotionPicker.activeStateLabel}}">
+          <i class="fas fa-bolt"></i>
+          <span>{{emotionPicker.activeStateLabel}}</span>
+        </div>
+        <div class="es-picker-meta-pill" title="{{emotionPicker.pickerModeLabel}}">
+          <i class="fas fa-layer-group"></i>
+          <span>{{emotionPicker.pickerCount}}</span>
         </div>
       </div>
       {{!-- Search field for 6+ emotions --}}
       {{#if (gt emotionPicker.emotions.length 5)}}
         <div class="es-picker-search">
           <i class="fas fa-search"></i>
-          <input type="text" class="es-picker-search-input" placeholder="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}">
+          <input type="text" class="es-picker-search-input" placeholder="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}" aria-label="{{localize "EXALTED-SCENES.Picker.SearchEmotions"}}">
         </div>
       {{/if}}
       <div class="es-picker-grid">
         {{!-- Emotions are already sorted: favorites first, then alphabetically --}}
         {{#each emotionPicker.emotions}}
-          <div class="es-picker-item {{#if (eq ../emotionPicker.character.currentState key)}}es-picker-item--active{{/if}} {{#if isFavorite}}es-picker-item--favorite{{/if}}"
+          <div class="es-picker-item {{#if (eq ../emotionPicker.character.currentState key)}}es-picker-item--active{{/if}} {{#if isFavorite}}es-picker-item--favorite{{/if}} {{#if isHeroFull}}es-picker-item--hero-full{{/if}}"
                data-action="select-emotion"
                data-state="{{key}}"
                data-path="{{path}}"
+               {{#if heroPoseType}}data-hero-pose-type="{{heroPoseType}}"{{/if}}
                title="{{key}}{{#if isFavorite}} {{localize "EXALTED-SCENES.Picker.Favorite"}}{{/if}}">
             <button class="es-emotion-fav-btn {{#if isFavorite}}es-emotion-fav-btn--active{{/if}}" data-action="toggle-emotion-favorite" data-state="{{key}}" title="{{#if isFavorite}}{{localize "EXALTED-SCENES.Picker.RemoveFromFavorites"}}{{else}}{{localize "EXALTED-SCENES.Picker.AddToFavorites"}}{{/if}}">
               <i class="{{#if isFavorite}}fas{{else}}far{{/if}} fa-star"></i>
             </button>
             {{#if (isVideo path)}}
-              <video src="{{path}}" muted loop autoplay playsinline disablepictureinpicture></video>
+              <video src="{{path}}" muted loop autoplay playsinline disablepictureinpicture style="{{focusStyle}}"></video>
             {{else}}
-              <img src="{{path}}">
+              <img src="{{path}}" style="{{focusStyle}}">
             {{/if}}
             <span class="es-picker-label">{{key}}</span>
           </div>
@@ -175,117 +440,232 @@
   {{#if musicPicker}}
     <div class="es-music-picker {{#if musicPicker.pickerBelow}}es-music-picker--below{{/if}}" style="left: {{musicPicker.x}}px; top: {{musicPicker.y}}px;">
       <div class="es-picker-header">
-        <span>{{localize "EXALTED-SCENES.Picker.RequestMusic"}}</span>
-        <button class="es-btn-icon es-btn-icon--small" data-action="close-music-picker"><i class="fas fa-times"></i></button>
+        <div class="es-picker-header-copy">
+          <div class="es-picker-header-kicker">
+            <i class="fas fa-music"></i>
+            <span>{{localize "EXALTED-SCENES.Picker.RequestMusic"}}</span>
+          </div>
+          <div class="es-picker-header-title">{{musicPicker.character.name}}</div>
+        </div>
+        <div class="es-picker-actions">
+          <button class="es-btn-icon es-btn-icon--small" data-action="close-music-picker" title="{{localize "EXALTED-SCENES.Common.Close"}}"><i class="fas fa-times"></i></button>
+        </div>
       </div>
-      <div class="es-picker-back" data-action="back-to-emotions-from-music">
-        <i class="fas fa-arrow-left"></i> {{localize "EXALTED-SCENES.Picker.BackToEmotions"}}
+      <div class="es-picker-meta es-music-picker__meta">
+        <div class="es-picker-meta-pill es-picker-meta-pill--active" title="{{musicPicker.playlistName}}">
+          <i class="fas fa-compact-disc"></i>
+          <span>{{musicPicker.playlistName}}</span>
+        </div>
+        <div class="es-picker-meta-pill" title="{{localize "EXALTED-SCENES.MusicPicker.CountTracks" count=musicPicker.totalTracks}}">
+          <i class="fas fa-wave-square"></i>
+          <span>{{musicPicker.totalTracks}}</span>
+        </div>
+        {{#if musicPicker.showPlaylistOrigin}}
+          <div class="es-picker-meta-pill" title="{{localize "EXALTED-SCENES.MusicPicker.PlaylistCount" count=musicPicker.playlistCount}}">
+            <i class="fas fa-layer-group"></i>
+            <span>{{musicPicker.playlistCount}}</span>
+          </div>
+        {{/if}}
+        {{#if musicPicker.canAddYouTube}}
+          <div class="es-picker-meta-pill es-music-picker__meta-pill--youtube">
+            <i class="fab fa-youtube"></i>
+            <span>YouTube</span>
+          </div>
+        {{/if}}
       </div>
+      <button type="button" class="es-picker-back es-music-picker__back" data-action="back-to-emotions-from-music">
+        <i class="fas fa-arrow-left"></i>
+        <span>{{localize "EXALTED-SCENES.Picker.BackToEmotions"}}</span>
+      </button>
 
-      <div class="es-music-picker__playlist">
-        <i class="fas fa-compact-disc"></i>
-        <span>{{musicPicker.playlistName}}</span>
-        <span class="es-music-picker__count">{{musicPicker.totalTracks}} tracks</span>
-      </div>
+      {{#if musicPicker.addMode}}
+        {{!-- ===== ADD MODE: YouTube URL Form ===== --}}
+        <div class="es-music-picker__panel es-music-picker__panel--add es-music-picker__add-form">
+          <div class="es-music-picker__hero es-music-picker__hero--youtube">
+            <div class="es-music-picker__hero-icon">
+              <i class="fab fa-youtube"></i>
+            </div>
+            <div class="es-music-picker__hero-copy">
+              <span class="es-music-picker__hero-label">{{musicPicker.playlistName}}</span>
+              <strong class="es-music-picker__hero-title">{{localize "EXALTED-SCENES.MusicPicker.AddYouTubeTrack"}}</strong>
+            </div>
+          </div>
+          <label class="es-music-picker__field">
+            <span class="es-music-picker__field-label">
+              <i class="fas fa-link"></i>
+              <span>{{localize "EXALTED-SCENES.MusicPicker.YouTubeUrl"}}</span>
+            </span>
+            <input type="url" name="track-url" class="es-music-picker__add-input" placeholder="https://youtube.com/watch?v=...">
+          </label>
+          <label class="es-music-picker__field">
+            <span class="es-music-picker__field-label">
+              <i class="fas fa-pen"></i>
+              <span>{{localize "EXALTED-SCENES.MusicPicker.TrackName"}}</span>
+            </span>
+            <input type="text" name="track-name" class="es-music-picker__add-input" placeholder="{{localize "EXALTED-SCENES.MusicPicker.TrackNamePlaceholder"}}" maxlength="100">
+          </label>
+          <div class="es-music-picker__add-actions">
+            <button type="button" class="es-music-picker__add-btn es-music-picker__add-btn--submit" data-action="submit-youtube-add">
+              <i class="fas fa-paper-plane"></i>
+              {{localize "EXALTED-SCENES.MusicPicker.SendRequest"}}
+            </button>
+            <button type="button" class="es-music-picker__add-btn es-music-picker__add-btn--cancel" data-action="toggle-add-mode">
+              {{localize "EXALTED-SCENES.Common.Cancel"}}
+            </button>
+          </div>
+        </div>
+      {{else}}
+        {{!-- ===== BROWSE MODE: Track List ===== --}}
+        <div class="es-music-picker__panel es-music-picker__panel--browse">
+          <div class="es-music-picker__hero">
+            <div class="es-music-picker__hero-icon">
+              <i class="fas fa-compact-disc"></i>
+            </div>
+            <div class="es-music-picker__hero-copy">
+              <span class="es-music-picker__hero-label">{{localize "EXALTED-SCENES.MusicPicker.CountTracks" count=musicPicker.totalTracks}}</span>
+              <strong class="es-music-picker__hero-title">{{musicPicker.playlistName}}</strong>
+            </div>
+          </div>
 
-      {{#if musicPicker.hasSearch}}
-        <div class="es-picker-search es-music-picker__search">
-          <i class="fas fa-search"></i>
-          <input type="text" class="es-music-picker__search-input" placeholder="{{localize "EXALTED-SCENES.MusicPicker.SearchTracks"}}">
+          {{#if musicPicker.hasSearch}}
+            <div class="es-picker-search es-music-picker__search">
+              <i class="fas fa-search"></i>
+              <input type="text" class="es-picker-search-input es-music-picker__search-input" placeholder="{{localize "EXALTED-SCENES.MusicPicker.SearchTracks"}}" aria-label="{{localize "EXALTED-SCENES.MusicPicker.SearchTracks"}}" value="{{musicPicker.searchQuery}}">
+              <span class="es-music-picker__search-count" data-music-visible-count>{{musicPicker.filteredTrackCount}}</span>
+            </div>
+          {{/if}}
+
+          <div class="es-music-picker__tracks" data-music-track-list>
+            {{#each musicPicker.tracks}}
+              <button type="button"
+                      class="es-music-picker__track"
+                      data-action="request-track"
+                      data-track-id="{{id}}"
+                      data-track-name="{{name}}"
+                      data-track-playlist="{{playlistName}}"
+                      title="{{localize "EXALTED-SCENES.MusicPicker.RequestTrack" name=name}}">
+                <span class="es-music-picker__track-icon">
+                  <i class="fas fa-play-circle"></i>
+                </span>
+                <span class="es-music-picker__track-copy">
+                  <span class="es-music-picker__track-name">{{name}}</span>
+                  {{#if ../musicPicker.showPlaylistOrigin}}
+                    <span class="es-music-picker__track-source">{{playlistName}}</span>
+                  {{/if}}
+                </span>
+                <span class="es-music-picker__track-action">
+                  <i class="fas fa-paper-plane"></i>
+                </span>
+              </button>
+            {{/each}}
+
+            <div class="es-music-picker__empty {{#if musicPicker.hasVisibleTracks}}is-hidden{{/if}}" data-music-empty-state>
+              <div class="es-music-picker__empty-icon">
+                <i class="fas fa-volume-mute"></i>
+              </div>
+              <span>{{localize "EXALTED-SCENES.MusicPicker.NoTracksFound"}}</span>
+              <span class="es-music-picker__empty-query {{#unless musicPicker.isFiltered}}is-hidden{{/unless}}" data-music-empty-query>{{musicPicker.searchQuery}}</span>
+            </div>
+          </div>
+
+          {{#if musicPicker.canAddYouTube}}
+            <div class="es-music-picker__footer">
+              <button type="button" class="es-music-picker__add-trigger-btn" data-action="toggle-add-mode">
+                <i class="fab fa-youtube"></i>
+                {{localize "EXALTED-SCENES.MusicPicker.AddYouTubeTrack"}}
+              </button>
+            </div>
+          {{/if}}
         </div>
       {{/if}}
-
-      <div class="es-music-picker__tracks">
-        {{#each musicPicker.tracks}}
-          <div class="es-music-picker__track"
-               data-action="request-track"
-               data-track-id="{{id}}"
-               data-track-name="{{name}}"
-               title="Request: {{name}}">
-            <i class="fas fa-play-circle"></i>
-            <span class="es-music-picker__track-name">{{name}}</span>
-          </div>
-        {{else}}
-          <div class="es-music-picker__empty">
-            <i class="fas fa-volume-mute"></i>
-            <span>{{localize "EXALTED-SCENES.MusicPicker.NoTracksFound"}}</span>
-          </div>
-        {{/each}}
-      </div>
     </div>
   {{/if}}
 
-  <!-- Border Picker Popover -->
+  <!-- Border Picker Popover (v6.0: effect + color) -->
   {{#if borderPicker}}
-    <div class="es-border-picker {{#if borderPicker.pickerBelow}}es-border-picker--below{{/if}}" style="left: {{borderPicker.x}}px; top: {{borderPicker.y}}px;">
+    <div class="es-border-picker {{#if borderPicker.pickerBelow}}es-border-picker--below{{/if}}" style="left: {{borderPicker.x}}px; top: {{borderPicker.y}}px; --es-border-picker-accent: {{borderPicker.currentAccent}}; --es-border-picker-accent-rgb: {{borderPicker.currentAccentRgb}};">
       <div class="es-picker-header">
-        <span>{{localize "EXALTED-SCENES.Picker.BorderStyle"}}</span>
-        <button class="es-btn-icon es-btn-icon--small" data-action="close-border-picker"><i class="fas fa-times"></i></button>
+        <div class="es-picker-header-copy">
+          <div class="es-picker-header-kicker">
+            <i class="fas fa-palette"></i>
+            <span>{{localize "EXALTED-SCENES.Picker.BorderStyle"}}</span>
+          </div>
+          <div class="es-picker-header-title">{{borderPicker.character.name}}</div>
+        </div>
+        <div class="es-picker-actions">
+          <button class="es-btn-icon es-btn-icon--small" data-action="close-border-picker"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="es-picker-meta es-border-picker__meta">
+        <div class="es-picker-meta-pill es-picker-meta-pill--active">
+          <i class="fas {{borderPicker.activeEffectIcon}} es-border-current-effect-icon"></i>
+          <span class="es-border-current-effect">{{localize borderPicker.activeEffectName}}</span>
+        </div>
+        <div class="es-picker-meta-pill es-border-picker__palette-pill" {{#if borderPicker.noColor}}hidden{{/if}}>
+          <i class="fas fa-droplet"></i>
+          <div class="es-border-picker__color-summary">
+            <span class="es-border-picker__color-chip" data-border-color-preview="color1" style="--es-color-chip: {{borderPicker.currentColor}}"></span>
+            <span class="es-border-picker__color-bridge" {{#unless borderPicker.showColor2}}hidden{{/unless}}></span>
+            <span class="es-border-picker__color-chip" data-border-color-preview="color2" style="--es-color-chip: {{borderPicker.currentColor2}}" {{#unless borderPicker.showColor2}}hidden{{/unless}}></span>
+          </div>
+        </div>
       </div>
       <div class="es-picker-back" data-action="back-to-emotions">
         <i class="fas fa-arrow-left"></i> {{localize "EXALTED-SCENES.Picker.BackToEmotions"}}
       </div>
 
-      {{!-- Solid Colors --}}
+      {{!-- Effect Grid --}}
       <div class="es-border-category">
-        <h4>{{localize "EXALTED-SCENES.Border.Solid"}}</h4>
-        <div class="es-border-grid">
-          {{#each borderPicker.solid}}
-            <div class="es-border-option {{#if active}}es-border-option--active{{/if}}"
-                 data-action="select-border"
-                 data-preset="{{key}}"
-                 data-type="solid"
-                 style="--option-color: {{color}}"
-                 title="{{name}}">
+        <h4>{{localize "EXALTED-SCENES.Border.Effect"}}</h4>
+        <div class="es-border-effect-grid">
+          {{#each borderPicker.effects}}
+            <div class="es-border-effect-option {{#if active}}es-border-effect-option--active{{/if}} {{#if animated}}es-border-effect-option--animated{{/if}}"
+                 data-action="select-effect"
+                 data-effect="{{key}}"
+                 data-effect-label="{{localize name}}"
+                 title="{{localize name}}">
+              <i class="fas {{icon}}"></i>
+              <span>{{localize name}}</span>
             </div>
           {{/each}}
         </div>
       </div>
 
-      {{!-- Gradients --}}
-      <div class="es-border-category">
-        <h4>{{localize "EXALTED-SCENES.Border.Gradient"}}</h4>
-        <div class="es-border-grid">
-          {{#each borderPicker.gradient}}
-            <div class="es-border-option {{#if active}}es-border-option--active{{/if}}"
-                 data-action="select-border"
-                 data-preset="{{key}}"
-                 data-type="gradient"
-                 title="{{name}}">
+      {{!-- Color Swatches — always in DOM, hidden for 0-color effects --}}
+      <div class="es-border-category es-border-color-section" {{#if borderPicker.noColor}}style="display: none"{{/if}}>
+        <h4>{{localize "EXALTED-SCENES.Border.Color"}}</h4>
+        <div class="es-border-color-row">
+          {{#each borderPicker.swatches}}
+            <div class="es-border-swatch {{#if active}}es-border-swatch--active{{/if}}"
+                 data-action="select-border-color"
+                 data-color="{{hex}}"
+                 style="background-color: {{hex}}"
+                 title="{{key}}">
             </div>
           {{/each}}
+          <div class="es-border-custom-color" style="background-color: {{borderPicker.currentColor}}">
+            <i class="fas fa-eye-dropper"></i>
+            <input type="color" class="es-border-color-input" value="{{borderPicker.currentColor}}" data-target="color1" title="{{localize "EXALTED-SCENES.Border.CustomColor"}}">
+          </div>
         </div>
       </div>
 
-      {{!-- Animated --}}
-      <div class="es-border-category">
-        <h4>{{localize "EXALTED-SCENES.Border.Animated"}}</h4>
-        <div class="es-border-grid">
-          {{#each borderPicker.animated}}
-            <div class="es-border-option {{#if active}}es-border-option--active{{/if}}"
-                 data-action="select-border"
-                 data-preset="{{key}}"
-                 data-type="animated"
-                 style="--option-color: {{color}}"
-                 title="{{name}}">
+      {{!-- Second Color — always in DOM, hidden for non-dual effects --}}
+      <div class="es-border-category es-border-color2-section" {{#unless borderPicker.showColor2}}style="display: none"{{/unless}}>
+        <h4>{{localize "EXALTED-SCENES.Border.SecondColor"}}</h4>
+        <div class="es-border-color-row">
+          {{#each borderPicker.swatches2}}
+            <div class="es-border-swatch {{#if active}}es-border-swatch--active{{/if}}"
+                 data-action="select-border-color2"
+                 data-color="{{hex}}"
+                 style="background-color: {{hex}}"
+                 title="{{key}}">
             </div>
           {{/each}}
-        </div>
-      </div>
-
-      {{!-- Styled --}}
-      <div class="es-border-category">
-        <h4>{{localize "EXALTED-SCENES.Border.Styled"}}</h4>
-        <div class="es-border-grid">
-          {{#each borderPicker.styled}}
-            <div class="es-border-option {{#if active}}es-border-option--active{{/if}}"
-                 data-action="select-border"
-                 data-preset="{{key}}"
-                 data-type="styled"
-                 style="--option-color: {{color}}"
-                 title="{{name}}">
-            </div>
-          {{/each}}
+          <div class="es-border-custom-color" style="background-color: {{borderPicker.currentColor2}}">
+            <i class="fas fa-eye-dropper"></i>
+            <input type="color" class="es-border-color-input" value="{{borderPicker.currentColor2}}" data-target="color2" title="{{localize "EXALTED-SCENES.Border.CustomColor"}}">
+          </div>
         </div>
       </div>
     </div>

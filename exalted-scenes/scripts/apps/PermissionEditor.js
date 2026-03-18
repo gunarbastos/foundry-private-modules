@@ -30,12 +30,12 @@ export class PermissionEditor extends HandlebarsApplicationMixin(ApplicationV2) 
     window: {
       title: 'Character Permissions',
       icon: 'fas fa-user-shield',
-      resizable: false,
+      resizable: true,
       controls: []
     },
     position: {
-      width: 480,
-      height: 'auto'
+      width: 520,
+      height: 760
     },
     actions: {
       save: PermissionEditor._onSave,
@@ -129,7 +129,7 @@ export class PermissionEditor extends HandlebarsApplicationMixin(ApplicationV2) 
       if (ExaltedScenesGMPanel._instance) {
         ExaltedScenesGMPanel._instance.render();
       }
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
   }
 
   static _onClose(event, target) {

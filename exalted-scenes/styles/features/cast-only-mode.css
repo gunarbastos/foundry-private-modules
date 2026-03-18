@@ -21,6 +21,39 @@
 }
 
 /* -----------------------------------------------------------------------------
+   GM PANEL - COMPACT TRIGGER & DROPDOWN
+   ----------------------------------------------------------------------------- */
+
+.es-cast-only-section {
+  position: relative;
+}
+
+.es-cast-only-trigger {
+  cursor: pointer;
+}
+
+.es-cast-only-dropdown {
+  position: absolute;
+  top: 100%;
+  left: var(--es-space-sm);
+  right: var(--es-space-sm);
+  z-index: 100;
+  background: var(--es-bg-panel);
+  border: 1px solid var(--es-border-subtle);
+  border-radius: var(--es-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: es-dropdown-in var(--es-duration-fast) var(--es-ease-out);
+  overflow: hidden;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.es-dropdown-hint {
+  padding: var(--es-space-sm) var(--es-space-md);
+  margin: 0;
+}
+
+/* -----------------------------------------------------------------------------
    GM PANEL - CAST-ONLY CONTROLS
    ----------------------------------------------------------------------------- */
 
@@ -102,7 +135,7 @@
   overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   opacity: 0.6;
 }
 
@@ -129,6 +162,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: var(--es-media-pos-x, 50%) var(--es-media-pos-y, 50%);
 }
 
 /* Selection check overlay */
@@ -234,7 +268,7 @@
   border-radius: var(--es-radius-sm);
   color: var(--es-text-muted);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   font-size: var(--es-font-size-xs);
 }
 
@@ -294,7 +328,7 @@
   border-radius: var(--es-radius-sm);
   color: var(--es-text-muted);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   font-size: 0.65rem;
 }
 

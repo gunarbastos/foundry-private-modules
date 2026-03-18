@@ -24,6 +24,8 @@
 /* ─── Features ─── */
 @import 'features/player-view.css';
 @import 'features/smart-creator.css';
+@import 'features/scene-bulk-importer.css';
+@import 'features/actor-character-importer.css';
 @import 'features/character-editor.css';
 @import 'features/permission-editor.css';
 @import 'features/slideshow.css';
@@ -36,7 +38,12 @@
 @import 'features/favorites.css';
 @import 'features/floating-cast.css';
 @import 'features/scene-editor.css';
+@import 'features/audio-browser.css';
+@import 'features/add-to-cast-browser.css';
+@import 'features/themed-dialog.css';
+@import 'features/audio-panel.css';
 @import 'features/music-request.css';
+@import 'features/shortcuts-overlay.css';
 
 /* ─── Theme Presets ─── */
 @import 'themes.css';

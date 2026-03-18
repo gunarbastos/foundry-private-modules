@@ -317,6 +317,78 @@
     box-shadow var(--es-duration-fast) var(--es-ease-out);
 }
 
+.es-fab-stack {
+  position: absolute;
+  right: var(--es-library-fab-offset-right, var(--es-space-xl));
+  bottom: var(--es-library-fab-offset-bottom, var(--es-space-xl));
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.es-fab-stack--inspector .es-fab-secondary {
+  display: none;
+}
+
+.es-fab-stack .es-fab {
+  position: static;
+  right: auto;
+  bottom: auto;
+}
+
+.es-fab-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 14px 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(10, 14, 24, 0.84);
+  color: var(--es-text-primary);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition:
+    transform var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out),
+    background-color var(--es-duration-fast) var(--es-ease-out);
+}
+
+.es-fab-secondary:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),
+    rgba(16, 22, 36, 0.9);
+}
+
+.es-fab-secondary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--es-accent-glow),
+    0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.es-fab-secondary__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--es-accent-base);
+}
+
+.es-fab-secondary__label {
+  font-size: var(--es-font-size-sm);
+  font-weight: 500;
+}
+
 .es-fab-icon {
   display: flex;
   align-items: center;
@@ -381,6 +453,28 @@
   }
 
   .es-fab-icon {
+    width: 24px;
+    height: 24px;
+    background: transparent;
+  }
+
+  .es-fab-stack {
+    gap: 10px;
+  }
+
+  .es-fab-secondary {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .es-fab-secondary__label {
+    display: none;
+  }
+
+  .es-fab-secondary__icon {
     width: 24px;
     height: 24px;
     background: transparent;

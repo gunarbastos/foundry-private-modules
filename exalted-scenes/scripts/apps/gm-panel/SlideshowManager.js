@@ -10,6 +10,7 @@ import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
 import { SlideshowEditor } from '../SlideshowEditor.js';
 import { localize, format } from '../../utils/i18n.js';
+import { ExaltedScenesDialog } from '../ThemedDialog.js';
 
 /**
  * Manages slideshow operations in the GMPanel.
@@ -22,6 +23,41 @@ export class SlideshowManager extends BaseManager {
    */
   constructor(panel) {
     super(panel);
+  }
+
+  /**
+   * Sets up event listeners for the slideshow dropdown.
+   * @param {HTMLElement} element - The panel's root element
+   */
+  setup(element) {
+    super.setup(element);
+    this._setupDropdownClose();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DROPDOWN
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Toggles the slideshow dropdown open/closed.
+   */
+  handleToggleDropdown() {
+    this.uiState.slideshowDropdownOpen = !this.uiState.slideshowDropdownOpen;
+    this.render();
+  }
+
+  /**
+   * Sets up listener to close the dropdown when clicking outside.
+   * @private
+   */
+  _setupDropdownClose() {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.es-slideshow-section')) return;
+      if (this.uiState.slideshowDropdownOpen) {
+        this.uiState.slideshowDropdownOpen = false;
+        this.render();
+      }
+    }, { signal: this.signal });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -55,11 +91,11 @@ export class SlideshowManager extends BaseManager {
     const slideshow = Store.slideshows.get(slideshowId);
     if (!slideshow) return;
 
-    const confirmed = await Dialog.confirm({
+    const confirmed = await ExaltedScenesDialog.confirm({
       title: localize('Dialog.DeleteSlideshow.Title'),
       content: format('Dialog.DeleteSlideshow.Content', { name: slideshow.name }),
-      yes: () => true,
-      no: () => false
+      tone: 'danger',
+      confirmLabel: localize('Common.Delete')
     });
 
     if (confirmed) {

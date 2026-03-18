@@ -223,7 +223,7 @@ export class CastOnlyService extends BaseService {
         id: c.id,
         name: c.name,
         image: c.image,
-        borderStyle: c.borderStyle || 'gold',
+        borderStyle: c.borderStyle || { effect: 'solid', color: '#c9a227' },
         locked: c.locked || false
       }));
 

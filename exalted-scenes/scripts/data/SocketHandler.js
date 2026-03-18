@@ -12,16 +12,19 @@
  * - update-lock: Character lock state change
  * - slideshow-*: Slideshow control messages
  * - sequence-*: Sequence control messages
+ * - update-positions: Character position updates (freeform mode)
  * - cast-only-*: Cast-only mode messages
  *
  * @module data/SocketHandler
  */
 
-import { CONFIG } from '../config.js';
+import { CONFIG, log } from '../config.js';
 import { ExaltedScenesPlayerView } from '../apps/PlayerView.js';
 import { Store } from './Store.js';
 import { localize, format } from '../utils/i18n.js';
 import { HOOK_NAMES } from '../api/index.js';
+import { normalizeYouTubeUrl, isYouTubeEmbedBlockedCode } from '../utils/youtube-embed-validator.js';
+import { ensureTheaterShots, getTheaterShot, isSceneTheaterMode } from '../apps/player-view/theater-mode-utils.js';
 
 /**
  * Handles real-time socket communication for the module.
@@ -30,13 +33,87 @@ import { HOOK_NAMES } from '../api/index.js';
  * @class SocketHandler
  */
 export class SocketHandler {
+  static _recentMusicAddApprovals = new Map();
+  static _recentPlaybackFailures = new Map();
+  static _RECENT_APPROVAL_TTL_MS = 5 * 60 * 1000;
+  static _RECENT_FAILURE_TTL_MS = 45 * 1000;
+
+  /**
+   * Required fields for each socket message type.
+   * Messages with no required data fields use an empty array.
+   * @private
+   */
+  static _requiredFields = {
+    'broadcast-scene': ['sceneId'],
+    'theater-shot-activate': ['sceneId', 'shotId'],
+    'stop-broadcast': [],
+    'update-emotion': ['characterId', 'state'],
+    'update-cast': ['sceneId'],
+    'update-border': ['characterId', 'borderStyle'],
+    'update-lock': ['characterId', 'locked'],
+    'slideshow-start': ['slideshowId'],
+    'slideshow-scene': ['sceneId'],
+    'slideshow-pause': [],
+    'slideshow-resume': [],
+    'slideshow-stop': [],
+    'sequence-start': ['sceneId', 'background'],
+    'sequence-change': ['background'],
+    'sequence-stop': [],
+    'cast-only-start': ['characterIds'],
+    'cast-only-update': [],
+    'cast-only-stop': [],
+    'music-request': ['requestId', 'userId', 'characterId', 'trackId'],
+    'music-request-approve': ['playlistId', 'trackId'],
+    'music-request-deny': ['userId'],
+    'music-add-request': ['requestId', 'userId', 'characterId', 'playlistId', 'trackName', 'trackUrl'],
+    'music-add-approve': ['requestId', 'userId', 'trackName'],
+    'music-add-deny': ['requestId', 'userId'],
+    'music-add-playback-failed': ['requestId', 'listenerId', 'listenerName', 'trackName'],
+    'update-positions': ['sceneId', 'positions']
+  };
+
+  /**
+   * Validates a socket message payload against required fields.
+   * @private
+   * @param {Object} payload - The full socket payload
+   * @returns {boolean} True if valid, false otherwise
+   */
+  static _validatePayload(payload) {
+    if (!payload?.type || typeof payload.type !== 'string') {
+      console.warn(`${CONFIG.MODULE_NAME} | Socket message missing type`);
+      return false;
+    }
+
+    const required = this._requiredFields[payload.type];
+    if (required === undefined) {
+      console.warn(`${CONFIG.MODULE_NAME} | Unknown socket message type: ${payload.type}`);
+      return false;
+    }
+
+    if (required.length > 0) {
+      const data = payload.data;
+      if (!data || typeof data !== 'object') {
+        console.warn(`${CONFIG.MODULE_NAME} | Socket message '${payload.type}' missing data object`);
+        return false;
+      }
+      for (const field of required) {
+        if (data[field] === undefined || data[field] === null) {
+          console.warn(`${CONFIG.MODULE_NAME} | Socket message '${payload.type}' missing required field: ${field}`);
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   /**
    * Initializes the socket handler by registering the message listener.
    * Should be called once during module ready hook.
    */
   static initialize() {
     game.socket.on(CONFIG.SOCKET_NAME, this._handleSocketMessage.bind(this));
-    console.log(`${CONFIG.MODULE_NAME} | Socket Handler Initialized`);
+    log('Socket Handler Initialized');
   }
 
   /**
@@ -47,11 +124,16 @@ export class SocketHandler {
    * @param {Object} payload.data - Message data
    */
   static _handleSocketMessage(payload) {
-    console.log(`${CONFIG.MODULE_NAME} | Socket Message Received:`, payload);
+    if (!this._validatePayload(payload)) return;
+
+    log('Socket Message Received:', payload);
 
     switch (payload.type) {
       case 'broadcast-scene':
         this._onBroadcastScene(payload.data);
+        break;
+      case 'theater-shot-activate':
+        this._onTheaterShotActivate(payload.data);
         break;
       case 'stop-broadcast':
         this._onStopBroadcast();
@@ -110,7 +192,95 @@ export class SocketHandler {
       case 'music-request-deny':
         this._onMusicRequestDeny(payload.data);
         break;
+      case 'music-add-request':
+        this._onMusicAddRequest(payload.data);
+        break;
+      case 'music-add-approve':
+        this._onMusicAddApprove(payload.data);
+        break;
+      case 'music-add-deny':
+        this._onMusicAddDeny(payload.data);
+        break;
+      case 'music-add-playback-failed':
+        this._onMusicAddPlaybackFailed(payload.data);
+        break;
+      case 'update-positions':
+        this._onUpdatePositions(payload.data);
+        break;
     }
+  }
+
+  static _pruneRecentMusicAddApprovals() {
+    const cutoff = Date.now() - this._RECENT_APPROVAL_TTL_MS;
+    for (const [key, value] of this._recentMusicAddApprovals.entries()) {
+      if ((value?.approvedAt ?? 0) < cutoff) {
+        this._recentMusicAddApprovals.delete(key);
+      }
+    }
+  }
+
+  static _pruneRecentPlaybackFailures() {
+    const cutoff = Date.now() - this._RECENT_FAILURE_TTL_MS;
+    for (const [key, value] of this._recentPlaybackFailures.entries()) {
+      if ((value ?? 0) < cutoff) {
+        this._recentPlaybackFailures.delete(key);
+      }
+    }
+  }
+
+  static _recordMusicAddApproval(data) {
+    const entry = {
+      ...data,
+      trackUrl: normalizeYouTubeUrl(data.trackUrl),
+      approvedAt: Date.now()
+    };
+
+    this._pruneRecentMusicAddApprovals();
+
+    if (entry.newTrackId) {
+      this._recentMusicAddApprovals.set(`id:${entry.newTrackId}`, entry);
+    }
+    if (entry.trackUrl) {
+      this._recentMusicAddApprovals.set(`url:${entry.trackUrl}`, entry);
+    }
+  }
+
+  static findRecentMusicAddApproval(track) {
+    if (!track) return null;
+
+    this._pruneRecentMusicAddApprovals();
+
+    const trackId = track.id || track._id || null;
+    if (trackId) {
+      const byId = this._recentMusicAddApprovals.get(`id:${trackId}`);
+      if (byId) return byId;
+    }
+
+    const normalizedUrl = normalizeYouTubeUrl(track.url || track.path || '');
+    if (!normalizedUrl) return null;
+    return this._recentMusicAddApprovals.get(`url:${normalizedUrl}`) ?? null;
+  }
+
+  static shouldReportMusicAddPlaybackFailure(requestId, listenerId, code) {
+    this._pruneRecentPlaybackFailures();
+
+    const key = `${requestId}:${listenerId}:${code ?? 'unknown'}`;
+    if (this._recentPlaybackFailures.has(key)) return false;
+
+    this._recentPlaybackFailures.set(key, Date.now());
+    return true;
+  }
+
+  /**
+   * Persists the current broadcast state so reconnecting players can restore it.
+   * Only called by the GM who controls the broadcast.
+   * @private
+   * @param {Object} state - Broadcast state to persist
+   */
+  static _saveBroadcastState(state) {
+    if (!game.user.isGM) return;
+    game.settings.set(CONFIG.MODULE_ID, CONFIG.SETTINGS.BROADCAST_STATE, state)
+      .catch(e => console.error('Exalted Scenes | Failed to save broadcast state:', e));
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -124,14 +294,19 @@ export class SocketHandler {
    * @param {string} data.sceneId - ID of scene to broadcast
    */
   static _onBroadcastScene(data) {
-    const { sceneId } = data;
+    const { sceneId, theaterShotId = null } = data;
     Store.setActiveScene(sceneId);
-    ExaltedScenesPlayerView.activate(sceneId);
+    ExaltedScenesPlayerView.activate(sceneId, { theaterShotId });
     const scene = Store.scenes.get(sceneId);
     Hooks.callAll(HOOK_NAMES.SCENE_BROADCAST, {
       sceneId,
       scene: scene ? foundry.utils.deepClone(scene.toJSON()) : null
     });
+  }
+
+  static _onTheaterShotActivate(data) {
+    const { sceneId, shotId } = data;
+    ExaltedScenesPlayerView.activateTheaterShot(sceneId, shotId);
   }
 
   static _onStopBroadcast() {
@@ -142,7 +317,7 @@ export class SocketHandler {
   }
 
   static _onUpdateEmotion(data) {
-    const { characterId, state, userId } = data;
+    const { characterId, state, userId, isHeroMode } = data;
     // Update the local store character instance if needed, or just refresh the view
     const character = Store.characters.get(characterId);
     if (character) {
@@ -160,8 +335,12 @@ export class SocketHandler {
         }
       }
 
-      const previousState = character.currentState;
-      character.currentState = state;
+      const previousState = isHeroMode ? character.currentHeroState : character.currentState;
+      if (isHeroMode) {
+        character.currentHeroState = state;
+      } else {
+        character.currentState = state;
+      }
 
       // If we are the GM, we must persist this change!
       if (game.user.isGM) {
@@ -182,8 +361,14 @@ export class SocketHandler {
              if (ExaltedScenesGMPanel._instance && ExaltedScenesGMPanel._instance.rendered) {
                  ExaltedScenesGMPanel._instance.render();
              }
-        });
+        }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
       }
+
+      import('../apps/PlayerPanel.js').then(({ ExaltedScenesPlayerPanel }) => {
+        if (ExaltedScenesPlayerPanel._instance?.rendered) {
+          ExaltedScenesPlayerPanel.refresh();
+        }
+      }).catch(e => console.error('Exalted Scenes | Failed to load PlayerPanel:', e));
     }
   }
 
@@ -237,7 +422,7 @@ export class SocketHandler {
           if (ExaltedScenesGMPanel._instance && ExaltedScenesGMPanel._instance.rendered) {
             ExaltedScenesGMPanel._instance.render();
           }
-        });
+        }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
       }
     }
   }
@@ -265,7 +450,7 @@ export class SocketHandler {
           if (ExaltedScenesGMPanel._instance && ExaltedScenesGMPanel._instance.rendered) {
             ExaltedScenesGMPanel._instance.render();
           }
-        });
+        }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
       }
     }
   }
@@ -278,13 +463,23 @@ export class SocketHandler {
    * Broadcasts a scene to all connected clients.
    * @param {string} sceneId - ID of scene to broadcast
    */
-  static emitBroadcastScene(sceneId) {
+  static emitBroadcastScene(sceneId, theaterShotId = null) {
     game.socket.emit(CONFIG.SOCKET_NAME, {
       type: 'broadcast-scene',
-      data: { sceneId }
+      data: { sceneId, theaterShotId }
     });
     // Also trigger locally
-    this._onBroadcastScene({ sceneId });
+    this._onBroadcastScene({ sceneId, theaterShotId });
+    this._saveBroadcastState({ mode: 'scene', sceneId, theaterShotId });
+  }
+
+  static emitActivateTheaterShot(sceneId, shotId) {
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'theater-shot-activate',
+      data: { sceneId, shotId }
+    });
+    this._onTheaterShotActivate({ sceneId, shotId });
+    this._saveBroadcastState({ mode: 'scene', sceneId, theaterShotId: shotId });
   }
 
   /**
@@ -296,6 +491,7 @@ export class SocketHandler {
       data: {}
     });
     this._onStopBroadcast();
+    this._saveBroadcastState({ mode: null });
   }
 
   /**
@@ -303,13 +499,13 @@ export class SocketHandler {
    * @param {string} characterId - ID of character to update
    * @param {string} state - New emotion state name
    */
-  static emitUpdateEmotion(characterId, state) {
+  static emitUpdateEmotion(characterId, state, isHeroMode = false) {
     const userId = game.user.id;
     game.socket.emit(CONFIG.SOCKET_NAME, {
       type: 'update-emotion',
-      data: { characterId, state, userId }
+      data: { characterId, state, userId, isHeroMode }
     });
-    this._onUpdateEmotion({ characterId, state, userId });
+    this._onUpdateEmotion({ characterId, state, userId, isHeroMode });
   }
 
   /**
@@ -327,7 +523,7 @@ export class SocketHandler {
   /**
    * Updates a character's border style across all clients.
    * @param {string} characterId - ID of character to update
-   * @param {string} borderStyle - Border preset name from CONFIG.BORDER_PRESETS
+   * @param {Object} borderStyle - Border style object { effect: string, color?: string, color2?: string }
    */
   static emitUpdateBorder(characterId, borderStyle) {
     const userId = game.user.id;
@@ -349,6 +545,76 @@ export class SocketHandler {
       data: { characterId, locked }
     });
     this._onUpdateLock({ characterId, locked });
+  }
+
+  /**
+   * Updates character positions for freeform layout across all clients.
+   * @param {string} sceneId - ID of scene being updated
+   * @param {Object} positions - Map of characterId → {x, y, scale, flipped}
+   */
+  static emitUpdatePositions(sceneId, positions, shotId = null) {
+    const userId = game.user.id;
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'update-positions',
+      data: { sceneId, positions, userId, shotId }
+    });
+  }
+
+  /**
+   * Handles position updates for freeform layout.
+   * Updates in-memory data and applies DOM-only updates on player side.
+   * @private
+   * @param {Object} data
+   * @param {string} data.sceneId
+   * @param {Object} data.positions
+   */
+  static _onUpdatePositions(data) {
+    const { sceneId, positions, userId, shotId = null } = data;
+    const scene = Store.scenes.get(sceneId);
+    if (!scene) return;
+
+    if (game.user.isGM && userId && userId !== game.user.id) {
+      const currentPositions = (isSceneTheaterMode(scene) && shotId)
+        ? (getTheaterShot(scene, shotId)?.positions || {})
+        : (scene.layoutSettings.positions || {});
+      const changedIds = new Set([
+        ...Object.keys(currentPositions),
+        ...Object.keys(positions || {})
+      ]);
+
+      for (const charId of changedIds) {
+        const previous = currentPositions[charId] || null;
+        const next = positions?.[charId] || null;
+        if (foundry.utils.deepEqual(previous, next)) continue;
+
+        const character = Store.characters.get(charId);
+        if (!character?.hasPermission(userId, 'full')) {
+          console.warn(`${CONFIG.MODULE_NAME} | User ${userId} attempted unauthorized layout change on ${character?.name || charId}`);
+          return;
+        }
+        if (character.locked) {
+          console.warn(`${CONFIG.MODULE_NAME} | User ${userId} attempted to move locked character ${character.name}`);
+          return;
+        }
+      }
+    }
+
+    if (isSceneTheaterMode(scene) && shotId) {
+      const shot = getTheaterShot(scene, shotId);
+      if (!shot) return;
+      shot.positions = positions;
+      scene.layoutSettings.theaterShots = ensureTheaterShots(scene).map(existing => {
+        return existing.id === shot.id ? shot : existing;
+      });
+    } else {
+      scene.layoutSettings.positions = positions;
+    }
+
+    if (game.user.isGM && userId && userId !== game.user.id) {
+      Store.saveData();
+    }
+
+    ExaltedScenesPlayerView.updateCharacterPositions(positions);
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -435,6 +701,7 @@ export class SocketHandler {
       data
     });
     this._onSlideshowScene(data);
+    this._saveBroadcastState({ mode: 'slideshow', sceneId: data.sceneId });
   }
 
   /** Pauses the current slideshow for all clients. */
@@ -462,6 +729,7 @@ export class SocketHandler {
       data: {}
     });
     this._onSlideshowStop();
+    this._saveBroadcastState({ mode: null });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -501,7 +769,7 @@ export class SocketHandler {
         if (ExaltedScenesGMPanel._instance && ExaltedScenesGMPanel._instance.rendered) {
           ExaltedScenesGMPanel._instance.render();
         }
-      });
+      }).catch(e => console.error('Exalted Scenes | Failed to load GMPanel:', e));
     }
   }
 
@@ -532,6 +800,10 @@ export class SocketHandler {
       data
     });
     this._onSequenceStart(data);
+    this._saveBroadcastState({
+      mode: 'sequence', sceneId: data.sceneId,
+      background: data.background, transitionType: data.transitionType
+    });
   }
 
   /**
@@ -549,6 +821,10 @@ export class SocketHandler {
       data
     });
     this._onSequenceChange(data);
+    this._saveBroadcastState({
+      mode: 'sequence', sceneId: data.sceneId,
+      background: data.background, transitionType: data.transitionType
+    });
   }
 
   /** Stops the current sequence for all clients. */
@@ -558,6 +834,7 @@ export class SocketHandler {
       data: {}
     });
     this._onSequenceStop();
+    this._saveBroadcastState({ mode: null });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -629,6 +906,11 @@ export class SocketHandler {
       data
     });
     this._onCastOnlyStart(data);
+    this._saveBroadcastState({
+      mode: 'cast-only',
+      characterIds: data.characterIds,
+      layoutSettings: data.layoutSettings
+    });
   }
 
   /**
@@ -643,6 +925,12 @@ export class SocketHandler {
       data
     });
     this._onCastOnlyUpdate(data);
+    // Update persisted state with latest character IDs and layout
+    this._saveBroadcastState({
+      mode: 'cast-only',
+      characterIds: Store.castOnlyState.characterIds,
+      layoutSettings: Store.castOnlyState.layoutSettings
+    });
   }
 
   /** Stops cast-only mode for all clients. */
@@ -652,6 +940,7 @@ export class SocketHandler {
       data: {}
     });
     this._onCastOnlyStop();
+    this._saveBroadcastState({ mode: null });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -691,7 +980,7 @@ export class SocketHandler {
         trackId,
         trackName
       });
-    });
+    }).catch(e => console.error('Exalted Scenes | Failed to load MusicRequestManager:', e));
   }
 
   /**
@@ -703,12 +992,16 @@ export class SocketHandler {
    * @param {string} data.trackId - Track ID to play
    */
   static _onMusicRequestApprove(data) {
-    const { requestId, playlistId, trackId, trackName, userId } = data;
+    const { playlistId, trackId, trackName, userId, approverId } = data;
 
-    // Play the track
-    import('./NarratorJukeboxIntegration.js').then(({ NarratorJukeboxIntegration }) => {
-      NarratorJukeboxIntegration.playTrack(playlistId, trackId);
-    });
+    // Only the GM who approved the request should start playback.
+    // Narrator Jukebox will then broadcast/sync that playback to every player.
+    const isApprovingGM = game.user.isGM && (!approverId || game.user.id === approverId);
+    if (isApprovingGM) {
+      import('./NarratorJukeboxIntegration.js').then(async ({ NarratorJukeboxIntegration }) => {
+        await NarratorJukeboxIntegration.playTrack(playlistId, trackId);
+      }).catch(e => console.error('Exalted Scenes | Failed to load NarratorJukeboxIntegration:', e));
+    }
 
     // Notify the requesting player
     if (game.user.id === userId) {
@@ -732,6 +1025,72 @@ export class SocketHandler {
     }
   }
 
+  /**
+   * Handles YouTube music add request from player. GM-only.
+   * @private
+   */
+  static _onMusicAddRequest(data) {
+    if (!game.user.isGM) return;
+
+    import('./MusicRequestManager.js').then(({ MusicRequestManager }) => {
+      MusicRequestManager.showAddRequest(data);
+    }).catch(e => console.error('Exalted Scenes | Failed to load MusicRequestManager:', e));
+  }
+
+  /**
+   * Handles YouTube music add approval.
+   * Invalidates NJ cache so the new track appears, then notifies the requesting player.
+   * @private
+   */
+  static _onMusicAddApprove(data) {
+    const { trackName, userId } = data;
+
+    this._recordMusicAddApproval(data);
+
+    // Invalidate NJ cache for ALL clients so the new track appears in the music picker
+    import('./NarratorJukeboxIntegration.js').then(({ NarratorJukeboxIntegration }) => {
+      NarratorJukeboxIntegration.invalidateCache();
+    }).catch(e => console.error('Exalted Scenes | Failed to load NarratorJukeboxIntegration:', e));
+
+    if (game.user.id === userId) {
+      ui.notifications.info(format('Notifications.MusicAddApproved', { track: trackName }));
+    }
+  }
+
+  /**
+   * Handles YouTube music add denial. Notifies the requesting player.
+   * @private
+   */
+  static _onMusicAddDeny(data) {
+    const { trackName, userId } = data;
+    if (game.user.id === userId) {
+      ui.notifications.warn(format('Notifications.MusicAddDenied', { track: trackName }));
+    }
+  }
+
+  /**
+   * Handles playback failures for recently approved YouTube add requests.
+   * Only GMs need to receive cross-client failure reports.
+   * @private
+   */
+  static _onMusicAddPlaybackFailed(data) {
+    if (!game.user.isGM) return;
+
+    const { listenerName, trackName, code } = data;
+    const isBlocked = isYouTubeEmbedBlockedCode(code);
+    const key = isBlocked
+      ? 'Notifications.MusicAddPlaybackBlockedGM'
+      : 'Notifications.MusicAddPlaybackFailedGM';
+    const fallback = isBlocked
+      ? `${listenerName} could not play "${trackName}" because YouTube blocked the embed on that client (error ${code}).`
+      : `${listenerName} could not play "${trackName}" on that client${code ? ` (error ${code})` : ''}.`;
+    const message = game.i18n.has(`EXALTED-SCENES.${key}`)
+      ? format(key, { player: listenerName, track: trackName, code: code ?? 'unknown' })
+      : fallback;
+
+    ui.notifications.warn(message);
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      MUSIC REQUEST EMITTERS - Send music request messages
      ═══════════════════════════════════════════════════════════════ */
@@ -746,9 +1105,9 @@ export class SocketHandler {
   static emitMusicRequest(characterId, characterName, trackId, trackName) {
     const requestId = foundry.utils.randomID();
 
-    // Get the character to retrieve playlistId
+    // Get the character to retrieve playlistId (prefer new music.playlists, fall back to legacy)
     const char = Store.characters.get(characterId);
-    const playlistId = char?.musicPlaylistId || null;
+    const playlistId = char?.music?.playlists?.[0] || char?.musicPlaylistId || null;
 
     const payload = {
       requestId,
@@ -775,11 +1134,16 @@ export class SocketHandler {
    * @param {Object} data - Approval data
    */
   static emitMusicRequestApprove(data) {
+    const payload = {
+      ...data,
+      approverId: game.user.id
+    };
+
     game.socket.emit(CONFIG.SOCKET_NAME, {
       type: 'music-request-approve',
-      data
+      data: payload
     });
-    this._onMusicRequestApprove(data);
+    this._onMusicRequestApprove(payload);
   }
 
   /**
@@ -792,5 +1156,69 @@ export class SocketHandler {
       data
     });
     this._onMusicRequestDeny(data);
+  }
+
+  /**
+   * Emits a YouTube music add request from player to GM.
+   * @param {string} characterId - Character ID
+   * @param {string} characterName - Character name
+   * @param {string} playlistId - Target playlist ID
+   * @param {string} trackName - Track display name
+   * @param {string} trackUrl - YouTube URL
+   */
+  static emitMusicAddRequest(characterId, characterName, playlistId, trackName, trackUrl) {
+    const requestId = foundry.utils.randomID();
+    const payload = {
+      requestId,
+      userId: game.user.id,
+      userName: game.user.name,
+      characterId,
+      characterName,
+      playlistId,
+      trackName,
+      trackUrl
+    };
+
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'music-add-request',
+      data: payload
+    });
+    this._onMusicAddRequest(payload);
+  }
+
+  /**
+   * Emits YouTube music add approval from GM.
+   * @param {Object} data - Approval data
+   */
+  static emitMusicAddApprove(data) {
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'music-add-approve',
+      data
+    });
+    this._onMusicAddApprove(data);
+  }
+
+  /**
+   * Emits YouTube music add denial from GM.
+   * @param {Object} data - Denial data
+   */
+  static emitMusicAddDeny(data) {
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'music-add-deny',
+      data
+    });
+    this._onMusicAddDeny(data);
+  }
+
+  /**
+   * Emits a playback failure for a recently approved YouTube add request.
+   * Used when a specific player cannot play the approved YouTube embed.
+   * @param {Object} data - Failure payload
+   */
+  static emitMusicAddPlaybackFailed(data) {
+    game.socket.emit(CONFIG.SOCKET_NAME, {
+      type: 'music-add-playback-failed',
+      data
+    });
   }
 }

@@ -8,18 +8,10 @@
  */
 
 import { BaseManager } from './BaseManager.js';
+import { AddToCastBrowser } from '../AddToCastBrowser.js';
 import { Store } from '../../data/Store.js';
-import { SocketHandler } from '../../data/SocketHandler.js';
-import { localize } from '../../utils/i18n.js';
-
-/**
- * Escapes HTML special characters to prevent injection.
- * @param {string} str - The string to escape
- * @returns {string} Escaped string safe for HTML insertion
- */
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+import { localize, format } from '../../utils/i18n.js';
+import { buildPopoverAnchorFromElement, clonePopoverAnchor } from '../../utils/popover-position.js';
 
 /**
  * Manages cast member interactions in the GMPanel.
@@ -63,6 +55,212 @@ export class CastManager extends BaseManager {
     }
   }
 
+  /**
+   * Gets the currently browsed character folder, if any.
+   * @returns {import('../../data/FolderModel.js').FolderModel|null}
+   * @private
+   */
+  _getCurrentCharacterFolder() {
+    if (!this.uiState.currentView?.startsWith('characters')) return null;
+    if (!this.uiState.currentFolderId) return null;
+
+    const folder = Store.folders.get(this.uiState.currentFolderId);
+    return folder?.type === 'character' ? folder : null;
+  }
+
+  /**
+   * Gets characters that can still be added to the scene.
+   * @param {import('../../data/SceneModel.js').SceneModel} scene
+   * @returns {Array}
+   * @private
+   */
+  _getAvailableCharacters(scene) {
+    const currentCastIds = new Set(scene.cast.map(c => c.id));
+    return Store.characters.contents
+      .filter(c => !currentCastIds.has(c.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /**
+   * Gets folders that contain addable characters for a scene.
+   * @param {import('../../data/SceneModel.js').SceneModel} scene
+   * @returns {Array<{id: string, label: string, addableCount: number, selected: boolean}>}
+   * @private
+   */
+  _getAvailableCharacterFolders(scene) {
+    const currentCastIds = new Set(scene.cast.map(c => c.id));
+    const currentFolder = this._getCurrentCharacterFolder();
+
+    return Store.folders.contents
+      .filter(folder => folder.type === 'character')
+      .map(folder => {
+        const folderPath = Store.getFolderPath(folder.id).map(node => node.name).join(' / ') || folder.name;
+        const addableCount = Store.getItemsInFolderTree('character', folder.id)
+          .filter(character => !currentCastIds.has(character.id))
+          .length;
+
+        return {
+          id: folder.id,
+          label: folderPath,
+          addableCount,
+          selected: folder.id === currentFolder?.id
+        };
+      })
+      .filter(folder => folder.addableCount > 0)
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  /**
+   * Adds all characters from a folder tree to a scene's cast.
+   * @param {string} sceneId - Scene ID
+   * @param {string} folderId - Character folder ID
+   * @returns {{added: string[], skipped: string[], missing: string[]}|null}
+   * @private
+   */
+  _addFolderToScene(sceneId, folderId) {
+    const scene = Store.scenes.get(sceneId);
+    const folder = Store.folders.get(folderId);
+
+    if (!scene || !folder || folder.type !== 'character') {
+      return null;
+    }
+
+    const folderCharacters = Store.getItemsInFolderTree('character', folderId);
+    if (!folderCharacters.length) {
+      ui.notifications.warn(localize('Notifications.WarnFolderHasNoCharacters'));
+      return null;
+    }
+
+    const folderPath = Store.getFolderPath(folderId).map(node => node.name).join(' / ') || folder.name;
+    const result = Store.addCastMembers(sceneId, folderCharacters.map(character => character.id));
+
+    if (!result.added.length) {
+      ui.notifications.warn(format('Notifications.WarnNoCharactersAddedFromFolder', { folder: folderPath }));
+      return result;
+    }
+
+    this._lastAddedCharId = result.added[result.added.length - 1];
+    this.render();
+
+    if (result.skipped.length) {
+      ui.notifications.info(format('Notifications.CharactersAddedFromFolderWithSkipped', {
+        added: result.added.length,
+        skipped: result.skipped.length,
+        folder: folderPath
+      }));
+    } else {
+      ui.notifications.info(format('Notifications.CharactersAddedFromFolder', {
+        added: result.added.length,
+        folder: folderPath
+      }));
+    }
+
+    return result;
+  }
+
+  /**
+   * Builds the character payload consumed by the add-to-cast browser.
+   * @param {Array<import('../../data/CharacterModel.js').CharacterModel>} characters
+   * @returns {Array<Object>}
+   * @private
+   */
+  _buildCharacterBrowserItems(characters) {
+    return characters.map(character => {
+      const folderPathNodes = character.folder ? Store.getFolderPath(character.folder) : [];
+      const folderIds = folderPathNodes.map(node => node.id);
+      const folderPath = folderPathNodes.map(node => node.name).join(' / ');
+      const folderName = folderPathNodes.length ? folderPathNodes[folderPathNodes.length - 1].name : '';
+      const tags = Array.from(character.tags || []);
+      const heroCount = Object.keys(character.heroStates || {}).length;
+      const stateEntries = Object.values(character.states || {});
+      const image = character.thumbnail
+        || character.image
+        || (character.currentState ? character.states?.[character.currentState] : null)
+        || character.states?.normal
+        || stateEntries[0]
+        || 'icons/svg/mystery-man.svg';
+
+      return {
+        id: character.id,
+        name: character.name,
+        image,
+        currentState: character.currentState || '',
+        emotionCount: Object.keys(character.states || {}).length,
+        heroCount,
+        folderIds,
+        folderName,
+        folderPath,
+        searchText: [
+          character.name,
+          character.currentState,
+          folderPath,
+          ...tags
+        ].filter(Boolean).join(' ').toLowerCase()
+      };
+    });
+  }
+
+  /**
+   * Builds the folder payload consumed by the add-to-cast browser.
+   * @param {Array<{id: string, label: string, addableCount: number, selected: boolean}>} folders
+   * @returns {Array<Object>}
+   * @private
+   */
+  _buildFolderBrowserItems(folders) {
+    return folders.map(folder => ({
+      ...folder,
+      countLabel: folder.addableCount === 1
+        ? format('GMPanel.CountCharacters', { count: folder.addableCount })
+        : format('GMPanel.CountCharactersPlural', { count: folder.addableCount }),
+      searchText: `${folder.label} ${folder.addableCount}`.toLowerCase()
+    }));
+  }
+
+  /**
+   * Opens the shared add-to-cast dialog for a scene.
+   * @param {string} sceneId - Scene ID
+   * @returns {void}
+   * @private
+   */
+  _openAddCastDialog(sceneId) {
+    const scene = Store.scenes.get(sceneId);
+    if (!scene) return;
+
+    const availableChars = this._getAvailableCharacters(scene);
+    const availableFolders = this._getAvailableCharacterFolders(scene);
+
+    if (!availableChars.length && !availableFolders.length) {
+      ui.notifications.warn(localize('Notifications.WarnNoAvailableCharacters'));
+      return;
+    }
+
+    const browser = new AddToCastBrowser({
+      sceneId,
+      sceneName: scene.name,
+      characters: this._buildCharacterBrowserItems(availableChars),
+      folders: this._buildFolderBrowserItems(availableFolders),
+      initialTab: availableChars.length ? 'characters' : 'folders',
+      onAddCharacter: (characterId) => {
+        const added = Store.addCastMember(sceneId, characterId);
+        if (!added) {
+          ui.notifications.warn(localize('Notifications.CharacterAlreadyInCast'));
+          return false;
+        }
+
+        this._lastAddedCharId = characterId;
+        this.render();
+        return { addedCharacterIds: [characterId] };
+      },
+      onAddFolder: (folderId) => {
+        const result = this._addFolderToScene(sceneId, folderId);
+        if (!result) return false;
+        return { addedCharacterIds: result.added };
+      }
+    });
+
+    browser.render(true);
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      CAST ACTIONS
      ═══════════════════════════════════════════════════════════════ */
@@ -74,45 +272,7 @@ export class CastManager extends BaseManager {
    */
   async handleAddCast() {
     const sceneId = this.uiState.selectedId;
-    const scene = Store.scenes.get(sceneId);
-    if (!scene) return;
-
-    // Get available characters not already in cast
-    const currentCastIds = new Set(scene.cast.map(c => c.id));
-    const availableChars = Store.characters.contents.filter(c => !currentCastIds.has(c.id));
-
-    if (availableChars.length === 0) {
-      ui.notifications.warn(localize('Notifications.WarnNoAvailableCharacters'));
-      return;
-    }
-
-    // Simple Dialog to select character
-    const content = `
-      <form>
-        <div class="form-group">
-          <label>${localize('Dialog.AddToCast.Label')}</label>
-          <select name="characterId">
-            ${availableChars.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
-          </select>
-        </div>
-      </form>
-    `;
-
-    new Dialog({
-      title: localize('Dialog.AddToCast.Title'),
-      content: content,
-      buttons: {
-        add: {
-          label: localize('Dialog.AddToCast.Add'),
-          callback: (html) => {
-            const charId = html.find('[name="characterId"]').val();
-            Store.addCastMember(sceneId, charId);
-            this._lastAddedCharId = charId;
-            this.render();
-          }
-        }
-      }
-    }).render(true);
+    this._openAddCastDialog(sceneId);
   }
 
   /**
@@ -138,35 +298,16 @@ export class CastManager extends BaseManager {
    */
   handleCastClick(target) {
     const charId = target.dataset.characterId;
-    const rect = target.getBoundingClientRect();
-
-    // Calculate position relative to the window
-    // We want it above the cast member, but ensure it stays within viewport
-    const PICKER_WIDTH = 320;  // Approximate picker width
-    const PICKER_HEIGHT = 400; // Approximate picker height
-    const MARGIN = 20;         // Margin from screen edges
-
-    let x = rect.left + (rect.width / 2);
-    let y = rect.top - 10; // Default: above the cast member
-
-    // Adjust horizontal position to stay within viewport
-    const viewportWidth = window.innerWidth;
-    if (x - (PICKER_WIDTH / 2) < MARGIN) {
-      x = MARGIN + (PICKER_WIDTH / 2);
-    } else if (x + (PICKER_WIDTH / 2) > viewportWidth - MARGIN) {
-      x = viewportWidth - MARGIN - (PICKER_WIDTH / 2);
-    }
-
-    // Adjust vertical position - show below if not enough space above
-    if (y - PICKER_HEIGHT < MARGIN) {
-      y = rect.bottom + 10; // Show below instead
-    }
+    const anchor = buildPopoverAnchorFromElement(target);
+    const pickerBelow = anchor?.preferBelow ?? false;
 
     this.uiState.emotionPicker = {
       open: true,
       characterId: charId,
-      x: x,
-      y: y
+      x: anchor?.anchorX ?? 0,
+      y: pickerBelow ? (anchor?.anchorBelowY ?? 0) : (anchor?.anchorAboveY ?? 0),
+      pickerBelow: pickerBelow,
+      anchor: clonePopoverAnchor(anchor)
     };
     this.render();
   }
@@ -205,45 +346,25 @@ export class CastManager extends BaseManager {
    */
   async handleFloatingAddCast() {
     const sceneId = this.uiState.editingSceneId;
-    const scene = Store.scenes.get(sceneId);
-    if (!scene) return;
+    this._openAddCastDialog(sceneId);
+  }
 
-    // Get available characters not already in cast
-    const currentCastIds = new Set(scene.cast.map(c => c.id));
-    const availableChars = Store.characters.contents.filter(c => !currentCastIds.has(c.id));
+  /**
+   * Adds the currently browsed character folder to a scene's cast.
+   * @param {string|null} [sceneId=null] - Optional scene override
+   */
+  handleAddCurrentFolderToCast(sceneId = null) {
+    const targetSceneId = sceneId || this.uiState.editingSceneId || this.uiState.selectedId;
+    const folder = this._getCurrentCharacterFolder();
 
-    if (availableChars.length === 0) {
-      ui.notifications.warn(localize('Notifications.WarnNoAvailableCharacters'));
+    if (!targetSceneId) return;
+
+    if (!folder) {
+      ui.notifications.warn(localize('Notifications.WarnNoCharacterFolderSelected'));
       return;
     }
 
-    // Simple Dialog to select character
-    const content = `
-      <form>
-        <div class="form-group">
-          <label>${localize('Dialog.AddToCast.Label')}</label>
-          <select name="characterId">
-            ${availableChars.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
-          </select>
-        </div>
-      </form>
-    `;
-
-    new Dialog({
-      title: localize('Dialog.AddToCast.Title'),
-      content: content,
-      buttons: {
-        add: {
-          label: localize('Dialog.AddToCast.Add'),
-          callback: (html) => {
-            const charId = html.find('[name="characterId"]').val();
-            Store.addCastMember(sceneId, charId);
-            this._lastAddedCharId = charId;
-            this.render();
-          }
-        }
-      }
-    }).render(true);
+    this._addFolderToScene(targetSceneId, folder.id);
   }
 
   /**

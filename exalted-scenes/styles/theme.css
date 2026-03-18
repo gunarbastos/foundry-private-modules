@@ -84,8 +84,9 @@
      Inter or system sans-serif. Clean and precise.
      Weights: 400 (Regular), 500 (Medium). Avoid Bold.
      ═══════════════════════════════════════════════════════════════ */
-  --es-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --es-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --es-font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --es-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 
   /* Font Sizes */
   --es-font-size-xs: 11px;
@@ -106,15 +107,23 @@
      Hierarchy via color: White > Zinc-200 > Zinc-400 > Zinc-500 > Zinc-600
      ═══════════════════════════════════════════════════════════════ */
   --es-text-primary: #ffffff;
-  --es-text-body: #e4e4e7;       /* Zinc 200 */
-  --es-text-secondary: #a1a1aa;  /* Zinc 400 */
-  --es-text-muted: #71717a;      /* Zinc 500 */
-  --es-text-disabled: #52525b;   /* Zinc 600 */
+  --es-text-body: #e4e4e7; /* Zinc 200 */
+  --es-text-secondary: #a1a1aa; /* Zinc 400 */
+  --es-text-muted: #71717a; /* Zinc 500 */
+  --es-text-disabled: #52525b; /* Zinc 600 */
 
   /* Text on colored backgrounds */
   --es-text-on-accent: #ffffff;
   --es-text-on-error: #ffffff;
   --es-text-on-success: #ffffff;
+
+  /* Branding */
+  --es-logo-color: var(--es-text-primary);
+  --es-logo-color: color-mix(
+    in srgb,
+    var(--es-text-primary) 82%,
+    var(--es-accent-base) 18%
+  );
 
   /* ═══════════════════════════════════════════════════════════════
      SPACING
@@ -180,12 +189,20 @@
   --es-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Common transition presets */
-  --es-transition-colors: color var(--es-duration-fast) var(--es-ease-out),
-                          background-color var(--es-duration-fast) var(--es-ease-out),
-                          border-color var(--es-duration-fast) var(--es-ease-out);
-  --es-transition-transform: transform var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-colors:
+    color var(--es-duration-fast) var(--es-ease-out),
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-transform: transform var(--es-duration-fast)
+    var(--es-ease-out);
   --es-transition-opacity: opacity var(--es-duration-fast) var(--es-ease-out);
-  --es-transition-all: all var(--es-duration-fast) var(--es-ease-out);
+  --es-transition-all:
+    color var(--es-duration-fast) var(--es-ease-out),
+    background-color var(--es-duration-fast) var(--es-ease-out),
+    border-color var(--es-duration-fast) var(--es-ease-out),
+    opacity var(--es-duration-fast) var(--es-ease-out),
+    box-shadow var(--es-duration-fast) var(--es-ease-out),
+    transform var(--es-duration-fast) var(--es-ease-out);
 
   /* ═══════════════════════════════════════════════════════════════
      Z-INDEX SCALE
@@ -226,23 +243,126 @@
   --es-modal-padding: var(--es-space-5);
   --es-overlay-bg: rgba(0, 0, 0, 0.6);
   --es-overlay-blur: blur(4px);
+
+  /* Theme-driven scrollbar and selection colors */
+  --es-scrollbar-track: transparent;
+  --es-scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --es-scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --es-selection-bg: var(--es-accent-glow);
+  --es-selection-color: var(--es-text-primary);
+
+  /* Decorative theme chrome */
+  --es-app-background: var(--es-bg-app);
+  --es-shell-background: var(--es-bg-panel);
+  --es-shell-background-strong: var(--es-bg-panel);
+  --es-section-background: var(--es-bg-interactive);
+  --es-panel-card-background: var(--es-bg-interactive);
+  --es-panel-card-border: var(--es-border-subtle);
+  --es-shell-shadow: none;
+  --es-shell-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --es-nav-hover-bg: rgba(255, 255, 255, 0.05);
+  --es-nav-active-bg: var(--es-accent-subtle);
+  --es-nav-active-shadow: none;
+  --es-ghost-hover-bg: rgba(255, 255, 255, 0.05);
+  --es-ghost-active-bg: rgba(255, 255, 255, 0.08);
+  --es-search-bg: rgba(0, 0, 0, 0.2);
+  --es-search-focus-bg: rgba(0, 0, 0, 0.3);
+  --es-card-inner-border: rgba(255, 255, 255, 0.05);
+  --es-card-media-gradient: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.2) 30%,
+    transparent 60%
+  );
+  --es-card-overlay-bg: rgba(0, 0, 0, 0.4);
+  --es-card-hover-shadow: none;
+  --es-inspector-checker-dark: #1a1a1a;
+  --es-inspector-checker-base: #252525;
+  --es-inspector-preview-gradient: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8),
+    transparent
+  );
+  --es-player-vignette: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 60%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  --es-nameplate-bg: rgba(0, 0, 0, 0.6);
+  --es-nameplate-text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  --es-character-lock-bg: rgba(0, 0, 0, 0.75);
+  --es-surface-base: rgba(30, 30, 46, 0.9);
+  --es-surface-overlay: rgba(0, 0, 0, 0.6);
+  --es-preview-banner-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --es-preview-banner-accent: #f39c12;
+  --es-preview-banner-subtext: rgba(255, 255, 255, 0.6);
+  --es-preview-banner-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --es-preview-banner-success: linear-gradient(
+    135deg,
+    #27ae60 0%,
+    #2ecc71 100%
+  );
+  --es-preview-banner-success-hover: linear-gradient(
+    135deg,
+    #2ecc71 0%,
+    #27ae60 100%
+  );
+  --es-preview-banner-success-glow: rgba(46, 204, 113, 0.4);
+  --es-preview-banner-success-glow-strong: rgba(46, 204, 113, 0.6);
+  --es-preview-banner-ghost-bg: rgba(255, 255, 255, 0.1);
+  --es-preview-banner-ghost-border: rgba(255, 255, 255, 0.3);
+  --es-inspector-contrast-text-primary: #f7f2eb;
+  --es-inspector-contrast-text-body: #e7ddd1;
+  --es-inspector-contrast-text-secondary: #cbb7a2;
+  --es-inspector-contrast-text-muted: #af9377;
+  --es-inspector-contrast-accent: rgba(244, 202, 127, 0.82);
+  --es-inspector-contrast-accent-strong: rgb(252, 225, 181);
+  --es-inspector-contrast-border: rgba(255, 255, 255, 0.08);
+  --es-inspector-contrast-border-soft: rgba(255, 255, 255, 0.06);
+  --es-inspector-contrast-border-strong: rgba(255, 255, 255, 0.14);
+  --es-inspector-contrast-surface: rgba(255, 255, 255, 0.04);
+  --es-inspector-contrast-surface-hover: rgba(255, 255, 255, 0.08);
+  --es-inspector-contrast-button-bg: rgba(255, 255, 255, 0.03);
+
+  /* Extended theme polish tokens */
+  --es-theme-control-bg: var(--es-search-bg);
+  --es-theme-control-bg-hover: var(--es-search-focus-bg);
+  --es-theme-control-border: var(--es-panel-card-border);
+  --es-theme-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --es-theme-float-bg: var(--es-shell-background-strong);
+  --es-theme-float-border: var(--es-panel-card-border);
+  --es-theme-float-shadow: var(--es-shell-shadow);
+  --es-theme-item-bg: var(--es-panel-card-background);
+  --es-theme-item-hover: var(--es-nav-hover-bg);
+  --es-theme-item-active: var(--es-nav-active-bg);
+  --es-theme-item-active-shadow: var(--es-nav-active-shadow);
+  --es-theme-pill-bg: var(--es-bg-elevated);
+  --es-theme-pill-border: var(--es-border-subtle);
+  --es-theme-pill-text: var(--es-text-secondary);
+  --es-theme-step-bg: var(--es-shell-background-strong);
+  --es-theme-step-border: var(--es-border-default);
+  --es-theme-step-line: var(--es-border-subtle);
+  --es-theme-step-active-bg: var(--es-accent-subtle);
+  --es-theme-step-complete-bg: var(--es-accent-base);
+  --es-theme-dropzone-bg: var(--es-panel-card-background);
+  --es-theme-dropzone-hover: var(--es-nav-hover-bg);
+  --es-theme-audio-bg: var(--es-glass-bg-solid);
+  --es-theme-audio-border: var(--es-panel-card-border);
+  --es-theme-audio-button-bg: var(--es-theme-control-bg);
+  --es-theme-audio-button-hover: var(--es-accent-base);
+  --es-theme-now-playing-bg: var(--es-shell-background-strong);
+  --es-theme-now-playing-border: var(--es-panel-card-border);
+  --es-theme-frame-border: var(--es-panel-card-border);
+  --es-theme-frame-shadow: var(--es-card-hover-shadow);
+  --es-theme-nameplate-border: var(--es-border-subtle);
+  --es-theme-lock-border: var(--es-panel-card-border);
+  --es-theme-progress-track: var(--es-theme-control-bg);
+  --es-theme-progress-fill: var(--es-accent-base);
 }
 
 /* Also set on body when theme class is applied for elements outside .exalted-scenes */
-body.es-theme-rose,
-body.es-theme-purple,
-body.es-theme-teal,
-body.es-theme-amber,
-body.es-theme-steel,
-body.es-theme-emerald,
-body.es-theme-parchment,
-body.es-theme-blood,
-body.es-theme-cyberpunk,
-body.es-theme-solar,
-body.es-theme-void,
-body.es-theme-jade,
-body.es-theme-ice,
-body.es-theme-inferno {
+body[class*="es-theme-"] {
   /* Theme variables will be inherited by PlayerView which is a direct body child */
 }
 
@@ -261,12 +381,12 @@ body.es-theme-inferno {
 }
 
 .exalted-scenes ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--es-scrollbar-thumb);
   border-radius: 4px;
 }
 
 .exalted-scenes ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--es-scrollbar-thumb-hover);
 }
 
 .exalted-scenes ::-webkit-scrollbar-corner {
@@ -276,7 +396,7 @@ body.es-theme-inferno {
 /* Firefox scrollbar */
 .exalted-scenes {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: var(--es-scrollbar-thumb) transparent;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -285,11 +405,11 @@ body.es-theme-inferno {
    ═══════════════════════════════════════════════════════════════ */
 
 .exalted-scenes ::selection {
-  background: var(--es-accent-glow);
-  color: var(--es-text-primary);
+  background: var(--es-selection-bg);
+  color: var(--es-selection-color);
 }
 
 .exalted-scenes ::-moz-selection {
-  background: var(--es-accent-glow);
-  color: var(--es-text-primary);
+  background: var(--es-selection-bg);
+  color: var(--es-selection-color);
 }

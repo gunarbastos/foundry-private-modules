@@ -23,9 +23,11 @@
   flex-direction: column;
   overflow: hidden;
 
-  /* Subtle glass effect */
-  backdrop-filter: var(--es-glass-blur);
-  -webkit-backdrop-filter: var(--es-glass-blur);
+  /* Glass effect removed from base container to reduce GPU compositing layers.
+     backdrop-filter creates expensive GPU operations on EVERY module window,
+     which causes drag stutters when combined with GPU-intensive modules (e.g. Dice So Nice).
+     The effect is barely visible since the background is already opaque (--es-bg-app).
+     Apply backdrop-filter selectively to specific elements that need it (e.g. emotion picker). */
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -69,9 +71,17 @@
   display: inline-block;
   width: 24px;
   height: 24px;
-  background: url('../../assets/logo_exalted_scenes.png') no-repeat center;
-  background-size: contain;
-  opacity: 0.9;
+  flex: 0 0 24px;
+  background-color: var(--es-logo-color, var(--es-text-primary));
+  -webkit-mask-image: url('../../assets/logo_exalted_scenes_symbol.svg');
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-image: url('../../assets/logo_exalted_scenes_symbol.svg');
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  opacity: 0.95;
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -144,6 +154,15 @@ div#exalted-scenes-slideshow-editor > header.window-header > button.header-contr
 /* Smart Creator */
 div#exalted-scenes-smart-creator > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
 #exalted-scenes-smart-creator button.fa-solid.fa-xmark::before,
+/* Audio Browser */
+div#exalted-scenes-audio-browser > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-audio-browser button.fa-solid.fa-xmark::before,
+/* Add To Cast Browser */
+div#exalted-scenes-add-to-cast-browser > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-add-to-cast-browser button.fa-solid.fa-xmark::before,
+/* Themed Dialog */
+div[id^="exalted-scenes-dialog-"] > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+div[id^="exalted-scenes-dialog-"] button.fa-solid.fa-xmark::before,
 /* Player View */
 div#exalted-scenes-player-view > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
 #exalted-scenes-player-view button.fa-solid.fa-xmark::before {

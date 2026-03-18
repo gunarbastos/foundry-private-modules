@@ -6,7 +6,7 @@
 .es-floating-cast {
   position: absolute;
   bottom: 0;
-  left: 220px; /* Sidebar width */
+  left: var(--es-sidebar-width, 220px);
   right: 0;
   background: var(--es-bg-panel);
   border-top: 1px solid var(--es-border-default);
@@ -17,7 +17,7 @@
 
 /* Adjust when inspector is open */
 .es-layout.with-inspector .es-floating-cast {
-  right: 320px; /* Inspector width */
+  right: var(--es-inspector-width, 320px);
 }
 
 /* Entry animation */
@@ -86,7 +86,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-floating-cast-actions .es-btn-icon:hover {

@@ -13,7 +13,7 @@
  * @module player-view/BaseHandler
  */
 
-import { CONFIG } from '../../config.js';
+import { CONFIG, log } from '../../config.js';
 import { Store } from '../../data/Store.js';
 
 /**
@@ -171,7 +171,7 @@ export class BaseHandler {
    * @protected
    */
   _log(message) {
-    console.log(`${CONFIG.MODULE_NAME} | ${message}`);
+    log(message);
   }
 
   /**

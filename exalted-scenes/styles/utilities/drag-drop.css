@@ -161,7 +161,9 @@
 .es-drop-before,
 .es-drop-after,
 .es-card--drag-over-left,
+.es-card--drag-over-top,
 .es-card--drag-over-right,
+.es-card--drag-over-bottom,
 .es-cast-member--drag-target {
   position: relative;
 }
@@ -200,7 +202,9 @@
 
 /* Horizontal drop indicator (for vertical lists) */
 .es-drop-before-h::before,
-.es-drop-after-h::after {
+.es-drop-after-h::after,
+.es-card--drag-over-top::before,
+.es-card--drag-over-bottom::after {
   content: '';
   position: absolute;
   left: 0;
@@ -218,7 +222,15 @@
   top: -4px;
 }
 
+.es-card--drag-over-top::before {
+  top: -4px;
+}
+
 .es-drop-after-h::after {
+  bottom: -4px;
+}
+
+.es-card--drag-over-bottom::after {
   bottom: -4px;
 }
 
@@ -229,6 +241,14 @@
 
 .es-card--drag-over-right {
   box-shadow: 3px 0 0 0 var(--es-accent-base), var(--es-shadow-md);
+}
+
+.es-card--drag-over-top {
+  box-shadow: inset 0 3px 0 0 var(--es-accent-base), var(--es-shadow-md);
+}
+
+.es-card--drag-over-bottom {
+  box-shadow: inset 0 -3px 0 0 var(--es-accent-base), var(--es-shadow-md);
 }
 
 /* Drop indicator pulse animation */

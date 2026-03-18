@@ -35,7 +35,33 @@ export class CastOnlyManager extends BaseManager {
    */
   setup(element) {
     super.setup(element);
-    // No additional setup needed - all actions are handled via data-action
+    this._setupDropdownClose();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     DROPDOWN
+     ═══════════════════════════════════════════════════════════════ */
+
+  /**
+   * Toggles the cast-only dropdown open/closed.
+   */
+  handleToggleDropdown() {
+    this.uiState.castOnlyDropdownOpen = !this.uiState.castOnlyDropdownOpen;
+    this.render();
+  }
+
+  /**
+   * Sets up listener to close the dropdown when clicking outside.
+   * @private
+   */
+  _setupDropdownClose() {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.es-cast-only-section')) return;
+      if (this.uiState.castOnlyDropdownOpen) {
+        this.uiState.castOnlyDropdownOpen = false;
+        this.render();
+      }
+    }, { signal: this.signal });
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -119,6 +145,11 @@ export class CastOnlyManager extends BaseManager {
     // Handle size change
     if (target.dataset.size) {
       newLayout.size = target.dataset.size;
+    }
+
+    // Handle shape change
+    if (target.dataset.shape) {
+      newLayout.shape = target.dataset.shape;
     }
 
     Store.updateCastOnlyLayout(newLayout);

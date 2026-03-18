@@ -4,21 +4,98 @@
        HEADER - Clean, minimal with just the name
        ═══════════════════════════════════════════════════════════════ -->
   <header class="es-scene-editor__header">
-    <input
-      type="text"
-      name="name"
-      value="{{scene.name}}"
-      placeholder="{{localize "EXALTED-SCENES.SceneEditor.UntitledScene"}}"
-      class="es-scene-editor__title"
-      aria-label="{{localize "EXALTED-SCENES.SceneEditor.SceneName"}}"
-      required
-    >
+    <div class="es-scene-editor__hero">
+      <div class="es-scene-editor__hero-media">
+        {{#if scene.background}}
+          {{#if isVideo}}
+            <video src="{{scene.background}}" muted loop autoplay playsinline></video>
+          {{else}}
+            <img src="{{scene.background}}" alt="{{localize "EXALTED-SCENES.SceneEditor.ScenePreview"}}">
+          {{/if}}
+        {{else}}
+          <div class="es-scene-editor__hero-placeholder">
+            <i class="fas fa-image"></i>
+          </div>
+        {{/if}}
+        <div class="es-scene-editor__hero-media-badge">
+          <i class="fas {{mediaBadgeIcon}}"></i>
+          <span>{{mediaBadgeLabel}}</span>
+        </div>
+      </div>
+      <div class="es-scene-editor__hero-main">
+        <div class="es-scene-editor__hero-kicker">{{activeTabLabel}}</div>
+        <input
+          type="text"
+          name="name"
+          value="{{scene.name}}"
+          placeholder="{{localize "EXALTED-SCENES.SceneEditor.UntitledScene"}}"
+          class="es-scene-editor__title"
+          aria-label="{{localize "EXALTED-SCENES.SceneEditor.SceneName"}}"
+          required
+        >
+        <div class="es-scene-editor__hero-stats">
+          {{#each heroStats}}
+            <div class="es-scene-editor__hero-stat">
+              <div class="es-scene-editor__hero-stat-icon">
+                <i class="fas {{icon}}"></i>
+              </div>
+              <div class="es-scene-editor__hero-stat-copy">
+                <span class="es-scene-editor__hero-stat-value">{{value}}</span>
+                <span class="es-scene-editor__hero-stat-label">{{label}}</span>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
   </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TABS - Navigation between editor sections
+       ═══════════════════════════════════════════════════════════════ -->
+  <nav class="es-scene-editor__tabs" role="tablist">
+    <div class="es-scene-editor__tabs-track">
+      <button type="button" class="es-scene-editor__tab {{#if (eq activeTab 'scene')}}es-scene-editor__tab--active{{/if}}" data-action="tab-switch" data-tab="scene" role="tab" aria-selected="{{#if (eq activeTab 'scene')}}true{{else}}false{{/if}}">
+        <i class="fas fa-image"></i>
+        <span class="es-scene-editor__tab-label">{{localize "EXALTED-SCENES.SceneEditor.TabScene"}}</span>
+        {{#if sceneTabBadge}}
+          <span class="es-scene-editor__tab-badge">{{sceneTabBadge}}</span>
+        {{/if}}
+      </button>
+      <button type="button" class="es-scene-editor__tab {{#if (eq activeTab 'layout')}}es-scene-editor__tab--active{{/if}}" data-action="tab-switch" data-tab="layout" role="tab" aria-selected="{{#if (eq activeTab 'layout')}}true{{else}}false{{/if}}">
+        <i class="fas fa-users"></i>
+        <span class="es-scene-editor__tab-label">{{localize "EXALTED-SCENES.SceneEditor.TabLayout"}}</span>
+      </button>
+      {{#if njAvailable}}
+      <button type="button" class="es-scene-editor__tab {{#if (eq activeTab 'audio')}}es-scene-editor__tab--active{{/if}}" data-action="tab-switch" data-tab="audio" role="tab" aria-selected="{{#if (eq activeTab 'audio')}}true{{else}}false{{/if}}">
+        <i class="fas fa-music"></i>
+        <span class="es-scene-editor__tab-label">{{localize "EXALTED-SCENES.SceneEditor.TabAudio"}}</span>
+        {{#if audioTabBadge}}
+          <span class="es-scene-editor__tab-badge">{{audioTabBadge}}</span>
+        {{/if}}
+      </button>
+      {{/if}}
+    </div>
+  </nav>
 
   <!-- ═══════════════════════════════════════════════════════════════
        CONTENT - Scrollable area with sections
        ═══════════════════════════════════════════════════════════════ -->
   <main class="es-scene-editor__content">
+    <div class="es-scene-editor__panel es-scene-editor__panel--active es-scene-editor__panel--{{activeTab}}">
+      <div class="es-scene-editor__panel-intro">
+        <div class="es-scene-editor__panel-kicker">{{activeTabLabel}}</div>
+        <div class="es-scene-editor__panel-title">{{activeTabLabel}}</div>
+        {{#if activeTabDescription}}
+          <p class="es-scene-editor__panel-desc">{{activeTabDescription}}</p>
+        {{/if}}
+      </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB: Scene
+         ═══════════════════════════════════════════════════════════════ -->
+    {{#if (eq activeTab 'scene')}}
+    <div class="es-scene-editor__scene-tab-grid">
 
     <!-- ─── Media Section ─── -->
     <section class="es-scene-editor__section">
@@ -100,6 +177,14 @@
         >
       </div>
     </section>
+    </div>
+
+    {{/if}}
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB: Layout
+         ═══════════════════════════════════════════════════════════════ -->
+    {{#if (eq activeTab 'layout')}}
 
     <!-- ─── Cast Layout Section ─── -->
     <section class="es-scene-editor__section">
@@ -108,6 +193,36 @@
         <span>{{localize "EXALTED-SCENES.SceneEditor.CastLayout"}}</span>
       </div>
       <p class="es-scene-editor__section-desc">{{localize "EXALTED-SCENES.SceneEditor.CastLayoutDesc"}}</p>
+
+      <!-- Display Mode -->
+      <div class="es-scene-editor__field es-scene-editor__field--full">
+        <label class="es-scene-editor__label">
+          <i class="fas fa-display"></i>
+          {{localize "EXALTED-SCENES.SceneEditor.DisplayMode"}}
+        </label>
+        <select name="displayMode" class="es-scene-editor__select">
+          {{#each displayModes}}
+            <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        <span class="es-scene-editor__hint">{{localize "EXALTED-SCENES.SceneEditor.DisplayModeHint"}}</span>
+      </div>
+
+      <div class="es-scene-editor__theater-toggle">
+        <label class="es-scene-editor__theater-toggle-main">
+          <span class="es-scene-editor__theater-toggle-copy">
+            <span class="es-scene-editor__theater-toggle-title">{{localize "EXALTED-SCENES.SceneEditor.TheaterMode"}}</span>
+            <span class="es-scene-editor__theater-toggle-desc">{{localize "EXALTED-SCENES.SceneEditor.TheaterModeHint"}}</span>
+          </span>
+          <input type="checkbox" name="theaterMode" {{#if theaterModeEnabled}}checked{{/if}}>
+        </label>
+        {{#if theaterModeEnabled}}
+          <div class="es-scene-editor__theater-toggle-meta">
+            <i class="fas fa-film"></i>
+            <span>{{format "EXALTED-SCENES.SceneEditor.TheaterModeLiveHint" shots=theaterShotCount}}</span>
+          </div>
+        {{/if}}
+      </div>
 
       <div class="es-scene-editor__grid">
         <div class="es-scene-editor__field">
@@ -127,8 +242,30 @@
             {{/each}}
           </select>
         </div>
+
+        <div class="es-scene-editor__field">
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.PortraitShape"}}</label>
+          <select name="layoutShape" class="es-scene-editor__select">
+            {{#each shapePresets}}
+              <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+          </select>
+        </div>
       </div>
 
+      {{#if isFreeform}}
+      <!-- Freeform mode hint -->
+      <div class="es-scene-editor__freeform-hint">
+        <i class="fas fa-hand"></i>
+        <span>{{localize "EXALTED-SCENES.Config.Layouts.FreeformHint"}}</span>
+      </div>
+      {{#if hasPositions}}
+      <button type="button" class="es-scene-editor__btn es-scene-editor__btn--ghost es-scene-editor__reset-btn" data-action="reset-positions">
+        <i class="fas fa-undo"></i>
+        {{localize "EXALTED-SCENES.Config.Layouts.ResetPositions"}}
+      </button>
+      {{/if}}
+      {{else}}
       <div class="es-scene-editor__grid es-scene-editor__grid--three">
         <div class="es-scene-editor__field">
           <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Spacing"}}</label>
@@ -154,10 +291,18 @@
           </div>
         </div>
       </div>
+      {{/if}}
     </section>
 
-    <!-- ─── Audio Integration Section ─── -->
+    {{/if}}
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB: Audio (only when NJ is available)
+         ═══════════════════════════════════════════════════════════════ -->
+    {{#if (eq activeTab 'audio')}}
     {{#if njAvailable}}
+
+    <!-- ─── Audio Integration Section ─── -->
     <section class="es-scene-editor__section">
       <div class="es-scene-editor__section-header">
         <i class="fas fa-music"></i>
@@ -166,80 +311,247 @@
       </div>
       <p class="es-scene-editor__section-desc">{{localize "EXALTED-SCENES.SceneEditor.AudioDesc"}}</p>
 
-      <div class="es-scene-editor__audio-grid">
-        <!-- Playlist -->
-        <div class="es-scene-editor__audio-item">
+      <!-- ─── Soundtrack Builder ─── -->
+      <div class="es-scene-editor__soundtrack">
+        <div class="es-scene-editor__soundtrack-header">
           <div class="es-scene-editor__audio-icon">
             <i class="fas fa-compact-disc"></i>
           </div>
-          <div class="es-scene-editor__audio-content">
-            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Playlist"}}</label>
-            <div class="es-scene-editor__audio-row">
-              <select name="audioPlaylist" class="es-scene-editor__select">
-                {{#each playlists}}
-                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
-                {{/each}}
-              </select>
-              <button type="button" class="es-scene-editor__audio-btn" data-action="preview-playlist" title="{{localize "EXALTED-SCENES.Common.Preview"}}">
-                <i class="fas fa-play"></i>
-              </button>
-            </div>
-            <label class="es-scene-editor__checkbox">
-              <input type="checkbox" name="autoPlayMusic" {{#if audio.autoPlayMusic}}checked{{/if}}>
-              <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
-            </label>
-          </div>
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.Soundtrack"}}</label>
+          <button type="button" class="es-scene-editor__add-track-btn {{#if (eq soundtrackMode 'playlists')}}es-scene-editor__add-track-btn--active{{/if}}" data-action="add-playlist">
+            <i class="fas fa-list"></i>
+            {{localize "EXALTED-SCENES.SceneEditor.AddPlaylist"}}
+          </button>
+          <button type="button" class="es-scene-editor__add-track-btn {{#if (eq soundtrackMode 'tracks')}}es-scene-editor__add-track-btn--active{{/if}}" data-action="add-soundtrack-track">
+            <i class="fas fa-plus"></i>
+            {{localize "EXALTED-SCENES.SceneEditor.AddTrack"}}
+          </button>
         </div>
 
-        <!-- Ambience -->
-        <div class="es-scene-editor__audio-item">
+        {{#if (eq soundtrackMode "playlists")}}
+          <!-- Attached Playlists -->
+          <div class="es-scene-editor__playlist-list">
+            {{#each attachedPlaylists}}
+              <div class="es-scene-editor__playlist-item {{#if missing}}es-scene-editor__playlist-item--missing{{/if}}" data-playlist-index="{{index}}">
+                <i class="fas fa-list es-scene-editor__playlist-icon"></i>
+                <div class="es-scene-editor__track-info">
+                  <span class="es-scene-editor__track-name">{{name}}</span>
+                  <span class="es-scene-editor__track-playlist">
+                    {{#if missing}}
+                      {{localize "EXALTED-SCENES.SceneEditor.PlaylistMissing"}}
+                    {{else}}
+                      {{trackCount}} {{localize "EXALTED-SCENES.AudioBrowser.TracksCount"}}
+                    {{/if}}
+                  </span>
+                </div>
+                <button type="button" class="es-scene-editor__track-preview-btn" data-action="preview-playlist" data-playlist-id="{{id}}" title="{{localize "EXALTED-SCENES.SceneEditor.PreviewPlaylist"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button type="button" class="es-scene-editor__track-remove-btn" data-action="remove-playlist" data-playlist-index="{{index}}" title="{{localize "EXALTED-SCENES.SceneEditor.RemovePlaylist"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+        {{else if (eq soundtrackMode "tracks")}}
+          <!-- Individual Tracks -->
+          <div class="es-scene-editor__track-list">
+            {{#each soundtrackTracks}}
+              <div class="es-scene-editor__track-item" draggable="true" data-track-index="{{index}}">
+                <i class="fas fa-grip-vertical es-scene-editor__track-grip"></i>
+                <i class="fas fa-music es-scene-editor__track-icon"></i>
+                <div class="es-scene-editor__track-info">
+                  <span class="es-scene-editor__track-name">{{displayName}}</span>
+                  {{#if playlistName}}
+                    <span class="es-scene-editor__track-playlist">{{playlistName}}</span>
+                  {{/if}}
+                </div>
+                <button type="button" class="es-scene-editor__track-preview-btn" data-action="preview-track" data-track-id="{{id}}" title="{{localize "EXALTED-SCENES.SceneEditor.PreviewTrack"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button type="button" class="es-scene-editor__track-remove-btn" data-action="remove-soundtrack-track" data-track-index="{{index}}" title="{{localize "EXALTED-SCENES.SceneEditor.RemoveTrack"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+
+          <!-- Playback Mode -->
+          <div class="es-scene-editor__field es-scene-editor__playback-mode">
+            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.PlaybackMode"}}</label>
+            <select name="playbackMode" class="es-scene-editor__select">
+              {{#each playbackModes}}
+                <option value="{{key}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+              {{/each}}
+            </select>
+          </div>
+        {{else}}
+          <!-- Empty state -->
+          <div class="es-scene-editor__soundtrack-empty">
+            <span>{{localize "EXALTED-SCENES.SceneEditor.NoSoundtrackYet"}}</span>
+            <small>{{localize "EXALTED-SCENES.SceneEditor.NoSoundtrackHint"}}</small>
+          </div>
+        {{/if}}
+
+        {{#if legacyPlaylistName}}
+          <!-- Legacy playlist hint -->
+          <div class="es-scene-editor__legacy-hint">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <span>{{format "EXALTED-SCENES.SceneEditor.LegacyPlaylist" name=legacyPlaylistName}}</span>
+              <small>{{localize "EXALTED-SCENES.SceneEditor.LegacyMigrateHint"}}</small>
+            </div>
+          </div>
+        {{/if}}
+
+        <label class="es-scene-editor__checkbox">
+          <input type="checkbox" name="autoPlayMusic" {{#if audio.autoPlayMusic}}checked{{/if}}>
+          <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
+        </label>
+      </div>
+
+      <!-- ─── Ambience Layers Builder ─── -->
+      <div class="es-scene-editor__ambience">
+        <div class="es-scene-editor__ambience-header">
           <div class="es-scene-editor__audio-icon">
             <i class="fas fa-wind"></i>
           </div>
-          <div class="es-scene-editor__audio-content">
-            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.AmbiencePreset"}}</label>
-            <div class="es-scene-editor__audio-row">
-              <select name="audioAmbience" class="es-scene-editor__select">
-                {{#each ambiencePresets}}
-                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
-                {{/each}}
-              </select>
-              <button type="button" class="es-scene-editor__audio-btn" data-action="preview-ambience" title="{{localize "EXALTED-SCENES.Common.Preview"}}">
-                <i class="fas fa-play"></i>
-              </button>
-            </div>
-            <label class="es-scene-editor__checkbox">
-              <input type="checkbox" name="autoPlayAmbience" {{#if audio.autoPlayAmbience}}checked{{/if}}>
-              <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
-            </label>
-          </div>
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.AmbienceLayers"}}</label>
+          {{#unless maxLayersReached}}
+            <button type="button" class="es-scene-editor__add-track-btn" data-action="add-ambience-layer">
+              <i class="fas fa-plus"></i>
+              {{localize "EXALTED-SCENES.SceneEditor.AddLayer"}}
+            </button>
+          {{else}}
+            <span class="es-scene-editor__max-hint">{{format "EXALTED-SCENES.SceneEditor.MaxLayersReached" max=maxLayers}}</span>
+          {{/unless}}
         </div>
+
+        {{#if hasLayers}}
+          <!-- Layer List -->
+          <div class="es-scene-editor__layer-list">
+            {{#each ambienceLayers}}
+              <div class="es-scene-editor__layer-item" data-layer-index="{{index}}">
+                <i class="fas fa-wind es-scene-editor__layer-icon"></i>
+                <span class="es-scene-editor__layer-name">{{name}}</span>
+                <div class="es-scene-editor__layer-volume">
+                  <input
+                    type="range"
+                    class="es-scene-editor__layer-slider"
+                    min="0" max="1" step="0.05"
+                    value="{{volume}}"
+                    data-layer-index="{{index}}"
+                    title="{{localize "EXALTED-SCENES.SceneEditor.LayerVolume"}}"
+                  >
+                  <span class="es-scene-editor__layer-volume-value">{{volumePercent}}%</span>
+                </div>
+                <button type="button" class="es-scene-editor__layer-preview-btn" data-action="preview-ambience" data-layer-id="{{id}}" data-layer-volume="{{volume}}" title="{{localize "EXALTED-SCENES.SceneEditor.PreviewLayer"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button type="button" class="es-scene-editor__layer-remove-btn" data-action="remove-ambience-layer" data-layer-index="{{index}}" title="{{localize "EXALTED-SCENES.SceneEditor.RemoveLayer"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <!-- Empty state -->
+          <div class="es-scene-editor__soundtrack-empty">
+            <span>{{localize "EXALTED-SCENES.SceneEditor.NoLayersYet"}}</span>
+            <small>{{localize "EXALTED-SCENES.SceneEditor.NoLayersHint"}}</small>
+          </div>
+        {{/if}}
+
+        {{#if legacyAmbienceName}}
+          <!-- Legacy ambience hint -->
+          <div class="es-scene-editor__legacy-hint">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <span>{{format "EXALTED-SCENES.SceneEditor.LegacyAmbience" name=legacyAmbienceName}}</span>
+              <small>{{localize "EXALTED-SCENES.SceneEditor.LegacyAmbienceHint"}}</small>
+            </div>
+          </div>
+        {{/if}}
+
+        <label class="es-scene-editor__checkbox">
+          <input type="checkbox" name="autoPlayAmbience" {{#if audio.autoPlayAmbience}}checked{{/if}}>
+          <span>{{localize "EXALTED-SCENES.SceneEditor.AutoPlayOnBroadcast"}}</span>
+        </label>
+      </div>
+
+      <!-- ─── Soundboard Quick Sounds ─── -->
+      <div class="es-scene-editor__soundboard">
+        <div class="es-scene-editor__soundboard-header">
+          <div class="es-scene-editor__audio-icon">
+            <i class="fas fa-drum"></i>
+          </div>
+          <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.QuickSounds"}}</label>
+          <button type="button" class="es-scene-editor__add-track-btn" data-action="add-soundboard-sound">
+            <i class="fas fa-plus"></i>
+            {{localize "EXALTED-SCENES.SceneEditor.AddSound"}}
+          </button>
+        </div>
+
+        {{#if hasSounds}}
+          <div class="es-scene-editor__sound-grid">
+            {{#each soundboardSounds}}
+              <div class="es-scene-editor__sound-chip" data-sound-index="{{index}}">
+                <button type="button" class="es-scene-editor__sound-preview-btn" data-action="preview-soundboard-sound" data-sound-id="{{id}}" title="{{localize "EXALTED-SCENES.SceneEditor.PreviewSound"}}">
+                  <i class="fas fa-play"></i>
+                </button>
+                <span class="es-scene-editor__sound-name">{{name}}</span>
+                <button type="button" class="es-scene-editor__sound-remove-btn" data-action="remove-soundboard-sound" data-sound-index="{{index}}" title="{{localize "EXALTED-SCENES.SceneEditor.RemoveSound"}}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="es-scene-editor__soundtrack-empty">
+            <span>{{localize "EXALTED-SCENES.SceneEditor.NoSoundsYet"}}</span>
+            <small>{{localize "EXALTED-SCENES.SceneEditor.NoSoundsHint"}}</small>
+          </div>
+        {{/if}}
       </div>
 
       <div class="es-scene-editor__audio-footer">
-        <label class="es-scene-editor__checkbox">
-          <input type="checkbox" name="stopOnEnd" {{#if audio.stopOnEnd}}checked{{/if}}>
-          <span>{{localize "EXALTED-SCENES.SceneEditor.StopAudioWhenSceneEnds"}}</span>
-        </label>
-        <button type="button" class="es-scene-editor__stop-btn" data-action="stop-audio">
-          <i class="fas fa-stop"></i>
-          {{localize "EXALTED-SCENES.SceneEditor.StopAll"}}
-        </button>
-      </div>
-    </section>
-    {{else}}
-    <section class="es-scene-editor__section es-scene-editor__section--disabled">
-      <div class="es-scene-editor__section-header">
-        <i class="fas fa-music"></i>
-        <span>{{localize "EXALTED-SCENES.SceneEditor.Audio"}}</span>
-      </div>
-      <div class="es-scene-editor__notice">
-        <i class="fas fa-info-circle"></i>
-        <p>{{{localize "EXALTED-SCENES.SceneEditor.InstallNarratorJukebox"}}}</p>
+        <div class="es-scene-editor__audio-settings">
+          <div class="es-scene-editor__volume-control">
+            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.MasterVolume"}}</label>
+            <div class="es-scene-editor__volume-row">
+              <input
+                type="range"
+                name="masterVolume"
+                class="es-scene-editor__volume-slider"
+                min="0" max="1" step="0.05"
+                value="{{audio.volume}}"
+              >
+              <span class="es-scene-editor__volume-value">{{volumePercent}}%</span>
+            </div>
+          </div>
+          <div class="es-scene-editor__fade-control">
+            <label class="es-scene-editor__label">{{localize "EXALTED-SCENES.SceneEditor.FadeOutDuration"}}</label>
+            <div class="es-scene-editor__input-unit">
+              <input type="number" name="fadeOut" value="{{audio.fadeOut}}" min="0" max="30" step="0.5" title="{{localize "EXALTED-SCENES.SceneEditor.FadeOutHint"}}">
+              <span>{{localize "EXALTED-SCENES.SceneEditor.FadeOutSeconds"}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="es-scene-editor__audio-footer-actions">
+          <label class="es-scene-editor__checkbox">
+            <input type="checkbox" name="stopOnEnd" {{#if audio.stopOnEnd}}checked{{/if}}>
+            <span>{{localize "EXALTED-SCENES.SceneEditor.StopAudioWhenSceneEnds"}}</span>
+          </label>
+          <button type="button" class="es-scene-editor__stop-btn" data-action="stop-audio">
+            <i class="fas fa-stop"></i>
+            {{localize "EXALTED-SCENES.SceneEditor.StopAll"}}
+          </button>
+        </div>
       </div>
     </section>
     {{/if}}
-
+    {{/if}}
+    </div>
   </main>
 
   <!-- ═══════════════════════════════════════════════════════════════

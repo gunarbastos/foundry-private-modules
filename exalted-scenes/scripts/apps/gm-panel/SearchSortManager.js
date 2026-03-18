@@ -9,6 +9,7 @@
 
 import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
+import { localize } from '../../utils/i18n.js';
 
 /**
  * Manages search and sorting interactions in the GMPanel.
@@ -72,6 +73,14 @@ export class SearchSortManager extends BaseManager {
       this._searchDebounceTimer = setTimeout(() => {
         this.uiState.searchQuery = query;
         this.uiState.isSearching = false;
+
+        // Save cursor state so _onRender can restore it
+        const input = this.element?.querySelector('.es-search-input');
+        if (input === document.activeElement) {
+          this.panel._pendingSearchRestore = { cursorPos: input.selectionStart };
+        }
+
+        this.panel.clearCardSelection();
         this.render();
       }, 300);
     }, { signal: this.signal });
@@ -82,6 +91,7 @@ export class SearchSortManager extends BaseManager {
         e.preventDefault();
         this.uiState.searchQuery = '';
         searchInput.value = '';
+        this.panel.clearCardSelection();
         this.render();
       }
     }, { signal: this.signal });
@@ -94,16 +104,33 @@ export class SearchSortManager extends BaseManager {
   _setupSortMenuClose() {
     if (!this.uiState.sortMenuOpen) return;
 
+    const closeMenu = () => {
+      this.uiState.sortMenuOpen = false;
+      const menu = this.element?.querySelector('.es-sort-menu');
+      if (menu) menu.remove();
+
+      const trigger = this.element?.querySelector('.es-sort-trigger');
+      if (trigger) {
+        trigger.classList.remove('es-toolbar-btn--open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    };
+
     const closeSort = (e) => {
       if (!e.target.closest('.es-sort-dropdown')) {
-        this.uiState.sortMenuOpen = false;
-        this.render();
+        closeMenu();
       }
+    };
+
+    const closeSortOnEscape = (e) => {
+      if (e.key !== 'Escape') return;
+      closeMenu();
     };
 
     // Delay to avoid closing immediately after opening
     setTimeout(() => {
       document.addEventListener('click', closeSort, { signal: this.signal });
+      document.addEventListener('keydown', closeSortOnEscape, { signal: this.signal });
     }, 10);
   }
 
@@ -163,13 +190,13 @@ export class SearchSortManager extends BaseManager {
    */
   getSortLabel() {
     const labels = {
-      name: 'Name',
-      created: 'Date',
-      lastUsed: 'Recent',
-      playCount: 'Popular',
-      custom: 'Custom'
+      name: localize('GMPanel.SortName'),
+      created: localize('GMPanel.SortDateCreated'),
+      lastUsed: localize('GMPanel.SortLastUsed'),
+      playCount: localize('GMPanel.SortMostUsed'),
+      custom: localize('GMPanel.SortCustom')
     };
-    return labels[this.uiState.sortBy] || 'Sort';
+    return labels[this.uiState.sortBy] || localize('GMPanel.SortBy');
   }
 
   /**
@@ -221,6 +248,7 @@ export class SearchSortManager extends BaseManager {
   clearSearch() {
     this.uiState.searchQuery = '';
     this.uiState.isSearching = false;
+    this.panel.clearCardSelection();
     this.render();
   }
 }

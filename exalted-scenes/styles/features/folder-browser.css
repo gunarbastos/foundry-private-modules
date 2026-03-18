@@ -40,7 +40,7 @@
   padding: var(--es-space-xs) var(--es-space-sm);
   border-radius: var(--es-radius-sm);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-breadcrumb-link:hover {
@@ -110,7 +110,7 @@
   border-radius: var(--es-radius-md);
   color: var(--es-text-secondary);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   user-select: none;
 }
 
@@ -195,7 +195,7 @@
   border-radius: var(--es-radius-lg);
   padding: var(--es-space-md);
   cursor: pointer;
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -235,7 +235,7 @@
 .es-folder-icon {
   font-size: 2rem;
   color: var(--es-text-muted);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-folder-card:hover .es-folder-icon {
@@ -297,7 +297,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: var(--es-font-size-xs);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
 }
 
 .es-folder-action:hover {
@@ -387,7 +387,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: var(--es-font-size-xs);
-  transition: all var(--es-duration-fast) ease-out;
+  transition: var(--es-transition-all);
   position: relative;
   overflow: hidden;
 }

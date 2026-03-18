@@ -72,6 +72,12 @@ export class KeyboardManager extends BaseManager {
                      document.activeElement === document.body ||
                      this.element?.contains(e.target);
 
+    if (this.uiState.shortcutsOpen) {
+      if (!isOurApp) return;
+      this._handleShortcutOverlayKeyboard(e);
+      return;
+    }
+
     // Handle emotion picker navigation when open
     if (this.uiState.emotionPicker.open) {
       this._handleEmotionPickerKeyboard(e);
@@ -166,12 +172,18 @@ export class KeyboardManager extends BaseManager {
    * @private
    */
   _handleGlobalShortcuts(e) {
+    const isTyping = this._isTypingTarget(e.target);
+
     switch (e.key) {
       case 'Escape':
         // Close sort menu first, then inspector
         if (this.uiState.sortMenuOpen) {
           e.preventDefault();
           this.uiState.sortMenuOpen = false;
+          this.render();
+        } else if ((this.uiState.selectedIds?.size ?? 0) > 1 || (((this.uiState.selectedIds?.size ?? 0) === 1) && !this.uiState.inspectorOpen)) {
+          e.preventDefault();
+          this.panel.clearCardSelection();
           this.render();
         } else if (this.uiState.inspectorOpen) {
           e.preventDefault();
@@ -180,9 +192,22 @@ export class KeyboardManager extends BaseManager {
         }
         break;
 
+      case '?':
+        if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          this.panel.constructor.toggleShortcutHelp();
+          return;
+        }
+        break;
+
       case '/':
+        if (e.shiftKey && !isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          this.panel.constructor.toggleShortcutHelp();
+          return;
+        }
         // Focus search (only if not in input)
-        if (!e.target.matches('input, textarea')) {
+        if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
           e.preventDefault();
           const searchInput = this.element?.querySelector('.es-search-input');
           if (searchInput) searchInput.focus();
@@ -192,12 +217,38 @@ export class KeyboardManager extends BaseManager {
       case 'f':
       case 'F':
         // Toggle favorite (only if not in input and has selection)
-        if (!e.target.matches('input, textarea') && this.uiState.selectedId) {
+        if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey && this.uiState.selectedId) {
           e.preventDefault();
           this._toggleSelectedFavorite();
         }
         break;
+
+      case 'b':
+      case 'B':
+        if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          this._broadcastSelectedScene();
+        }
+        break;
     }
+  }
+
+  _handleShortcutOverlayKeyboard(e) {
+    const isTyping = this._isTypingTarget(e.target);
+    const isToggleKey = e.key === '?' || (e.key === '/' && e.shiftKey);
+
+    if (e.key === 'Escape' || (!isTyping && isToggleKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.panel.constructor.toggleShortcutHelp(false);
+    }
+  }
+
+  _isTypingTarget(target) {
+    return Boolean(
+      target?.matches?.('input, textarea, select, [contenteditable="true"], .es-inline-rename') ||
+      target?.closest?.('input, textarea, select, [contenteditable="true"], .es-inline-rename')
+    );
   }
 
   /**
@@ -256,5 +307,20 @@ export class KeyboardManager extends BaseManager {
       ui.notifications.info(format('Notifications.FavoritesToggle', { type, action }));
       this.render();
     }
+  }
+
+  _broadcastSelectedScene() {
+    if (!this.uiState.selectedId || !this.uiState.currentView.startsWith('scenes')) return;
+
+    const scene = Store.scenes.get(this.uiState.selectedId);
+    if (!scene) return;
+
+    if (scene.isSequence) {
+      Store.startSequence(scene.id);
+      this.render();
+      return;
+    }
+
+    this.panel.constructor.broadcastSceneById(scene.id);
   }
 }

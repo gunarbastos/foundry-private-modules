@@ -71,6 +71,27 @@ export class FolderService extends BaseService {
   }
 
   /**
+   * Get all items in a folder and its subfolders recursively.
+   *
+   * @param {string} type - Item type ('scene' or 'character')
+   * @param {string|null} folderId - Root folder ID
+   * @returns {Array} Array of items in the folder tree
+   */
+  getItemsInFolderTree(type, folderId) {
+    if (folderId == null) {
+      return this.getItemsInFolder(type, null);
+    }
+
+    const folderIds = [folderId, ...this.getAllSubfolders(folderId)];
+
+    if (type === 'scene') {
+      return this.scenes.filter(s => folderIds.includes(s.folder));
+    }
+
+    return this.characters.filter(c => folderIds.includes(c.folder));
+  }
+
+  /**
    * Get all subfolders recursively.
    *
    * @param {string} parentId - Parent folder ID
@@ -209,5 +230,34 @@ export class FolderService extends BaseService {
       }
     }
     return false;
+  }
+
+  /**
+   * Move multiple items (scenes or characters) to a folder.
+   *
+   * @param {string[]} itemIds - Item IDs to move
+   * @param {string} itemType - Item type ('scene' or 'character')
+   * @param {string|null} folderId - Target folder ID, null for root
+   * @returns {number} Number of items moved
+   */
+  moveItemsToFolder(itemIds, itemType, folderId) {
+    const ids = Array.isArray(itemIds) ? itemIds.filter(Boolean) : [];
+    if (!ids.length) return 0;
+
+    const collection = itemType === 'scene' ? this.scenes : this.characters;
+    let movedCount = 0;
+
+    ids.forEach((itemId) => {
+      const item = collection.get(itemId);
+      if (!item || item.folder === folderId) return;
+      item.folder = folderId;
+      movedCount += 1;
+    });
+
+    if (movedCount > 0) {
+      this.saveData();
+    }
+
+    return movedCount;
   }
 }

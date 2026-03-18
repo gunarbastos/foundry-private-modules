@@ -423,10 +423,16 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* Disable all animations (for reduced motion preference) */
+/* Scoped to Exalted Scenes elements only — never override global animations */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  .exalted-scenes,
+  .exalted-scenes *,
+  .exalted-scenes *::before,
+  .exalted-scenes *::after,
+  [id^="exalted-scenes"],
+  [id^="exalted-scenes"] *,
+  [id^="exalted-scenes"] *::before,
+  [id^="exalted-scenes"] *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

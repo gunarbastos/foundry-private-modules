@@ -10,6 +10,7 @@ import { BaseManager } from './BaseManager.js';
 import { Store } from '../../data/Store.js';
 import { SocketHandler } from '../../data/SocketHandler.js';
 import { localize, format } from '../../utils/i18n.js';
+import { applyPopoverPosition, getFallbackPopoverAnchor } from '../../utils/popover-position.js';
 
 /**
  * Manages the emotion picker in the GMPanel.
@@ -31,6 +32,8 @@ export class EmotionPickerManager extends BaseManager {
   setup(element) {
     super.setup(element);
     this._setupEmotionPickerBehavior();
+    window.addEventListener('resize', () => this._positionEmotionPicker(), { signal: this.signal });
+    this._positionEmotionPicker();
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -49,6 +52,26 @@ export class EmotionPickerManager extends BaseManager {
     this._setupHoverPreview(emotionPicker);
   }
 
+  _positionEmotionPicker() {
+    const emotionPicker = this.element?.querySelector('.es-emotion-picker');
+    if (!(emotionPicker instanceof HTMLElement)) return;
+
+    const anchor = this.uiState.emotionPicker.anchor || getFallbackPopoverAnchor(this.uiState.emotionPicker);
+    if (!anchor) return;
+
+    const positioned = applyPopoverPosition(emotionPicker, anchor, {
+      belowClass: 'es-emotion-picker--below',
+      gapAbove: 8,
+      gapBelow: 8
+    });
+
+    if (!positioned) return;
+
+    this.uiState.emotionPicker.x = positioned.x;
+    this.uiState.emotionPicker.y = positioned.y;
+    this.uiState.emotionPicker.pickerBelow = positioned.pickerBelow;
+  }
+
   /**
    * Sets up the search input filtering for emotions.
    * @param {HTMLElement} emotionPicker - The emotion picker element
@@ -65,6 +88,7 @@ export class EmotionPickerManager extends BaseManager {
         const emotionKey = item.dataset.state.toLowerCase();
         item.style.display = emotionKey.includes(query) ? '' : 'none';
       });
+      this._positionEmotionPicker();
     }, { signal: this.signal });
 
     // Focus on the search input when picker opens
@@ -173,7 +197,10 @@ export class EmotionPickerManager extends BaseManager {
    */
   handleClosePicker() {
     this.uiState.emotionPicker.open = false;
-    this.render();
+    this.uiState.emotionSearchQuery = '';
+    // Remove picker overlay directly without full panel re-render
+    const picker = this.element?.querySelector('.es-emotion-picker');
+    if (picker) picker.remove();
   }
 
   /**

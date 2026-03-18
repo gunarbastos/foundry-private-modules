@@ -123,6 +123,40 @@ export class CharacterService extends BaseService {
   }
 
   /**
+   * Duplicate an existing character, preserving all portraits and configuration.
+   *
+   * @param {string} id - Character ID to duplicate
+   * @param {Object} [options={}] - Duplicate options
+   * @param {string} [options.name] - Optional explicit name for the duplicate
+   * @param {string|null} [options.folder] - Optional destination folder override
+   * @returns {CharacterModel|undefined} The duplicated character or undefined if not found
+   */
+  duplicateCharacter(id, options = {}) {
+    const source = this.characters.get(id);
+    if (!source) {
+      return undefined;
+    }
+
+    const existingNames = this.characters.contents.map(character => character.name);
+    const duplicateData = foundry.utils.deepClone(source.toJSON());
+    delete duplicateData.id;
+    delete duplicateData.image;
+    delete duplicateData.emotionCount;
+    delete duplicateData.heroCount;
+
+    duplicateData.name = options.name?.trim() || this._buildDuplicateName(source.name, existingNames);
+    duplicateData.folder = options.folder !== undefined ? options.folder : source.folder;
+    duplicateData.createdAt = Date.now();
+    duplicateData.lastUsed = null;
+    duplicateData.playCount = 0;
+
+    const duplicate = new CharacterModel(duplicateData);
+    this.characters.set(duplicate.id, duplicate);
+    this.saveData();
+    return duplicate;
+  }
+
+  /**
    * Update an existing character.
    *
    * @param {string} id - Character ID
