@@ -150,9 +150,9 @@ export class IconPicker {
     if (!container) {
       container = document.createElement('div');
       container.id = 'sessionflow-picker-container';
-      container.style.cssText = 'position:absolute;top:0;left:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:10001;';
       document.body.appendChild(container);
     }
+    container.style.cssText = 'position:absolute;top:0;left:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:100001;';
     el.style.pointerEvents = 'auto';
     container.appendChild(el);
     this.#element = el;

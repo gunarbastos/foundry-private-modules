@@ -354,6 +354,93 @@
 }
 
 /* -------------------------------------------- */
+/*  Keyboard Shortcuts Popover                  */
+/* -------------------------------------------- */
+
+.sessionflow-shortcuts-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 260px;
+  background: color-mix(in srgb, var(--sf-color-bg-light, #1a1a2e) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--sf-color-border) 60%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  z-index: 30000;
+  animation: sessionflow-dropdown-enter 0.2s ease;
+  overflow: hidden;
+  padding: 0;
+}
+
+.sessionflow-shortcuts-popover__title {
+  padding: 10px 14px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sf-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid color-mix(in srgb, var(--sf-color-border) 40%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionflow-shortcuts-popover__title i {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.sessionflow-shortcuts-popover__grid {
+  padding: 6px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sessionflow-shortcuts-popover__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.12s ease;
+}
+
+.sessionflow-shortcuts-popover__row:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 8%, transparent);
+}
+
+.sessionflow-shortcuts-popover__keys {
+  display: inline-block;
+  min-width: 72px;
+  padding: 2px 6px;
+  font-size: 0.66rem;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-weight: 500;
+  color: var(--sf-color-text);
+  background: color-mix(in srgb, var(--sf-color-bg) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sf-color-border) 50%, transparent);
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.sessionflow-shortcuts-popover__divider {
+  border: none !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  margin: 4px 0 !important;
+}
+
+.sessionflow-shortcuts-popover__label {
+  font-size: 0.72rem;
+  color: var(--sf-color-text-muted);
+  flex: 1;
+}
+
+/* -------------------------------------------- */
 /*  Canvas Container                            */
 /* -------------------------------------------- */
 
@@ -559,6 +646,160 @@
   opacity: 1 !important;
   background: rgba(244, 67, 54, 0.1);
   color: var(--sf-color-danger, #f44336);
+}
+
+/* ---- Help Button ---- */
+
+.sessionflow-widget__help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 700;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease,
+              border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.sessionflow-widget__header:hover .sessionflow-widget__help-btn {
+  opacity: 0.55;
+}
+
+.sessionflow-widget__help-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Help Tooltip ---- */
+
+.sessionflow-widget__help-tooltip {
+  position: fixed;
+  z-index: 10000;
+  width: 280px;
+  padding: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 70%),
+    var(--sf-color-surface, #1a1a2e);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.65),
+    0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.sessionflow-widget__help-tooltip.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* -- Tooltip Header -- */
+
+.sessionflow-help__header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px 8px;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sessionflow-help__header i {
+  font-size: 10px;
+  color: var(--sf-beat-color, var(--sf-color-primary, #8b5cf6));
+  opacity: 0.8;
+}
+
+.sessionflow-help__header span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* -- Tagline -- */
+
+.sessionflow-help__tagline {
+  padding: 10px 14px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: -0.01em;
+}
+
+/* -- Body -- */
+
+.sessionflow-help__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 14px 12px;
+}
+
+.sessionflow-help__line {
+  position: relative;
+  padding-left: 10px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+}
+
+.sessionflow-help__line::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+}
+
+/* -- Tip line -- */
+
+.sessionflow-help__tip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sessionflow-help__tip i {
+  font-size: 9px;
+  color: #facc15;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.sessionflow-help__tip span {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+  line-height: 1.5;
 }
 
 /* -------------------------------------------- */
@@ -772,7 +1013,7 @@
   flex-shrink: 0;
 }
 
-.sessionflow-widget-characters__header i {
+.sessionflow-widget-characters__header > i {
   color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
   font-size: 0.75rem;
 }
@@ -797,6 +1038,287 @@
   color: var(--sf-beat-color, var(--sf-color-primary));
   font-size: 0.65rem;
   font-weight: 700;
+}
+
+/* ---- View Toggle ---- */
+
+.sessionflow-widget-characters__view-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.sessionflow-widget-characters__view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.6rem;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-characters__view-btn.is-active {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
+  color: var(--sf-beat-color, var(--sf-color-primary));
+}
+
+.sessionflow-widget-characters__view-btn:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--sf-color-text);
+}
+
+/* ---- Search Bar ---- */
+
+.sessionflow-widget-characters__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-characters__search-icon {
+  color: var(--sf-color-text-muted);
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.sessionflow-widget-characters__search-input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  color: var(--sf-color-text) !important;
+  font-size: 0.75rem !important;
+  font-family: inherit;
+  padding: 2px 0 !important;
+  outline: none !important;
+  min-width: 0;
+}
+
+.sessionflow-widget-characters__search-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-characters__search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.55rem;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-characters__search-clear:hover {
+  background: rgba(220, 53, 69, 0.12);
+  color: #dc3545;
+}
+
+/* ---- Content Area ---- */
+
+.sessionflow-widget-characters__content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sessionflow-widget-characters__content::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sessionflow-widget-characters__content::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+/* ---- Folder Headers ---- */
+
+.sessionflow-widget-characters__folder-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.sessionflow-widget-characters__folder-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sessionflow-widget-characters__folder-chevron {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.sessionflow-widget-characters__folder-header.is-collapsed .sessionflow-widget-characters__folder-chevron {
+  transform: rotate(-90deg);
+}
+
+.sessionflow-widget-characters__folder-icon {
+  font-size: 0.6rem;
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-widget-characters__folder-name {
+  flex: 1;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--sf-color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-widget-characters__folder-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--sf-color-text-muted);
+  font-size: 0.55rem;
+  font-weight: 600;
+}
+
+.sessionflow-widget-characters__folder-content {
+  /* no transition, simple show/hide via collapsed state */
+}
+
+/* ---- List View ---- */
+
+.sessionflow-widget-characters__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionflow-widget-characters__list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  animation: sessionflow-character-enter 0.3s ease both;
+  animation-delay: calc(0.04s + var(--sf-char-index, 0) * 0.04s);
+}
+
+.sessionflow-widget-characters__list-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sessionflow-widget-characters__list-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 35%, var(--sf-color-border));
+  background: var(--sf-color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+}
+
+.sessionflow-widget-characters__list-row:hover .sessionflow-widget-characters__list-portrait {
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+}
+
+.sessionflow-widget-characters__list-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sessionflow-widget-characters__list-portrait i {
+  font-size: 0.7rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.4;
+}
+
+.sessionflow-widget-characters__list-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sessionflow-widget-characters__list-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--sf-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.sessionflow-widget-characters__tags {
+  display: flex;
+  gap: 3px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-characters__tag {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 0.55rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sf-color-text-muted);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.sessionflow-widget-characters__list-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  cursor: pointer;
+  font-size: 0.55rem;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-characters__list-row:hover .sessionflow-widget-characters__list-remove {
+  opacity: 1;
+}
+
+.sessionflow-widget-characters__list-remove:hover {
+  background: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
 }
 
 /* ---- Add button + dropdown ---- */
@@ -830,29 +1352,84 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  width: 200px;
-  max-height: 240px;
-  overflow-y: auto;
+  width: 220px;
+  max-height: 300px;
+  display: none;
+  flex-direction: column;
   background: var(--sf-color-bg-light);
   border: 1px solid var(--sf-color-border);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 10;
-  display: none;
 }
 
 .sessionflow-widget-characters__dropdown.is-visible {
-  display: block;
+  display: flex;
   animation: sessionflow-dropdown-enter 0.2s ease;
 }
 
-.sessionflow-widget-characters__dropdown::-webkit-scrollbar {
+.sessionflow-widget-characters__dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sf-color-border);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-characters__dropdown-search i {
+  font-size: 0.6rem;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-characters__dropdown-search input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  color: var(--sf-color-text) !important;
+  font-size: 0.75rem !important;
+  font-family: inherit;
+  padding: 2px 0 !important;
+  outline: none !important;
+  min-width: 0;
+}
+
+.sessionflow-widget-characters__dropdown-search input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-characters__dropdown-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sessionflow-widget-characters__dropdown-list::-webkit-scrollbar {
   width: 4px;
 }
 
-.sessionflow-widget-characters__dropdown::-webkit-scrollbar-thumb {
+.sessionflow-widget-characters__dropdown-list::-webkit-scrollbar-thumb {
   background: var(--sf-color-border);
   border-radius: 2px;
+}
+
+.sessionflow-widget-characters__dropdown-folder {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--sf-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: rgba(0, 0, 0, 0.12);
+  opacity: 0.8;
+}
+
+.sessionflow-widget-characters__dropdown-folder i {
+  font-size: 0.55rem;
 }
 
 .sessionflow-widget-characters__dropdown-item {
@@ -906,25 +1483,19 @@
   color: var(--sf-color-text-muted);
 }
 
-/* ---- Character Grid ---- */
+/* ---- Character Grid (grid view) ---- */
+
+.sessionflow-widget-characters__grid-wrapper {
+  display: flex;
+  flex-direction: column;
+}
 
 .sessionflow-widget-characters__grid {
-  flex: 1;
-  overflow-y: auto;
   padding: 6px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   align-content: start;
-}
-
-.sessionflow-widget-characters__grid::-webkit-scrollbar {
-  width: 3px;
-}
-
-.sessionflow-widget-characters__grid::-webkit-scrollbar-thumb {
-  background: var(--sf-color-border);
-  border-radius: 2px;
 }
 
 .sessionflow-widget-characters__character {
@@ -985,7 +1556,7 @@
   text-overflow: ellipsis;
 }
 
-/* Remove button on hover */
+/* Remove button on hover (grid view) */
 .sessionflow-widget-characters__remove-btn {
   position: absolute;
   top: 2px;
@@ -1091,7 +1662,7 @@
   border-bottom: none;
   z-index: 3;
   transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .sessionflow-widget[data-widget-type="paragraph"] .sessionflow-widget__header::before {
@@ -1126,6 +1697,7 @@
 .sessionflow-widget[data-widget-type="paragraph"].is-editing .sessionflow-widget__header,
 .sessionflow-widget[data-widget-type="paragraph"].is-dragging .sessionflow-widget__header {
   opacity: 1;
+  pointer-events: auto;
   background:
     linear-gradient(180deg,
       color-mix(in srgb, var(--sf-color-bg) 96%, rgba(255, 255, 255, 0.04)) 0%,
@@ -2078,6 +2650,11 @@
   background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
 }
 
+.sessionflow-teleprompter-popover__chat-btn.is-sent {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
 .sessionflow-teleprompter-popover__divider {
   width: 1px;
   height: 16px;
@@ -2805,6 +3382,40 @@
 .sessionflow-widget-free-image__timer-option.is-selected {
   color: var(--sf-beat-color, var(--sf-color-primary));
   font-weight: 600;
+}
+
+/* ---- Journal toggle (top-right, below timer) ---- */
+
+.sessionflow-widget-free-image__journal-toggle {
+  position: absolute;
+  top: 36px;
+  right: 8px;
+  z-index: 4;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.sessionflow-widget-free-image:hover .sessionflow-widget-free-image__journal-toggle {
+  opacity: 1;
+}
+
+.sessionflow-widget-free-image__journal-toggle:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.sessionflow-widget-free-image__journal-toggle.is-active {
+  color: var(--sf-beat-color, var(--sf-color-primary));
 }
 
 /* ---- Countdown display (bottom-right during broadcast) ---- */
@@ -3858,12 +4469,20 @@
 
 .sessionflow-widget-checklist__checkbox input[type="checkbox"] {
   position: absolute;
-  opacity: 0;
+  opacity: 0 !important;
   width: 100%;
   height: 100%;
   margin: 0;
+  padding: 0;
   cursor: pointer;
   z-index: 1;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .sessionflow-widget-checklist__checkmark {
@@ -3879,11 +4498,14 @@
 }
 
 .sessionflow-widget-checklist__checkmark::after {
-  content: '\f00c';
-  font-family: 'Font Awesome 6 Free';
-  font-weight: 900;
-  font-size: 0.55rem;
-  color: white;
+  content: '';
+  display: block;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 1px;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -5993,16 +6615,25 @@
 .sessionflow-widget-timer__custom-wrap {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 6px;
   align-items: center;
   width: 100%;
+}
+
+.sessionflow-widget-timer__custom-separator {
+  color: var(--sf-color-text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
 }
 
 .sessionflow-widget-timer__custom-input {
   min-width: 0;
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--sf-timer-color) 8%, transparent);
   background: color-mix(in srgb, var(--sf-color-bg) 28%, transparent);
@@ -6010,6 +6641,17 @@
   font-size: 11px;
   font-weight: 600;
   font-family: inherit;
+  text-align: center;
+}
+
+/* Hide number input spinners */
+.sessionflow-widget-timer__custom-input::-webkit-inner-spin-button,
+.sessionflow-widget-timer__custom-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.sessionflow-widget-timer__custom-input {
+  -moz-appearance: textfield;
 }
 
 .sessionflow-widget-timer__custom-input:focus {
@@ -7568,6 +8210,574 @@
   margin: 0;
 }
 
+/* ---- Button Row (Add + Library) ---- */
+
+.sessionflow-widget-clock__btn-row {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-clock__btn-row .sessionflow-widget-clock__add-btn {
+  flex: 1;
+}
+
+.sessionflow-widget-clock__library-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--sf-color-border) 50%, transparent);
+  border-radius: 6px;
+  color: var(--sf-color-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-clock__library-btn:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 10%, transparent);
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+  color: var(--sf-color-text);
+}
+
+/* ---- Bar Visual Style ---- */
+
+.sessionflow-widget-clock__bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  max-width: 160px;
+  align-self: center;
+}
+
+.sessionflow-widget-clock__bar-segment {
+  flex: 1;
+  height: 22px;
+  border-radius: 3px;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.sessionflow-widget-clock__bar-segment:first-child {
+  border-radius: 6px 3px 3px 6px;
+}
+
+.sessionflow-widget-clock__bar-segment:last-child {
+  border-radius: 3px 6px 6px 3px;
+}
+
+.sessionflow-widget-clock__bar-segment:hover {
+  transform: scaleY(1.15);
+}
+
+.sessionflow-widget-clock__bar-segment.is-filled {
+  animation: sessionflow-clock-fill-pulse 0.4s ease-out;
+}
+
+.sessionflow-widget-clock__bar--mini {
+  max-width: none;
+  height: auto;
+}
+
+.sessionflow-widget-clock__bar--mini .sessionflow-widget-clock__bar-segment {
+  height: 8px;
+}
+
+/* ---- Label Tag ---- */
+
+.sessionflow-widget-clock__label {
+  font-size: 0.55rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-widget-clock__label:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sessionflow-widget-clock__label.is-empty {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sessionflow-widget-clock__item:hover .sessionflow-widget-clock__label.is-empty {
+  opacity: 0.4;
+}
+
+.sessionflow-widget-clock__label-input {
+  width: 80px;
+  max-width: 100px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--sf-beat-color, var(--sf-color-primary));
+  color: var(--sf-color-text);
+  font-size: 0.55rem;
+  font-family: inherit;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  outline: none;
+}
+
+.sessionflow-widget-clock__label-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+  text-transform: none;
+}
+
+/* ---- Link Indicator ---- */
+
+.sessionflow-widget-clock__link-indicator {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sessionflow-widget-clock__link-indicator i {
+  font-size: 0.45rem;
+  opacity: 0.6;
+}
+
+/* ---- Mode Select ---- */
+
+.sessionflow-widget-clock__mode-select {
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 3px;
+  color: var(--sf-color-text);
+  font-size: 0.6rem;
+  font-family: inherit;
+  padding: 1px 2px;
+  cursor: pointer;
+  outline: none;
+  height: 18px;
+  min-width: 36px;
+}
+
+.sessionflow-widget-clock__mode-select:focus {
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+}
+
+/* ---- Link Select ---- */
+
+.sessionflow-widget-clock__link-select {
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  border-radius: 3px;
+  color: var(--sf-color-text);
+  font-size: 0.6rem;
+  font-family: inherit;
+  padding: 1px 2px;
+  cursor: pointer;
+  outline: none;
+  height: 18px;
+  min-width: 30px;
+  max-width: 50px;
+}
+
+.sessionflow-widget-clock__link-select:focus {
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+}
+
+/* ---- Settings Button ---- */
+
+.sessionflow-widget-clock__settings-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text-muted);
+  font-size: 0.5rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+}
+
+.sessionflow-widget-clock__settings-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sf-color-text);
+  opacity: 1;
+}
+
+.sessionflow-widget-clock__settings-btn.has-config {
+  color: var(--sf-beat-color, var(--sf-color-primary));
+  opacity: 0.7;
+}
+
+/* ---- Reset Button ---- */
+
+.sessionflow-widget-clock__reset-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text-muted);
+  font-size: 0.5rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+}
+
+.sessionflow-widget-clock__reset-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  opacity: 1;
+}
+
+/* ---- Save to Library Button ---- */
+
+.sessionflow-widget-clock__save-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--sf-color-text-muted);
+  font-size: 0.5rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+}
+
+.sessionflow-widget-clock__save-btn:hover {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  opacity: 1;
+}
+
+/* ---- Settings Popover ---- */
+
+.sessionflow-widget-clock__settings-popover {
+  width: 100%;
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sessionflow-widget-clock__settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-clock__settings-close {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  font-size: 0.55rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-clock__settings-close:hover {
+  background: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+}
+
+.sessionflow-widget-clock__settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessionflow-widget-clock__settings-label {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.sessionflow-widget-clock__settings-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: var(--sf-color-text);
+  font-size: 0.65rem;
+  font-family: inherit;
+  padding: 3px 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sessionflow-widget-clock__settings-input:focus {
+  border-color: var(--sf-beat-color, var(--sf-color-primary));
+}
+
+.sessionflow-widget-clock__settings-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.4;
+}
+
+/* ---- Threat Level Glow ---- */
+
+.sessionflow-widget-clock__item.is-warming {
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.12);
+  border-radius: 8px;
+}
+
+.sessionflow-widget-clock__item.is-hot {
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.2);
+  border-radius: 8px;
+  animation: sf-clock-pulse 2s ease-in-out infinite;
+}
+
+.sessionflow-widget-clock__item.is-critical {
+  box-shadow: 0 0 18px rgba(220, 53, 69, 0.35);
+  border-radius: 8px;
+  animation: sf-clock-pulse-critical 1s ease-in-out infinite;
+}
+
+@keyframes sf-clock-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(249, 115, 22, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.35); }
+}
+
+@keyframes sf-clock-pulse-critical {
+  0%, 100% { box-shadow: 0 0 18px rgba(220, 53, 69, 0.35); }
+  50% { box-shadow: 0 0 28px rgba(220, 53, 69, 0.55); }
+}
+
+/* ---- Countdown Mode Visual ---- */
+
+.sessionflow-widget-clock__item.is-countdown {
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+/* ---- Clock Library Panel ---- */
+
+.sessionflow-widget-clock__library-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sessionflow-widget-clock__library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sf-color-text);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-clock__library-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  font-size: 0.6rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-clock__library-close:hover {
+  background: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+}
+
+.sessionflow-widget-clock__library-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+  text-align: center;
+  padding: 20px;
+}
+
+.sessionflow-widget-clock__library-empty i {
+  font-size: 1.2rem;
+}
+
+.sessionflow-widget-clock__library-empty p {
+  font-size: 0.7rem;
+  margin: 0;
+}
+
+.sessionflow-widget-clock__library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+}
+
+.sessionflow-widget-clock__library-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-clock__library-list::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
+}
+
+.sessionflow-widget-clock__library-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.sessionflow-widget-clock__library-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sessionflow-widget-clock__library-preview {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sessionflow-widget-clock__library-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sessionflow-widget-clock__library-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--sf-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionflow-widget-clock__library-meta {
+  font-size: 0.55rem;
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-widget-clock__library-actions {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-clock__library-load,
+.sessionflow-widget-clock__library-delete {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--sf-color-text-muted);
+  font-size: 0.55rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  opacity: 0.5;
+}
+
+.sessionflow-widget-clock__library-load:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
+  color: var(--sf-beat-color, var(--sf-color-primary));
+  opacity: 1;
+}
+
+.sessionflow-widget-clock__library-delete:hover {
+  background: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+  opacity: 1;
+}
+
+/* ---- HUD Bar Style ---- */
+
+.sessionflow-clock-hud__bar {
+  display: flex;
+  gap: 1px;
+  height: 10px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.sessionflow-clock-hud__bar-segment {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 1px;
+  transition: background 0.2s ease;
+}
+
+.sessionflow-clock-hud__bar-segment:first-child {
+  border-radius: 3px 1px 1px 3px;
+}
+
+.sessionflow-clock-hud__bar-segment:last-child {
+  border-radius: 1px 3px 3px 1px;
+}
+
 
 /* ============================================ */
 /*  Faction Reputation Widget                   */
@@ -8890,7 +10100,7 @@
 .sessionflow-widget-timetracker__secondary-label-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--sf-beat-color, var(--sf-color-primary));
+  border-bottom: 1px solid var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
   color: var(--sf-color-text);
   font-size: 0.65rem;
   font-family: inherit;
@@ -8939,6 +10149,19 @@
   animation: sessionflow-timetracker-tick 0.45s ease forwards;
 }
 
+/* ---- Pulse ring style ---- */
+
+.sessionflow-widget-timetracker__pulse-circle {
+  animation: sessionflow-timetracker-pulse 3s ease-in-out infinite;
+  transform-origin: 60px 60px;
+}
+
+.sessionflow-widget-timetracker__pulse-glow {
+  animation: sessionflow-timetracker-pulse 3s ease-in-out infinite;
+  animation-delay: 0.3s;
+  transform-origin: 60px 60px;
+}
+
 /* ---- Ring Overlay (count + label) ---- */
 
 .sessionflow-widget-timetracker__ring-overlay {
@@ -8965,8 +10188,28 @@
   letter-spacing: -1px;
 }
 
+.sessionflow-widget-timetracker__count--small {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 .sessionflow-widget-timetracker__count.is-bumping {
   animation: sessionflow-timetracker-bump 0.25s ease;
+}
+
+.sessionflow-widget-timetracker__center-icon {
+  font-size: 1.5rem;
+  color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.sessionflow-widget-timetracker__center-icon-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 .sessionflow-widget-timetracker__label {
@@ -8988,7 +10231,7 @@
 .sessionflow-widget-timetracker__label-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--sf-beat-color, var(--sf-color-primary));
+  border-bottom: 1px solid var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
   color: var(--sf-color-text);
   font-size: 0.65rem;
   font-family: inherit;
@@ -9006,18 +10249,36 @@
   text-transform: none;
 }
 
+/* ---- Badge Label (below ring) ---- */
+
+.sessionflow-widget-timetracker__badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--sf-color-text);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 35%, transparent);
+}
+
 /* ---- Controls (horizontal row) ---- */
 
 .sessionflow-widget-timetracker__controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
+}
+
+.sessionflow-widget-timetracker__controls-spacer {
+  width: 6px;
 }
 
 .sessionflow-widget-timetracker__btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -9033,21 +10294,26 @@
 
 .sessionflow-widget-timetracker__btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--sf-beat-color, var(--sf-color-primary));
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+  transform: scale(1.1);
+}
+
+.sessionflow-widget-timetracker__btn:active {
+  transform: scale(0.95);
 }
 
 .sessionflow-widget-timetracker__btn--inc {
-  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 15%, transparent);
-  border-color: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 40%, transparent);
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 15%, transparent);
+  border-color: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 40%, transparent);
 }
 
 .sessionflow-widget-timetracker__btn--inc:hover {
-  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 25%, transparent);
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 25%, transparent);
 }
 
 .sessionflow-widget-timetracker__btn--reset {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   font-size: 0.5rem;
   opacity: 0.5;
 }
@@ -9059,72 +10325,40 @@
   color: #dc3545;
 }
 
+.sessionflow-widget-timetracker__btn--broadcast {
+  width: 26px;
+  height: 26px;
+  font-size: 0.55rem;
+  opacity: 0.6;
+}
+
+.sessionflow-widget-timetracker__btn--broadcast.is-active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 25%, transparent);
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+  color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+}
+
+.sessionflow-widget-timetracker__btn--flash {
+  width: 26px;
+  height: 26px;
+  font-size: 0.55rem;
+  opacity: 0.6;
+}
+
+.sessionflow-widget-timetracker__btn--flash:hover {
+  opacity: 1;
+  background: rgba(234, 179, 8, 0.15);
+  border-color: #eab308;
+  color: #eab308;
+}
+
 .sessionflow-widget-timetracker__step {
   font-size: 0.6rem;
   color: var(--sf-color-text-muted);
   font-variant-numeric: tabular-nums;
   min-width: 22px;
   text-align: center;
-}
-
-/* ---- Note Row ---- */
-
-.sessionflow-widget-timetracker__note-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  padding: 0 4px;
-}
-
-.sessionflow-widget-timetracker__note-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--sf-color-border);
-  color: var(--sf-color-text);
-  font-size: 0.7rem;
-  font-family: inherit;
-  padding: 3px 6px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.sessionflow-widget-timetracker__note-input:focus {
-  border-bottom-color: var(--sf-beat-color, var(--sf-color-primary));
-}
-
-.sessionflow-widget-timetracker__note-input::placeholder {
-  color: var(--sf-color-text-muted);
-  opacity: 0.5;
-}
-
-.sessionflow-widget-timetracker__note-confirm,
-.sessionflow-widget-timetracker__note-skip {
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid var(--sf-color-border);
-  color: var(--sf-color-text-muted);
-  font-size: 0.55rem;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s ease;
-}
-
-.sessionflow-widget-timetracker__note-confirm:hover {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: #22c55e;
-  color: #22c55e;
-}
-
-.sessionflow-widget-timetracker__note-skip:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--sf-color-text);
 }
 
 /* ---- History ---- */
@@ -9195,17 +10429,6 @@
   flex-shrink: 0;
 }
 
-.sessionflow-widget-timetracker__history-note {
-  font-size: 0.6rem;
-  color: var(--sf-color-text-muted);
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
 .sessionflow-widget-timetracker__history-time {
   font-size: 0.55rem;
   color: var(--sf-color-text-muted);
@@ -9220,15 +10443,22 @@
   position: absolute;
   top: 24px;
   right: 4px;
-  width: 200px;
+  width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
   background: var(--sf-color-bg-light);
   border: 1px solid var(--sf-color-border);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 30;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.sessionflow-widget-timetracker__settings-popover::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-timetracker__settings-popover::-webkit-scrollbar-thumb {
+  background: var(--sf-color-border);
+  border-radius: 2px;
 }
 
 .sessionflow-widget-timetracker__settings-title {
@@ -9254,11 +10484,21 @@
   gap: 8px;
 }
 
+.sessionflow-widget-timetracker__settings-row--inline {
+  justify-content: flex-start;
+  gap: 6px;
+}
+
 .sessionflow-widget-timetracker__settings-label {
   font-size: 0.65rem;
   color: var(--sf-color-text-muted);
   flex: 1;
   min-width: 0;
+}
+
+.sessionflow-widget-timetracker__settings-label--clickable {
+  cursor: pointer;
+  flex: unset;
 }
 
 .sessionflow-widget-timetracker__settings-rate-preview {
@@ -9280,8 +10520,28 @@
   flex-shrink: 0;
 }
 
+.sessionflow-widget-timetracker__settings-input--wide {
+  width: 100%;
+  flex: 1;
+  text-align: left;
+  padding: 3px 6px;
+}
+
 .sessionflow-widget-timetracker__settings-input:focus {
-  border-color: var(--sf-beat-color, var(--sf-color-primary));
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+}
+
+.sessionflow-widget-timetracker__settings-input::placeholder {
+  color: var(--sf-color-text-muted);
+  opacity: 0.5;
+}
+
+.sessionflow-widget-timetracker__settings-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .sessionflow-widget-timetracker__settings-separator {
@@ -9289,6 +10549,138 @@
   background: var(--sf-color-border);
   opacity: 0.4;
 }
+
+/* ---- Ring Style Selector ---- */
+
+.sessionflow-widget-timetracker__ring-style-group {
+  display: flex;
+  gap: 3px;
+}
+
+.sessionflow-widget-timetracker__ring-style-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--sf-color-border);
+  color: var(--sf-color-text-muted);
+  font-size: 0.6rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-timetracker__ring-style-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sf-color-text);
+}
+
+.sessionflow-widget-timetracker__ring-style-btn.is-active {
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 20%, transparent);
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+  color: var(--sf-color-text);
+}
+
+/* ---- Color Palette ---- */
+
+.sessionflow-widget-timetracker__color-palette {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.sessionflow-widget-timetracker__color-dot {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: all 0.15s ease;
+  display: block;
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  line-height: 0;
+  overflow: hidden;
+}
+
+.sessionflow-widget-timetracker__color-dot:hover {
+  transform: scale(1.2);
+}
+
+.sessionflow-widget-timetracker__color-dot.is-active {
+  border-color: var(--sf-color-text);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+.sessionflow-widget-timetracker__color-dot--inherit {
+  background: var(--sf-color-bg) !important;
+  border-color: var(--sf-color-border);
+  color: var(--sf-color-text-muted);
+}
+
+.sessionflow-widget-timetracker__color-dot--inherit.is-active {
+  border-color: var(--sf-color-text);
+}
+
+/* ---- Center Icon picker ---- */
+
+.sessionflow-widget-timetracker__icon-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.sessionflow-widget-timetracker__settings-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sf-color-bg);
+  border: 1px solid var(--sf-color-border);
+  color: var(--sf-color-text);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-timetracker__settings-icon-btn:hover {
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
+}
+
+.sessionflow-widget-timetracker__settings-icon-clear {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--sf-color-border);
+  color: var(--sf-color-text-muted);
+  font-size: 0.5rem;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.sessionflow-widget-timetracker__settings-icon-clear:hover {
+  background: rgba(220, 53, 69, 0.1);
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+/* ---- Secondary buttons ---- */
 
 .sessionflow-widget-timetracker__settings-add-secondary {
   display: flex;
@@ -9307,8 +10699,8 @@
 }
 
 .sessionflow-widget-timetracker__settings-add-secondary:hover {
-  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-color-primary)) 10%, transparent);
-  border-color: var(--sf-beat-color, var(--sf-color-primary));
+  background: color-mix(in srgb, var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary))) 10%, transparent);
+  border-color: var(--sf-tracker-color, var(--sf-beat-color, var(--sf-color-primary)));
   color: var(--sf-color-text);
 }
 
@@ -9337,7 +10729,7 @@
 
 @keyframes sessionflow-timetracker-bump {
   0% { transform: scale(1); }
-  50% { transform: scale(1.12); }
+  50% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
 
@@ -9345,6 +10737,172 @@
   0% { opacity: 1; }
   40% { opacity: 1; }
   100% { opacity: 0.3; }
+}
+
+@keyframes sessionflow-timetracker-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.12; }
+  50% { transform: scale(1.04); opacity: 0.22; }
+}
+
+/* ---- Time Tracker HUD (Player) ---- */
+
+.sessionflow-tracker-hud {
+  position: fixed;
+  bottom: 80px;
+  left: 16px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(20, 20, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  user-select: none;
+}
+
+.sessionflow-tracker-hud.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sessionflow-tracker-hud.is-leaving {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.sessionflow-tracker-hud.is-dragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.sessionflow-tracker-hud__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sessionflow-tracker-hud__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.sessionflow-tracker-hud__count {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sf-color-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sessionflow-tracker-hud__label {
+  font-size: 0.6rem;
+  color: var(--sf-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+.sessionflow-tracker-hud__secondary {
+  font-size: 0.6rem;
+  color: var(--sf-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sessionflow-tracker-hud__badge {
+  font-size: 0.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--sf-color-text);
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  align-self: flex-start;
+}
+
+.sessionflow-tracker-hud__ring-svg {
+  flex-shrink: 0;
+}
+
+/* ---- Time Tracker Flash Popup ---- */
+
+.sessionflow-tracker-flash {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 36px;
+  background: rgba(15, 15, 25, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: all 0.4s ease;
+  pointer-events: none;
+}
+
+.sessionflow-tracker-flash.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sessionflow-tracker-flash.is-leaving {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.sessionflow-tracker-flash__ring {
+  flex-shrink: 0;
+}
+
+.sessionflow-tracker-flash__count {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--sf-color-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.sessionflow-tracker-flash__label {
+  font-size: 0.8rem;
+  color: var(--sf-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.sessionflow-tracker-flash__secondary {
+  font-size: 0.9rem;
+  color: var(--sf-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sessionflow-tracker-flash__badge {
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--sf-color-text);
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* ============================================ */
@@ -12519,7 +14077,8 @@
 .sessionflow-widget[data-widget-type="time-tracker"],
 .sessionflow-widget[data-widget-type="journal-board"],
 .sessionflow-widget[data-widget-type="day-night"],
-.sessionflow-widget[data-widget-type="sequence"] {
+.sessionflow-widget[data-widget-type="sequence"],
+.sessionflow-widget[data-widget-type="quest-tracker"] {
   overflow: visible;
 }
 
@@ -12531,7 +14090,8 @@
 .sessionflow-widget[data-widget-type="time-tracker"] .sessionflow-widget__header,
 .sessionflow-widget[data-widget-type="journal-board"] .sessionflow-widget__header,
 .sessionflow-widget[data-widget-type="day-night"] .sessionflow-widget__header,
-.sessionflow-widget[data-widget-type="sequence"] .sessionflow-widget__header {
+.sessionflow-widget[data-widget-type="sequence"] .sessionflow-widget__header,
+.sessionflow-widget[data-widget-type="quest-tracker"] .sessionflow-widget__header {
   top: 0;
   transform: translateY(-100%);
 }
@@ -12579,6 +14139,10 @@
   opacity: 0.5;
 }
 
+.sessionflow-widget.is-collapsed .sessionflow-widget__help-btn {
+  opacity: 0.35;
+}
+
 .sessionflow-widget.is-collapsed .sessionflow-widget__collapse-btn:hover,
 .sessionflow-widget.is-collapsed .sessionflow-widget__remove-btn:hover {
   opacity: 1;
@@ -12601,4 +14165,863 @@
       color-mix(in srgb, var(--sf-sticky-bg, #FEF3C7) 96%, #fff 4%) 0%,
       color-mix(in srgb, var(--sf-sticky-bg, #FEF3C7) 88%, transparent) 100%);
   border-bottom: none;
+}
+
+/* ===================================================================== */
+/*  Cast Display Widget ("The Stage")                                    */
+/* ===================================================================== */
+
+.sessionflow-widget-cast-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 0;
+}
+
+.sessionflow-widget-cast-display--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.sessionflow-widget-cast-display__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.sessionflow-widget-cast-display__empty i {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+/* ---- Characters section ---- */
+
+.sessionflow-widget-cast-display__characters {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.sessionflow-widget-cast-display__search {
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-cast-display__search input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sessionflow-widget-cast-display__search input:focus {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+}
+
+.sessionflow-widget-cast-display__search input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.sessionflow-widget-cast-display__grid-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.sessionflow-widget-cast-display__no-chars {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+  padding: 16px 8px;
+}
+
+/* ---- Folder headers ---- */
+
+.sessionflow-widget-cast-display__folder-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 2px 2px;
+  margin-top: 4px;
+}
+
+.sessionflow-widget-cast-display__folder-header:first-child {
+  margin-top: 0;
+}
+
+.sessionflow-widget-cast-display__folder-header i {
+  font-size: 0.6rem;
+  opacity: 0.5;
+}
+
+/* ---- Character grid ---- */
+
+.sessionflow-widget-cast-display__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.sessionflow-widget-cast-display__char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 4px 2px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.sessionflow-widget-cast-display__char:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Portrait ---- */
+
+.sessionflow-widget-cast-display__portrait {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-cast-display__portrait i {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Unselected: dimmed */
+.sessionflow-widget-cast-display__char:not(.is-selected) .sessionflow-widget-cast-display__portrait {
+  opacity: 0.5;
+  filter: grayscale(40%);
+}
+
+/* Selected: accent ring */
+.sessionflow-widget-cast-display__char.is-selected .sessionflow-widget-cast-display__portrait {
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 50%, transparent);
+  opacity: 1;
+  filter: none;
+}
+
+/* ---- Check badge ---- */
+
+.sessionflow-widget-cast-display__check {
+  position: absolute;
+  top: 2px;
+  right: calc(50% - 24px);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.sessionflow-widget-cast-display__check i {
+  font-size: 0.5rem;
+  color: #fff;
+}
+
+.sessionflow-widget-cast-display__char.is-selected .sessionflow-widget-cast-display__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ---- Character name ---- */
+
+.sessionflow-widget-cast-display__name {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.sessionflow-widget-cast-display__char.is-selected .sessionflow-widget-cast-display__name {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ---- Layout controls ---- */
+
+.sessionflow-widget-cast-display__layout {
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.sessionflow-widget-cast-display__control-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionflow-widget-cast-display__control-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-cast-display__btn-group {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.sessionflow-widget-cast-display__pill-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.6rem !important;
+  padding: 2px 6px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 22px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.sessionflow-widget-cast-display__pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.sessionflow-widget-cast-display__pill-btn.is-active {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 25%, transparent) !important;
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) !important;
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) !important;
+}
+
+.sessionflow-widget-cast-display__pill-btn i {
+  font-size: 0.55rem;
+}
+
+/* ---- Broadcast button ---- */
+
+.sessionflow-widget-cast-display__broadcast-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 16px) !important;
+  margin: 0 8px 8px !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.sessionflow-widget-cast-display__broadcast-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.sessionflow-widget-cast-display__broadcast-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Active / broadcasting state */
+.sessionflow-widget-cast-display__broadcast-btn.is-active {
+  background: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) !important;
+  border-color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) !important;
+  color: #fff !important;
+  animation: sessionflow-broadcast-pulse 2s ease-in-out infinite;
+}
+
+.sessionflow-widget-cast-display__broadcast-btn.is-active:hover {
+  background: color-mix(in srgb, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))) 80%, #000) !important;
+  animation: none;
+}
+
+/* Broadcasting container border glow */
+.sessionflow-widget-cast-display.is-broadcasting {
+  border-top: 2px solid var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+}
+
+/* ===================================================================== */
+/*  Quick Scenes Widget ("The Compass")                                  */
+/* ===================================================================== */
+
+.sessionflow-widget-quick-scenes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 4px 0 0;
+  position: relative;
+}
+
+/* ---- Empty state ---- */
+
+.sessionflow-widget-quick-scenes__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 12px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.sessionflow-widget-quick-scenes__empty:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sessionflow-widget-quick-scenes__empty i {
+  font-size: 1.4rem;
+  opacity: 0.4;
+}
+
+/* ---- Chip grid ---- */
+
+.sessionflow-widget-quick-scenes__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: flex-start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* ---- Scene chip ---- */
+
+.sessionflow-widget-quick-scenes__chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 15%, rgba(255, 255, 255, 0.06));
+  border: 1px solid color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 30%, transparent);
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  max-width: 100%;
+}
+
+.sessionflow-widget-quick-scenes__chip:hover {
+  background: color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 25%, rgba(255, 255, 255, 0.08));
+  border-color: color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 50%, transparent);
+}
+
+/* Chip content */
+
+.sessionflow-widget-quick-scenes__chip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sessionflow-widget-quick-scenes__chip-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.sessionflow-widget-quick-scenes__chip-beat {
+  font-size: 0.55rem;
+  color: color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 70%, rgba(255, 255, 255, 0.5));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* Remove button */
+
+.sessionflow-widget-quick-scenes__chip-remove {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.5rem !important;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  padding: 0 !important;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-quick-scenes__chip:hover .sessionflow-widget-quick-scenes__chip-remove {
+  opacity: 1;
+}
+
+.sessionflow-widget-quick-scenes__chip-remove:hover {
+  background: rgba(255, 80, 80, 0.3) !important;
+  color: rgba(255, 120, 120, 0.9) !important;
+}
+
+/* Missing chip */
+
+.sessionflow-widget-quick-scenes__chip.is-missing {
+  opacity: 0.45;
+  border-style: dashed;
+  cursor: default;
+}
+
+.sessionflow-widget-quick-scenes__chip.is-missing .sessionflow-widget-quick-scenes__chip-title {
+  color: rgba(255, 200, 100, 0.7);
+}
+
+.sessionflow-widget-quick-scenes__chip.is-missing .sessionflow-widget-quick-scenes__chip-title i {
+  font-size: 0.55rem;
+  margin-right: 3px;
+}
+
+/* Drag states */
+
+.sessionflow-widget-quick-scenes__chip.is-dragging {
+  opacity: 0.35;
+}
+
+.sessionflow-widget-quick-scenes__chip.drag-over {
+  border-color: var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary)));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--sf-chip-accent, var(--sf-beat-color, var(--sf-color-primary))) 40%, transparent);
+}
+
+/* ---- Add button ---- */
+
+.sessionflow-widget-quick-scenes__add-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 8px 6px !important;
+  padding: 4px 8px !important;
+  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.65rem !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-quick-scenes__add-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.sessionflow-widget-quick-scenes__add-btn i {
+  font-size: 0.55rem;
+}
+
+/* ---- Dropdown (scene picker) ---- */
+
+.sessionflow-widget-quick-scenes__dropdown {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: rgba(20, 20, 25, 0.97);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-direction: column;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.sessionflow-widget-quick-scenes__dropdown.is-visible {
+  display: flex;
+}
+
+/* Filter */
+
+.sessionflow-widget-quick-scenes__dropdown-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-filter i {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sessionflow-widget-quick-scenes__dropdown-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.72rem;
+  padding: 0;
+  outline: none;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-filter-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* List */
+
+.sessionflow-widget-quick-scenes__dropdown-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-list::-webkit-scrollbar { width: 3px; }
+.sessionflow-widget-quick-scenes__dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* Session header */
+
+.sessionflow-widget-quick-scenes__dropdown-session {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Beat header */
+
+.sessionflow-widget-quick-scenes__dropdown-beat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 2px 18px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Color dot */
+
+.sessionflow-widget-quick-scenes__dropdown-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+/* Scene item */
+
+.sessionflow-widget-quick-scenes__dropdown-item {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  width: 100% !important;
+  padding: 4px 10px 4px 28px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.68rem !important;
+  cursor: pointer;
+  text-align: left !important;
+  transition: background 0.12s ease;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-item:hover:not(.is-added):not(.is-current) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-item i {
+  font-size: 0.5rem;
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-item.is-added {
+  color: rgba(255, 255, 255, 0.3) !important;
+  cursor: default;
+}
+
+.sessionflow-widget-quick-scenes__dropdown-item.is-added i {
+  color: var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)));
+}
+
+.sessionflow-widget-quick-scenes__dropdown-item.is-current {
+  color: rgba(255, 255, 255, 0.3) !important;
+  cursor: default;
+  font-style: italic;
+}
+
+/* Empty dropdown state */
+
+.sessionflow-widget-quick-scenes__dropdown-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.7rem;
+  padding: 16px 8px;
+}
+
+/* ================================================================ */
+/*  Page Tabs                                                        */
+/* ================================================================ */
+
+.sessionflow-page-tabs {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 0 4px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  flex-shrink: 1 !important;
+  flex-grow: 0 !important;
+  min-width: 0 !important;
+}
+
+.sessionflow-page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sessionflow-page-tab {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 4px 10px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.5) !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  line-height: 1.3 !important;
+  min-width: 0 !important;
+}
+
+.sessionflow-page-tab i {
+  font-size: 0.6rem !important;
+  opacity: 0.7;
+  width: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.sessionflow-page-tab__icon-img {
+  width: 14px !important;
+  height: 14px !important;
+  object-fit: cover !important;
+  border-radius: 2px !important;
+  flex-shrink: 0 !important;
+  opacity: 0.8;
+}
+
+.sessionflow-page-tab:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+
+.sessionflow-page-tab.is-active {
+  background: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: inset 0 -2px 0 var(--sf-page-color, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary)))) !important;
+}
+
+.sessionflow-page-tab.is-active i {
+  opacity: 1;
+  color: var(--sf-page-color, var(--sf-beat-color, var(--sf-session-color, var(--sf-color-primary))));
+}
+
+/* Solo tab: non-interactive label in flat mode */
+
+.sessionflow-page-tab.is-solo {
+  cursor: default !important;
+  opacity: 0.5 !important;
+}
+
+.sessionflow-page-tab.is-dragging {
+  opacity: 0.4 !important;
+}
+
+.sessionflow-page-tab.drag-over {
+  box-shadow: inset 2px 0 0 var(--sf-color-primary) !important;
+}
+
+/* Add page button */
+
+.sessionflow-page-tab--add {
+  background: transparent !important;
+  color: rgba(255,255,255,0.25) !important;
+  padding: 4px 8px !important;
+  border: 1px dashed rgba(255,255,255,0.15) !important;
+}
+
+.sessionflow-page-tab--add:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.6) !important;
+  border-color: rgba(255,255,255,0.3) !important;
+}
+
+.sessionflow-page-tab--add i {
+  font-size: 0.55rem !important;
+  opacity: 1 !important;
+}
+
+/* Inline rename input */
+
+.sessionflow-page-tab__rename-input {
+  background: rgba(0,0,0,0.4) !important;
+  border: 1px solid var(--sf-color-primary) !important;
+  border-radius: 3px !important;
+  color: white !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  padding: 1px 4px !important;
+  outline: none !important;
+  min-width: 40px !important;
+  max-width: 120px !important;
+}
+
+/* ================================================================ */
+/*  Page Context Menu                                                */
+/* ================================================================ */
+
+.sessionflow-page-context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 160px;
+  background: rgba(20, 20, 30, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.sessionflow-page-context-menu__item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 6px 10px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: rgba(255,255,255,0.75) !important;
+  font-size: 0.7rem !important;
+  cursor: pointer !important;
+  text-align: left !important;
+}
+
+.sessionflow-page-context-menu__item:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: white !important;
+}
+
+.sessionflow-page-context-menu__item.is-danger:hover {
+  background: rgba(220, 53, 69, 0.2) !important;
+  color: #ff6b7a !important;
+}
+
+.sessionflow-page-context-menu__item i {
+  width: 14px !important;
+  text-align: center !important;
+  font-size: 0.65rem !important;
+  opacity: 0.7;
+  flex-shrink: 0 !important;
+}
+
+.sessionflow-page-context-menu__divider {
+  border: none !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  margin: 3px 6px !important;
 }

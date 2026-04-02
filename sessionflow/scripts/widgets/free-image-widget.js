@@ -28,6 +28,8 @@ export class FreeImageWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 320;
   static DEFAULT_HEIGHT = 240;
+  static PLAYER_MODES = ['view', 'own'];
+  static HELP = 'SESSIONFLOW.Help.FreeImage';
 
   /* -- Private fields -- */
 
@@ -99,8 +101,8 @@ export class FreeImageWidget extends Widget {
       container.appendChild(titleEl);
     }
 
-    // GM controls
-    if (game.user.isGM) {
+    // Broadcast + change controls for anyone who can edit
+    if (this.canEdit) {
       this.#buildBroadcastControls(container);
       this.#buildChangeButton(container);
     }
@@ -118,7 +120,7 @@ export class FreeImageWidget extends Widget {
       <span>${game.i18n.localize('SESSIONFLOW.Canvas.FreeImagePlaceholder')}</span>
     `;
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       placeholder.classList.add('is-clickable');
       placeholder.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -166,8 +168,9 @@ export class FreeImageWidget extends Widget {
     });
     container.appendChild(btn);
 
-    // Timer selector (top-right)
+    // Top-right controls (timer for everyone, journal toggle GM-only)
     this.#buildTimerSelector(container);
+    if (game.user.isGM) this.#buildJournalToggle(container);
 
     // Countdown display (during timed broadcast)
     if (this.#isBroadcasting && this.#countdownRemaining > 0) {
@@ -233,10 +236,41 @@ export class FreeImageWidget extends Widget {
   }
 
   /* ---------------------------------------- */
+  /*  Journal Toggle                          */
+  /* ---------------------------------------- */
+
+  #buildJournalToggle(container) {
+    const enabled = this.config.createJournal !== false;
+    const btn = document.createElement('button');
+    btn.className = 'sessionflow-widget-free-image__journal-toggle';
+    if (enabled) btn.classList.add('is-active');
+    btn.type = 'button';
+    btn.title = game.i18n.localize(
+      enabled
+        ? 'SESSIONFLOW.Canvas.FreeImageJournalOn'
+        : 'SESSIONFLOW.Canvas.FreeImageJournalOff'
+    );
+    btn.innerHTML = `<i class="fas fa-book-open"></i>`;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.updateConfig({ createJournal: !enabled });
+      this.engine.scheduleSave();
+      this.refreshBody();
+    });
+    container.appendChild(btn);
+  }
+
+  /* ---------------------------------------- */
   /*  FilePicker                              */
   /* ---------------------------------------- */
 
   #openFilePicker() {
+    // Players may not have Browse Files permission — use upload fallback
+    if (!game.user.isGM && !game.user.can('FILES_BROWSE')) {
+      this.#openFileInput();
+      return;
+    }
+
     const fp = new FilePicker({
       type: 'image',
       current: this.config.src || '',
@@ -247,6 +281,39 @@ export class FreeImageWidget extends Widget {
       }
     });
     fp.render(true);
+  }
+
+  /**
+   * Fallback for players without Browse Files permission.
+   * Reads the file as a data URL (base64) — no server permissions needed.
+   */
+  #openFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/mp4,video/webm';
+    input.style.display = 'none';
+
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (!file) { input.remove(); return; }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.updateConfig({ src: reader.result });
+        this.engine.scheduleSave();
+        this.refreshBody();
+        input.remove();
+      };
+      reader.onerror = () => {
+        console.error(`[${MODULE_ID}] Failed to read image file`);
+        ui.notifications.error(game.i18n.localize('SESSIONFLOW.Notifications.UploadFailed'));
+        input.remove();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.body.appendChild(input);
+    input.click();
   }
 
   /* ---------------------------------------- */
@@ -278,7 +345,7 @@ export class FreeImageWidget extends Widget {
       senderId: game.user.id
     });
 
-    // Also trigger locally on GM — socket.emit doesn't reach sender
+    // Also trigger locally — socket.emit doesn't reach sender
     Hooks.call('sessionflow:showImage', { src, title, timer });
 
     // Start countdown if timed
@@ -297,8 +364,6 @@ export class FreeImageWidget extends Widget {
   }
 
   #stopBroadcast() {
-    const wasTimed = this.config.timer != null && this.config.timer > 0;
-
     // Clear countdown
     if (this.#countdownIntervalId) {
       clearInterval(this.#countdownIntervalId);
@@ -314,11 +379,11 @@ export class FreeImageWidget extends Widget {
       senderId: game.user.id
     });
 
-    // Also trigger locally on GM
+    // Also trigger locally — socket.emit doesn't reach sender
     Hooks.call('sessionflow:hideImage');
 
-    // Auto-journal for timed broadcasts
-    if (wasTimed) {
+    // Auto-journal (GM only, if enabled)
+    if (game.user.isGM && this.config.createJournal !== false) {
       this.#createJournalEntry();
     }
 

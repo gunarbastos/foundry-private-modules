@@ -17,6 +17,7 @@ export class SoundboardWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 240;
   static DEFAULT_HEIGHT = 260;
+  static HELP = 'SESSIONFLOW.Help.Soundboard';
 
   /** @type {string} Current search filter text */
   #searchFilter = '';

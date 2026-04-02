@@ -16,6 +16,8 @@ export class ChecklistWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 280;
   static DEFAULT_HEIGHT = 300;
+  static PLAYER_MODES = ['view', 'own'];
+  static HELP = 'SESSIONFLOW.Help.Checklist';
 
   /** @type {string|null} ID of the item currently being edited inline */
   #editingItemId = null;
@@ -62,8 +64,8 @@ export class ChecklistWidget extends Widget {
     // Items list
     this.#buildItems(container);
 
-    // Add form (GM only)
-    if (game.user.isGM) {
+    // Add form (editable mode only)
+    if (this.canEdit) {
       this.#buildAddForm(container);
     }
 
@@ -139,8 +141,8 @@ export class ChecklistWidget extends Widget {
     if (item.checked) row.classList.add('is-checked');
     row.dataset.itemId = item.id;
 
-    // Drag handle (GM only)
-    if (game.user.isGM) {
+    // Drag handle (editable mode only)
+    if (this.canEdit) {
       row.draggable = true;
       const handle = document.createElement('span');
       handle.className = 'sessionflow-widget-checklist__drag-handle';
@@ -158,7 +160,11 @@ export class ChecklistWidget extends Widget {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = item.checked;
-    checkbox.addEventListener('change', () => this.#toggleItem(item.id));
+    if (this.canEdit) {
+      checkbox.addEventListener('change', () => this.#toggleItem(item.id));
+    } else {
+      checkbox.disabled = true;
+    }
     const checkmark = document.createElement('span');
     checkmark.className = 'sessionflow-widget-checklist__checkmark';
     label.appendChild(checkbox);
@@ -171,8 +177,8 @@ export class ChecklistWidget extends Widget {
     textEl.textContent = item.text;
     row.appendChild(textEl);
 
-    // Actions (GM only)
-    if (game.user.isGM) {
+    // Actions (editable mode only)
+    if (this.canEdit) {
       // Double-click to edit
       textEl.addEventListener('dblclick', () => this.#startEdit(item.id));
 

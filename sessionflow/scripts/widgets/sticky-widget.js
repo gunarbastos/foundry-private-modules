@@ -26,6 +26,8 @@ export class StickyWidget extends Widget {
   static MIN_HEIGHT = 100;
   static DEFAULT_WIDTH = 220;
   static DEFAULT_HEIGHT = 180;
+  static PLAYER_MODES = ['own'];
+  static HELP = 'SESSIONFLOW.Help.Sticky';
 
   /** @type {number|null} Debounce timer for text saves */
   #saveTimer = null;

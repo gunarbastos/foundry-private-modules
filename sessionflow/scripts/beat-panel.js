@@ -4,7 +4,9 @@
  * @module beat-panel
  */
 
-import { getSession, getBeats, getScenes, createScene, updateScene, deleteScene } from './session-store.js';
+import { getSession, getScenes, createScene, updateScene, deleteScene } from './session-store.js';
+import { resumeManagedVideos, suspendManagedVideos } from './media-utils.js';
+import { getCachedMediaPreview, requestMediaPreview, warmMediaPreviews } from './preview-cache.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -59,11 +61,13 @@ export class BeatPanel {
 
     this.#isOpen = true;
     this.#element.dataset.open = 'true';
+    resumeManagedVideos(this.#element);
   }
 
   /** Close the panel (no hook fired). */
   close() {
     if (!this.#isOpen || !this.#element) return;
+    suspendManagedVideos(this.#element);
     // Discard any in-progress edit/creation without rerendering (we're closing)
     this.#editingSceneId = null;
     this.#isCreatingScene = false;
@@ -85,6 +89,7 @@ export class BeatPanel {
 
   /** Remove the panel from DOM entirely. */
   destroy() {
+    suspendManagedVideos(this.#element);
     this.#element?.remove();
     this.#element = null;
     this.#isOpen = false;
@@ -121,6 +126,7 @@ export class BeatPanel {
 
     this.#activateShellListeners();
     this.#activateBodyListeners();
+    this.#hydrateDeferredPreviews();
   }
 
   async #rerenderBody() {
@@ -163,6 +169,11 @@ export class BeatPanel {
     }
 
     this.#activateBodyListeners();
+    this.#hydrateDeferredPreviews();
+
+    if (this.#isOpen) {
+      resumeManagedVideos(this.#element);
+    }
   }
 
   #getTemplateData() {
@@ -171,21 +182,29 @@ export class BeatPanel {
     const beat = beats.find(b => b.id === this.#beatId);
     const scenes = getScenes(this.#sessionId, this.#beatId);
     const anchor = game.settings.get(MODULE_ID, 'anchoredPanel');
-
-    // Get Exalted Scenes data
     const exaltedAvailable = this.#isExaltedScenesAvailable();
-    const exaltedScenes = exaltedAvailable ? this.#getAllExaltedScenes() : [];
+    const beatHeroPreview = beat?.image && !this.#isVideoSource(beat.image)
+      ? getCachedMediaPreview(beat.image)
+      : '';
 
     // Enrich scenes with Exalted Scene data
     const enrichedScenes = scenes.map((sc, i) => {
       const exalted = sc.exaltedSceneId ? this.#getExaltedScene(sc.exaltedSceneId) : null;
-      const bg = exalted?.background || '';
+      const preview = this.#getExaltedScenePreview(exalted);
+      const cachedPreview = preview.src ? getCachedMediaPreview(preview.src) : '';
+      const resolvedPreview = preview.isVideo
+        ? preview.src
+        : (preview.src ? (cachedPreview || (preview.builtin ? preview.src : '')) : '');
+      const shouldDefer = !!preview.src && !preview.builtin && !preview.isVideo && !cachedPreview;
       return {
         ...sc,
-        background: bg,
         exaltedSceneName: exalted?.name || '',
-        hasBackground: !!bg,
-        isVideo: this.#isVideoSource(bg),
+        previewSource: preview.src,
+        previewImage: shouldDefer ? '' : resolvedPreview,
+        hasPreviewImage: !!(shouldDefer ? '' : resolvedPreview),
+        needsDeferredPreview: shouldDefer,
+        renderPreviewAsVideo: preview.isVideo && !shouldDefer,
+        isVideoBackground: preview.isVideo,
         index: i
       };
     });
@@ -195,6 +214,8 @@ export class BeatPanel {
       beatTitle: beat?.title ?? '',
       beatText: beat?.text ?? '',
       beatImage: beat?.image ?? '',
+      beatHeroPreview,
+      beatHeroNeedsDeferredPreview: !!beat?.image && !this.#isVideoSource(beat.image) && !beatHeroPreview,
       hasBeatImage: !!beat?.image,
       isBeatImageVideo: this.#isVideoSource(beat?.image),
       beatColor: beat?.color || session?.color || '#7c5cbf',
@@ -225,12 +246,7 @@ export class BeatPanel {
 
       // Exalted Scenes integration
       exaltedScenesAvailable: exaltedAvailable,
-      exaltedScenes: exaltedScenes.map(es => ({
-        id: es.id,
-        name: es.name
-      })),
-      exaltedRequiredMessage: game.i18n.localize('SESSIONFLOW.BeatPanel.ExaltedRequired'),
-      noExaltedScenesMessage: game.i18n.localize('SESSIONFLOW.BeatPanel.NoExaltedScenes')
+      exaltedRequiredMessage: game.i18n.localize('SESSIONFLOW.BeatPanel.ExaltedRequired')
     };
   }
 
@@ -605,6 +621,88 @@ export class BeatPanel {
     }
   }
 
+  /**
+   * Prefer lightweight thumbnails for card previews.
+   * Never autoplay full-scene videos in the beat scene list.
+   * @param {object|null} exaltedScene
+   * @returns {{ src: string, isVideo: boolean }}
+   */
+  #getExaltedScenePreview(exaltedScene) {
+    const background = exaltedScene?.background || '';
+    const thumbnail = exaltedScene?.thumbnail || '';
+    const isVideo = this.#isVideoSource(background);
+
+    if (thumbnail && !this.#isVideoSource(thumbnail)) {
+      return { src: thumbnail, isVideo, builtin: true };
+    }
+
+    if (background) {
+      return { src: background, isVideo, builtin: false };
+    }
+
+    return { src: '', isVideo, builtin: false };
+  }
+
+  #hydrateDeferredPreviews() {
+    if (!this.#element) return;
+
+    const pendingSources = new Set();
+
+    this.#element.querySelectorAll('[data-preview-src]').forEach((el) => {
+      const src = el.dataset.previewSrc;
+      if (!src) return;
+
+      const cached = getCachedMediaPreview(src);
+      if (cached) {
+        this.#applyDeferredPreview(el, cached);
+        return;
+      }
+
+      pendingSources.add(src);
+      requestMediaPreview(src).then((previewPath) => {
+        if (!previewPath || !this.#element?.contains(el)) return;
+        this.#applyDeferredPreview(el, previewPath);
+      });
+    });
+
+    if (pendingSources.size > 1) {
+      warmMediaPreviews([...pendingSources]);
+    }
+  }
+
+  #applyDeferredPreview(target, previewPath) {
+    if (!target || !previewPath) return;
+
+    const kind = target.dataset.previewKind || 'image';
+
+    if (kind === 'hero') {
+      target.innerHTML = `<img src="${this.#escapeAttr(previewPath)}" alt="${this.#escapeAttr(target.dataset.previewAlt || '')}" decoding="async" />`;
+      target.removeAttribute('data-preview-src');
+      return;
+    }
+
+    if (kind === 'scene-card') {
+      const alt = target.dataset.previewAlt || '';
+      target.innerHTML = `
+        <img src="${this.#escapeAttr(previewPath)}"
+             alt="${this.#escapeAttr(alt)}"
+             loading="lazy"
+             decoding="async"
+             fetchpriority="low" />
+      `;
+
+      if (target.dataset.videoBackground === 'true' && !target.querySelector('.sessionflow-scene-card__media-badge')) {
+        target.insertAdjacentHTML('beforeend', `
+          <span class="sessionflow-scene-card__media-badge">
+            <i class="fas fa-film"></i>
+          </span>
+        `);
+      }
+
+      target.removeAttribute('data-preview-src');
+    }
+  }
+
   /* ---------------------------------------- */
   /*  Anchor State                            */
   /* ---------------------------------------- */
@@ -632,5 +730,9 @@ export class BeatPanel {
     const div = document.createElement('div');
     div.textContent = str ?? '';
     return div.innerHTML;
+  }
+
+  #escapeAttr(str) {
+    return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }
 }

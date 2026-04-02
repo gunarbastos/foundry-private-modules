@@ -48,6 +48,8 @@ export class InspirationWidget extends Widget {
   static MIN_HEIGHT = 42;
   static DEFAULT_WIDTH = 210;
   static DEFAULT_HEIGHT = 44;
+  static PLAYER_MODES = ['own'];
+  static HELP = 'SESSIONFLOW.Help.Inspiration';
 
   /* -- Private state -- */
 

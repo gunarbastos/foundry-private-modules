@@ -9,11 +9,13 @@ import { Widget, registerWidgetType } from '../widget.js';
 import {
   getRichTextClasses,
   getRichTextEditorOptions,
+  isRichTextAuxiliaryTarget,
   renderRichTextHTML,
   serializeRichTextEditor
 } from '../rich-text-utils.js';
 
 const MODULE_ID = 'sessionflow';
+const VIEW_EDIT_DRAG_THRESHOLD = 6;
 
 export class ParagraphWidget extends Widget {
 
@@ -24,6 +26,8 @@ export class ParagraphWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 360;
   static DEFAULT_HEIGHT = 280;
+  static PLAYER_MODES = ['view', 'own'];
+  static HELP = 'SESSIONFLOW.Help.Paragraph';
 
   /** @type {boolean} */
   #isEditing = false;
@@ -39,6 +43,9 @@ export class ParagraphWidget extends Widget {
 
   /** @type {{ x: number, y: number }|null} */
   #pendingFocusCoords = null;
+
+  /** @type {{ x: number, y: number }|null} */
+  #viewPointerOrigin = null;
 
   /* ---------------------------------------- */
   /*  Rendering                               */
@@ -94,15 +101,17 @@ export class ParagraphWidget extends Widget {
       });
     }
 
-    // Click to edit (GM only)
-    if (game.user.isGM) {
+    // Click to edit (GM or player-own mode)
+    if (this.canEdit) {
       container.classList.add('is-editable');
+      container.addEventListener('pointerdown', (event) => this.#onViewPointerDown(event));
       container.addEventListener('click', (e) => {
+        const wasDrag = this.#consumeViewPointerDrag(e);
         // Don't enter edit mode if user clicked a link inside enriched content
         if (e.target.closest('a')) return;
+        if (wasDrag) return;
 
-        const selection = window.getSelection?.();
-        if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+        if (this.#hasSelectionInside(container)) return;
 
         this.#enterEditMode({ x: e.clientX, y: e.clientY });
       });
@@ -167,6 +176,7 @@ export class ParagraphWidget extends Widget {
     // Register escape handler
     this.#escapeHandler = (e) => {
       if (e.key === 'Escape' && this.#isEditing) {
+        if (isRichTextAuxiliaryTarget(e.target) || isRichTextAuxiliaryTarget(document.activeElement)) return;
         e.stopPropagation();
         e.preventDefault();
         this.#exitEditMode();
@@ -242,6 +252,30 @@ export class ParagraphWidget extends Widget {
   /*  Event Handlers                          */
   /* ---------------------------------------- */
 
+  #onViewPointerDown(event) {
+    if (event.button !== 0) {
+      this.#viewPointerOrigin = null;
+      return;
+    }
+    this.#viewPointerOrigin = { x: event.clientX, y: event.clientY };
+  }
+
+  #consumeViewPointerDrag(event) {
+    const origin = this.#viewPointerOrigin;
+    this.#viewPointerOrigin = null;
+    if (!origin) return false;
+    return Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > VIEW_EDIT_DRAG_THRESHOLD;
+  }
+
+  #hasSelectionInside(rootEl) {
+    const selection = window.getSelection?.();
+    if (!selection || selection.isCollapsed || selection.rangeCount < 1) return false;
+    return Boolean(
+      (selection.anchorNode && rootEl.contains(selection.anchorNode))
+      || (selection.focusNode && rootEl.contains(selection.focusNode))
+    );
+  }
+
   #onOutsideClick(event) {
     if (!this.#isEditing) return;
     if (!this.element) return;
@@ -249,9 +283,10 @@ export class ParagraphWidget extends Widget {
     // If click is inside this widget, ignore
     if (this.element.contains(event.target)) return;
 
-    // Foundry's ProseMirror renders dropdown popups as direct children of <body>
-    // (e.g. #prosemirror-dropdown). Clicking them should not close the editor.
-    if (event.target.closest('#prosemirror-dropdown, .pm-dropdown')) return;
+    // Foundry's ProseMirror renders dropdowns and prompt dialogs outside the
+    // editor root. Table insertion uses a dialog, so these interactions must
+    // not be treated as outside clicks.
+    if (isRichTextAuxiliaryTarget(event.target)) return;
 
     this.#exitEditMode();
   }
@@ -282,6 +317,7 @@ export class ParagraphWidget extends Widget {
     }
 
     this.#pendingFocusCoords = null;
+    this.#viewPointerOrigin = null;
   }
 
   #focusEditor() {

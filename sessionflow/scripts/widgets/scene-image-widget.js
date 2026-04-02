@@ -7,6 +7,7 @@
 
 import { Widget, registerWidgetType } from '../widget.js';
 import { getScenes } from '../session-store.js';
+import { getCachedMediaPreview, requestMediaPreview } from '../preview-cache.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -20,6 +21,7 @@ export class SceneImageWidget extends Widget {
   static DEFAULT_WIDTH = 480;
   static DEFAULT_HEIGHT = 340;
   static MAX_INSTANCES = 1;
+  static HELP = 'SESSIONFLOW.Help.SceneImage';
 
   /* ---------------------------------------- */
   /*  Rendering                               */
@@ -42,29 +44,52 @@ export class SceneImageWidget extends Widget {
     const exaltedAvailable = this.#isExaltedScenesAvailable();
     const exaltedScene = (scene?.exaltedSceneId && exaltedAvailable)
       ? this.#getExaltedScene(scene.exaltedSceneId) : null;
+    const backgroundSrc = exaltedScene?.background || '';
+    const isVideoBackground = this.#isVideoSource(backgroundSrc);
+    const builtinThumbnail = exaltedScene?.thumbnail && !this.#isVideoSource(exaltedScene.thumbnail)
+      ? exaltedScene.thumbnail
+      : '';
+    const previewSource = builtinThumbnail || backgroundSrc || '';
+    const previewImage = builtinThumbnail || (previewSource ? getCachedMediaPreview(previewSource) : '');
 
     // Container
     const container = document.createElement('div');
     container.className = 'sessionflow-widget-scene-image';
 
     // Image or placeholder
-    if (exaltedScene?.background) {
-      const src = exaltedScene.background;
-      if (this.#isVideoSource(src)) {
-        const video = document.createElement('video');
-        video.className = 'sessionflow-widget-scene-image__img';
-        video.src = src;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        container.appendChild(video);
-      } else {
-        const img = document.createElement('img');
-        img.className = 'sessionflow-widget-scene-image__img';
-        img.src = src;
-        img.alt = scene?.title ?? '';
-        container.appendChild(img);
-      }
+    if (isVideoBackground && backgroundSrc) {
+      const video = document.createElement('video');
+      video.className = 'sessionflow-widget-scene-image__img';
+      video.src = backgroundSrc;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      container.appendChild(video);
+    } else if (previewImage) {
+      const img = document.createElement('img');
+      img.className = 'sessionflow-widget-scene-image__img';
+      img.src = previewImage;
+      img.alt = scene?.title ?? '';
+      img.decoding = 'async';
+      container.appendChild(img);
+    } else if (previewSource) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'sessionflow-widget-scene-image__placeholder';
+      placeholder.innerHTML = '<i class="fas fa-image"></i>';
+      container.appendChild(placeholder);
+
+      requestMediaPreview(previewSource).then((previewPath) => {
+        if (!previewPath || !container.isConnected) return;
+
+        const nextImg = document.createElement('img');
+        nextImg.className = 'sessionflow-widget-scene-image__img';
+        nextImg.src = previewPath;
+        nextImg.alt = scene?.title ?? '';
+        nextImg.decoding = 'async';
+        placeholder.replaceWith(nextImg);
+      });
     } else {
       const placeholder = document.createElement('div');
       placeholder.className = 'sessionflow-widget-scene-image__placeholder';
@@ -172,6 +197,11 @@ export class SceneImageWidget extends Widget {
       const api = game.modules.get('exalted-scenes')?.api;
       if (!api?.isReady) return;
       await api.broadcast.scene(exaltedSceneId);
+
+      // Trigger scene audio (music + ambience) via Exalted Scenes audio API
+      if (api.audio?.playSceneAudio) {
+        await api.audio.playSceneAudio(exaltedSceneId);
+      }
     } catch (err) {
       console.warn(`[${MODULE_ID}] Failed to start broadcast:`, err);
     }
@@ -181,6 +211,13 @@ export class SceneImageWidget extends Widget {
     try {
       const api = game.modules.get('exalted-scenes')?.api;
       if (!api?.isReady) return;
+
+      // Stop scene audio before stopping broadcast
+      if (api.audio?.stopAll) {
+        const state = api.broadcast.getState();
+        await api.audio.stopAll(state.activeSceneId ?? undefined);
+      }
+
       await api.broadcast.stop();
     } catch (err) {
       console.warn(`[${MODULE_ID}] Failed to stop broadcast:`, err);

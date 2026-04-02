@@ -41,6 +41,7 @@ export class RelationshipsWidget extends Widget {
   static MIN_HEIGHT = 160;
   static DEFAULT_WIDTH = 360;
   static DEFAULT_HEIGHT = 320;
+  static HELP = 'SESSIONFLOW.Help.Relationships';
 
   /** @type {boolean} */
   #isDropdownOpen = false;

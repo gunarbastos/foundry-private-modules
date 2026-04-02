@@ -25,6 +25,8 @@ export class DividerWidget extends Widget {
   static MIN_HEIGHT = 16;
   static DEFAULT_WIDTH = 300;
   static DEFAULT_HEIGHT = 20;
+  static PLAYER_MODES = ['view', 'own'];
+  static HELP = 'SESSIONFLOW.Help.Divider';
 
   /* ---------------------------------------- */
   /*  Helpers                                 */
@@ -73,8 +75,8 @@ export class DividerWidget extends Widget {
     line.className = 'sessionflow-widget-divider__line';
     container.appendChild(line);
 
-    // Controls overlay (GM only)
-    if (game.user.isGM) {
+    // Controls overlay (editable mode only)
+    if (this.canEdit) {
       container.appendChild(this.#buildControls(style, orientation, color));
     }
 

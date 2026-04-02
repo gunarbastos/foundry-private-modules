@@ -9,6 +9,7 @@ import { Widget, registerWidgetType } from '../widget.js';
 import {
   getRichTextClasses,
   getRichTextEditorOptions,
+  isRichTextAuxiliaryTarget,
   renderRichTextHTML,
   serializeRichTextEditor
 } from '../rich-text-utils.js';
@@ -29,6 +30,7 @@ const SCROLL_SPEED_MAX = 100;
 const SCROLL_SPEED_STEP = 10;
 const DEFAULT_FONT_SIZE = 24;
 const DEFAULT_SCROLL_SPEED = 30;
+const VIEW_EDIT_DRAG_THRESHOLD = 6;
 
 export class TeleprompterWidget extends Widget {
 
@@ -38,7 +40,9 @@ export class TeleprompterWidget extends Widget {
   static MIN_WIDTH = 140;
   static MIN_HEIGHT = 42;
   static DEFAULT_WIDTH = 210;
+  static PLAYER_MODES = ['own'];
   static DEFAULT_HEIGHT = 44;
+  static HELP = 'SESSIONFLOW.Help.Teleprompter';
 
   /* -- Private state -- */
 
@@ -68,6 +72,9 @@ export class TeleprompterWidget extends Widget {
 
   /** @type {Function|null} */
   #escapeHandler = null;
+
+  /** @type {{ x: number, y: number }|null} */
+  #viewPointerOrigin = null;
 
   /* ---------------------------------------- */
   /*  Rendering                               */
@@ -319,6 +326,11 @@ export class TeleprompterWidget extends Widget {
     editBtn.classList.add('sessionflow-teleprompter-popover__edit-btn');
     controls.appendChild(editBtn);
 
+    // Post to Chat
+    const chatBtn = this.#createControlBtn('fas fa-book-open', game.i18n.localize('SESSIONFLOW.Canvas.TeleprompterPostChat'), () => this.#postToChat());
+    chatBtn.classList.add('sessionflow-teleprompter-popover__chat-btn');
+    controls.appendChild(chatBtn);
+
     // Divider
     controls.appendChild(this.#createDivider());
 
@@ -388,14 +400,16 @@ export class TeleprompterWidget extends Widget {
       });
     }
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       body.classList.add('is-editable');
+      body.addEventListener('pointerdown', (event) => this.#onViewPointerDown(event));
       body.addEventListener('click', (event) => {
+        const wasDrag = this.#consumeViewPointerDrag(event);
         if (this.#isEditing || this.#isScrolling) return;
         if (event.target.closest('a, button, input, select, textarea')) return;
+        if (wasDrag) return;
 
-        const selection = window.getSelection?.();
-        if (selection && !selection.isCollapsed && selection.toString().trim()) return;
+        if (this.#hasSelectionInside(body)) return;
 
         this.#enterEditMode({ x: event.clientX, y: event.clientY });
       });
@@ -534,6 +548,7 @@ export class TeleprompterWidget extends Widget {
     }
 
     this.#pendingFocusCoords = null;
+    this.#viewPointerOrigin = null;
   }
 
   /**
@@ -559,6 +574,30 @@ export class TeleprompterWidget extends Widget {
       x: event.clientX,
       y: event.clientY
     }));
+  }
+
+  #onViewPointerDown(event) {
+    if (event.button !== 0) {
+      this.#viewPointerOrigin = null;
+      return;
+    }
+    this.#viewPointerOrigin = { x: event.clientX, y: event.clientY };
+  }
+
+  #consumeViewPointerDrag(event) {
+    const origin = this.#viewPointerOrigin;
+    this.#viewPointerOrigin = null;
+    if (!origin) return false;
+    return Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > VIEW_EDIT_DRAG_THRESHOLD;
+  }
+
+  #hasSelectionInside(rootEl) {
+    const selection = window.getSelection?.();
+    if (!selection || selection.isCollapsed || selection.rangeCount < 1) return false;
+    return Boolean(
+      (selection.anchorNode && rootEl.contains(selection.anchorNode))
+      || (selection.focusNode && rootEl.contains(selection.focusNode))
+    );
   }
 
   #focusEditor() {
@@ -746,6 +785,75 @@ export class TeleprompterWidget extends Widget {
   }
 
   /* ---------------------------------------- */
+  /*  Post to Chat                            */
+  /* ---------------------------------------- */
+
+  #postToChat() {
+    const content = this.config.content ?? '';
+    const stripped = content.replace(/<[^>]*>/g, '').trim();
+    if (!stripped) {
+      ui.notifications.warn(game.i18n.localize('SESSIONFLOW.Canvas.TeleprompterChatEmpty'));
+      return;
+    }
+
+    const title = this.config.title?.trim();
+    const accentColor = this.config.chipColor || '#7c5cbf';
+
+    // Build novel-style chat card with inline styles
+    const titleHtml = title
+      ? `<div style="font-family:'Modesto Condensed','Palatino Linotype','Book Antiqua',Palatino,serif;font-size:18px;font-weight:700;color:${accentColor};letter-spacing:0.5px;margin-bottom:8px;line-height:1.2;">${title}</div>`
+      : '';
+
+    const ornamentColor = this.#hexToRgba(accentColor, 0.4);
+    const ornament = `<div style="text-align:center;margin-bottom:10px;font-size:14px;color:${ornamentColor};letter-spacing:6px;">&#10045; &#10045; &#10045;</div>`;
+
+    const chatHtml = `
+      <div style="position:relative;background:linear-gradient(135deg,rgba(13,13,20,0.95),rgba(20,18,30,0.95));border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${accentColor};border-radius:8px;padding:16px 18px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at top left,${this.#hexToRgba(accentColor, 0.06)},transparent 70%);pointer-events:none;"></div>
+        ${ornament}
+        ${titleHtml}
+        <div style="position:relative;font-size:14px;line-height:1.75;color:rgba(230,225,240,0.92);text-align:justify;font-style:italic;">
+          ${content}
+        </div>
+        <div style="margin-top:12px;text-align:right;font-size:10px;color:rgba(255,255,255,0.18);font-style:italic;letter-spacing:0.3px;">
+          <i class="fas fa-scroll" style="margin-right:3px;"></i>SessionFlow
+        </div>
+      </div>
+    `.trim();
+
+    ChatMessage.create({
+      content: chatHtml,
+      speaker: { alias: title || game.i18n.localize('SESSIONFLOW.Canvas.Teleprompter') },
+      whisper: []
+    });
+
+    // Brief visual feedback on button
+    const chatBtn = this.#popoverEl?.querySelector('.sessionflow-teleprompter-popover__chat-btn');
+    if (chatBtn) {
+      chatBtn.classList.add('is-sent');
+      const icon = chatBtn.querySelector('i');
+      if (icon) icon.className = 'fas fa-check';
+      setTimeout(() => {
+        chatBtn.classList.remove('is-sent');
+        if (icon) icon.className = 'fas fa-book-open';
+      }, 1500);
+    }
+  }
+
+  /**
+   * Convert hex color to rgba string.
+   * @param {string} hex
+   * @param {number} alpha
+   * @returns {string}
+   */
+  #hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  /* ---------------------------------------- */
   /*  Event Handlers                          */
   /* ---------------------------------------- */
 
@@ -759,6 +867,7 @@ export class TeleprompterWidget extends Widget {
     // Escape key
     this.#escapeHandler = (e) => {
       if (e.key === 'Escape') {
+        if (this.#isEditing && (isRichTextAuxiliaryTarget(e.target) || isRichTextAuxiliaryTarget(document.activeElement))) return;
         e.stopPropagation();
         e.preventDefault();
 
@@ -792,8 +901,9 @@ export class TeleprompterWidget extends Widget {
     // Click inside widget → ignore
     if (this.element?.contains(event.target)) return;
 
-    // ProseMirror dropdown popups (rendered at body level)
-    if (event.target.closest('#prosemirror-dropdown, .pm-dropdown')) return;
+    // ProseMirror dropdowns and prompt dialogs (rendered outside the popover)
+    // should not count as outside clicks.
+    if (isRichTextAuxiliaryTarget(event.target)) return;
 
     this.#closePopover();
   }

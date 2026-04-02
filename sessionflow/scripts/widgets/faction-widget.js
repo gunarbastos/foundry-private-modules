@@ -246,6 +246,8 @@ export class FactionWidget extends Widget {
   static MIN_HEIGHT = 180;
   static DEFAULT_WIDTH = 360;
   static DEFAULT_HEIGHT = 320;
+  static PLAYER_MODES = ['view'];
+  static HELP = 'SESSIONFLOW.Help.Faction';
 
   /** @type {boolean} */
   #isDropdownOpen = false;
@@ -663,7 +665,7 @@ export class FactionWidget extends Widget {
         game.i18n.localize('SESSIONFLOW.Canvas.FactionUnavailable')
       ));
       bodyEl.appendChild(container);
-      if (game.user.isGM) {
+      if (this.canEdit) {
         this.#injectHeaderButtons();
         if (this.#isLevelEditorOpen) this.#rebuildLevelEditor();
         if (this.#isLibraryPanelOpen) this.#rebuildLibraryPanel();
@@ -674,13 +676,13 @@ export class FactionWidget extends Widget {
     this.#buildBanner(container);
     this.#buildMembersList(container);
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       this.#buildAddArea(container);
     }
 
     bodyEl.appendChild(container);
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       this.#injectHeaderButtons();
       if (this.#isLevelEditorOpen) this.#rebuildLevelEditor();
       if (this.#isLibraryPanelOpen) this.#rebuildLibraryPanel();
@@ -694,12 +696,12 @@ export class FactionWidget extends Widget {
     const banner = document.createElement('div');
     banner.className = 'sessionflow-widget-faction__banner';
 
-    const art = document.createElement(game.user.isGM ? 'button' : 'div');
+    const art = document.createElement(this.canEdit ? 'button' : 'div');
     art.className = 'sessionflow-widget-faction__banner-art';
     if (art instanceof HTMLButtonElement) art.type = 'button';
     art.title = game.i18n.localize('SESSIONFLOW.Canvas.FactionImagePrompt');
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       art.addEventListener('click', (event) => {
         event.stopPropagation();
         this.#openFilePicker();
@@ -730,7 +732,7 @@ export class FactionWidget extends Widget {
     const heading = document.createElement('div');
     heading.className = 'sessionflow-widget-faction__banner-heading';
 
-    if (this.#isEditingName && game.user.isGM) {
+    if (this.#isEditingName && this.canEdit) {
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'sessionflow-widget-faction__banner-name-input';
@@ -768,7 +770,7 @@ export class FactionWidget extends Widget {
       name.className = 'sessionflow-widget-faction__banner-name';
       name.textContent = this.#getFactionName();
 
-      if (game.user.isGM) {
+      if (this.canEdit) {
         name.title = game.i18n.localize('SESSIONFLOW.Canvas.FactionNamePlaceholder');
         name.addEventListener('click', (event) => {
           event.stopPropagation();
@@ -871,7 +873,7 @@ export class FactionWidget extends Widget {
     row.appendChild(info);
     row.appendChild(this.#buildNoteArea(member));
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'sessionflow-widget-faction__delete-btn';
@@ -920,7 +922,7 @@ export class FactionWidget extends Widget {
     slider.max = String(maxLevel);
     slider.step = '1';
     slider.value = String(currentLevel);
-    slider.disabled = !game.user.isGM || maxLevel <= 0;
+    slider.disabled = !this.canEdit || maxLevel <= 0;
 
     slider.addEventListener('input', (event) => {
       event.stopPropagation();
@@ -956,7 +958,7 @@ export class FactionWidget extends Widget {
     const noteArea = document.createElement('div');
     noteArea.className = 'sessionflow-widget-faction__note-area';
 
-    if (this.#editingNoteId === member.id && game.user.isGM) {
+    if (this.#editingNoteId === member.id && this.canEdit) {
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'sessionflow-widget-faction__note-input';
@@ -996,7 +998,7 @@ export class FactionWidget extends Widget {
     note.textContent = member.note ?? '';
     note.dataset.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.FactionNotePlaceholder');
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       note.addEventListener('click', (event) => {
         event.stopPropagation();
         this.#editingNoteId = member.id;
@@ -1394,7 +1396,7 @@ export class FactionWidget extends Widget {
       if (slider) {
         slider.max = String(maxLevel);
         slider.value = String(clampLevel(member.level, maxLevel, this.#getDefaultLevel()));
-        slider.disabled = !game.user.isGM || maxLevel <= 0;
+        slider.disabled = !this.canEdit || maxLevel <= 0;
       }
     }
   }

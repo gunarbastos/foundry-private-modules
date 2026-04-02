@@ -23,6 +23,9 @@
               title="{{ anchorLabel }}">
         <i class="fas fa-anchor"></i>
       </button>
+      {{#if canEdit}}
+        <div class="sessionflow-page-tabs" style="display: none;"></div>
+      {{/if}}
       <button class="sessionflow-scene-panel__close" type="button"
               aria-label="Close" data-action="close">
         <i class="fas fa-times"></i>
@@ -46,6 +49,11 @@
                   type="button" data-action="open-templates"
                   title="{{ templateLabel }}">
             <i class="fas fa-layer-group"></i>
+          </button>
+          <button class="sessionflow-scene-panel__toolbar-btn sessionflow-scene-panel__toolbar-btn--shortcuts"
+                  type="button" data-action="show-shortcuts"
+                  title="{{ shortcutsLabel }}">
+            <i class="fas fa-keyboard"></i>
           </button>
         </div>
       {{/if}}

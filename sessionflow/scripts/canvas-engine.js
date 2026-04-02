@@ -1,8 +1,9 @@
 /**
  * SessionFlow - Canvas Engine
  * Core engine that manages the free-form widget canvas. Handles drag-to-move,
- * resize, z-index management, snap-to-grid, panel height resize, and
- * debounced persistence of widget layout.
+ * resize, z-index management, snap-to-grid, panel height resize, multi-select,
+ * keyboard shortcuts, clipboard (copy/cut/paste/duplicate), and debounced
+ * persistence of widget layout.
  * @module canvas-engine
  */
 
@@ -15,9 +16,79 @@ const DRAG_DEAD_ZONE = 3;
 const MIN_PANEL_HEIGHT = 280;
 const PANEL_HEIGHT_MARGIN = 60;
 const WIDGET_VISIBLE_MIN = 40;
+const PASTE_OFFSET = 20;
+
+/** Global clipboard shared across all CanvasEngine instances (survives panel close/open) */
+let globalClipboard = [];
 
 /** Interactive elements that should not trigger drag */
 const INTERACTIVE_TAGS = new Set(['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A']);
+
+/** Selector for interactive widget internals — prevents drag initiation AND keyboard shortcut activation */
+const INTERACTIVE_SELECTOR = 'button, a, input, select, textarea, .ProseMirror, .editor-content, .sessionflow-widget-paragraph__content, .sessionflow-widget-paragraph__editor, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-clock__bar-segment, .sessionflow-widget-clock__mode-select, .sessionflow-widget-clock__link-select, .sessionflow-widget-clock__settings-btn, .sessionflow-widget-clock__settings-popover, .sessionflow-widget-clock__reset-btn, .sessionflow-widget-clock__save-btn, .sessionflow-widget-clock__library-panel, .sessionflow-widget-clock__library-btn, .sessionflow-widget-clock__label-input, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__library-panel, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-faction__library-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card, .sessionflow-widget-macropad__tile, .sessionflow-widget-macropad__dropdown, .sessionflow-widget-macropad__grid, .sessionflow-widget-scenelink__dropdown, .sessionflow-widget-scenelink__activate-btn, .sessionflow-widget-scenelink__change-btn, .sessionflow-widget-scenelink__empty, .sessionflow-widget-daynight__advance-btn, .sessionflow-widget-daynight__set-btn, .sessionflow-widget-daynight__set-popover, .sessionflow-widget-daynight__set-input, .sessionflow-widget-daynight__set-confirm, .sessionflow-widget-daynight__format-btn, .sessionflow-widget-daynight__broadcast-btn, .sessionflow-widget-daynight__flash-btn, .sessionflow-widget-daynight__label, .sessionflow-widget-daynight__label-input, .sessionflow-widget-sequence__filmstrip-track, .sessionflow-widget-sequence__dropdown, .sessionflow-widget-sequence__empty, .sessionflow-widget-slideshow__controls, .sessionflow-widget-slideshow__dropdown, .sessionflow-widget-slideshow__empty, .sessionflow-widget-slideshow__now-playing, .sessionflow-widget-map__viewport, .sessionflow-widget-map__toolbar, .sessionflow-widget-map__popover, .sessionflow-widget-map__marker, .sessionflow-widget-map__scale-bar, .sessionflow-widget-map__grid-settings, .sessionflow-widget-map__empty, .sessionflow-currency__transactions-header, .sessionflow-currency__char-actions, .sessionflow-currency__toolbar, .sessionflow-currency__balances, .sessionflow-currency__shop, .sessionflow-currency__tx-list, .sessionflow-currency__wealth, .sessionflow-currency__debug, .sessionflow-currency__split-recipients, .sessionflow-currency__popover, .sessionflow-currency__empty, .sessionflow-widget-characters__search, .sessionflow-widget-characters__dropdown-search, .sessionflow-widget-characters__dropdown-list, .sessionflow-widget-characters__list-row, .sessionflow-widget-characters__folder-header, .sessionflow-scribe__color-row, .sessionflow-scribe__color-dot, .sessionflow-scribe__color-dots';
+
+/**
+ * Build the keyboard shortcuts help popover element.
+ * Shared between scene-panel and character-panel.
+ * @returns {HTMLElement}
+ */
+export function buildShortcutsPopover({ showPageShortcuts = false } = {}) {
+  const i18n = (key) => game.i18n.localize(`SESSIONFLOW.Canvas.${key}`);
+  const pi18n = (key) => game.i18n.localize(`SESSIONFLOW.Pages.${key}`);
+  const isMac = navigator.platform?.includes('Mac') || navigator.userAgent?.includes('Mac');
+  const mod = isMac ? '\u2318' : 'Ctrl';
+
+  const shortcuts = [
+    { keys: `${mod}+C`,       label: i18n('ShortcutCopy') },
+    { keys: `${mod}+X`,       label: i18n('ShortcutCut') },
+    { keys: `${mod}+V`,       label: i18n('ShortcutPaste') },
+    { keys: `${mod}+D`,       label: i18n('ShortcutDuplicate') },
+    { keys: `${mod}+A`,       label: i18n('ShortcutSelectAll') },
+    { keys: 'Delete',         label: i18n('ShortcutDelete') },
+    { keys: 'Escape',         label: i18n('ShortcutDeselect') },
+    { keys: '\u2190\u2191\u2192\u2193',  label: i18n('ShortcutNudge') },
+    { keys: `Shift+\u2190\u2192`,        label: i18n('ShortcutNudgeGrid') },
+    { keys: `${mod}+Click`,   label: i18n('ShortcutMultiSelect') },
+    { keys: ']',              label: i18n('ShortcutBringFront') },
+    { keys: '[',              label: i18n('ShortcutSendBack') },
+  ];
+
+  if (showPageShortcuts) {
+    shortcuts.push(
+      { divider: true },
+      { keys: `${mod}+PgDn`, label: pi18n('ShortcutNextPage') },
+      { keys: `${mod}+PgUp`, label: pi18n('ShortcutPrevPage') },
+      { keys: `${mod}+1\u20139`,   label: pi18n('ShortcutGoToPage') }
+    );
+  }
+
+  const popover = document.createElement('div');
+  popover.className = 'sessionflow-shortcuts-popover';
+
+  const title = document.createElement('div');
+  title.className = 'sessionflow-shortcuts-popover__title';
+  title.innerHTML = `<i class="fas fa-keyboard"></i> ${i18n('KeyboardShortcuts')}`;
+  popover.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'sessionflow-shortcuts-popover__grid';
+
+  for (const item of shortcuts) {
+    if (item.divider) {
+      const hr = document.createElement('hr');
+      hr.className = 'sessionflow-shortcuts-popover__divider';
+      grid.appendChild(hr);
+      continue;
+    }
+    const row = document.createElement('div');
+    row.className = 'sessionflow-shortcuts-popover__row';
+    row.innerHTML = `<kbd class="sessionflow-shortcuts-popover__keys">${item.keys}</kbd><span class="sessionflow-shortcuts-popover__label">${item.label}</span>`;
+    grid.appendChild(row);
+  }
+
+  popover.appendChild(grid);
+  return popover;
+}
 
 export class CanvasEngine {
 
@@ -42,12 +113,12 @@ export class CanvasEngine {
   /** @type {number} Current canvas/panel height */
   #canvasHeight = 420;
 
-  /** @type {string|null} Currently selected widget ID */
-  #selectedWidgetId = null;
+  /** @type {Set<string>} Currently selected widget IDs */
+  #selectedWidgetIds = new Set();
 
   /* -- Drag state -- */
 
-  /** @type {{ widgetId: string, startX: number, startY: number, originX: number, originY: number, hasMoved: boolean, topOverflow: number }|null} */
+  /** @type {{ widgetId: string, startX: number, startY: number, origins: Map<string, {x:number,y:number,topOverflow:number}>, hasMoved: boolean }|null} */
   #dragState = null;
 
   /* -- Resize state -- */
@@ -69,6 +140,11 @@ export class CanvasEngine {
 
   /** @type {boolean} */
   #isShiftHeld = false;
+
+  /* -- Read-only mode (player panel GM base page) -- */
+
+  /** @type {boolean} */
+  #readOnly = false;
 
   /* -- Listener cleanup -- */
 
@@ -96,6 +172,7 @@ export class CanvasEngine {
     this.#saveFn = saveFn;
     this.#canvasHeight = canvasHeight;
     this.#nextZIndex = nextZIndex;
+    this.#readOnly = context?.readOnly ?? false;
 
     // Apply canvas height
     this.#panelContentEl.style.setProperty('--sf-scene-panel-height', `${this.#canvasHeight}px`);
@@ -121,26 +198,27 @@ export class CanvasEngine {
     this.#abortController = new AbortController();
     const signal = this.#abortController.signal;
 
-    // Canvas pointer events
-    this.#canvasEl.addEventListener('pointerdown', (e) => this.#onCanvasPointerDown(e), { signal });
+    // In read-only mode, skip drag/resize/keyboard interactions
+    if (!this.#readOnly) {
+      // Canvas pointer events
+      this.#canvasEl.addEventListener('pointerdown', (e) => this.#onCanvasPointerDown(e), { signal });
 
-    // Document-level move/up (only active during drag/resize)
-    document.addEventListener('pointermove', (e) => this.#onPointerMove(e), { signal });
-    document.addEventListener('pointerup', (e) => this.#onPointerUp(e), { signal });
+      // Document-level move/up (only active during drag/resize)
+      document.addEventListener('pointermove', (e) => this.#onPointerMove(e), { signal });
+      document.addEventListener('pointerup', (e) => this.#onPointerUp(e), { signal });
 
-    // Shift key for snap-to-grid
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Shift' && !this.#isShiftHeld) {
-        this.#isShiftHeld = true;
-        this.#canvasEl?.classList.add('is-snapping');
-      }
-    }, { signal });
-    document.addEventListener('keyup', (e) => {
-      if (e.key === 'Shift') {
-        this.#isShiftHeld = false;
-        this.#canvasEl?.classList.remove('is-snapping');
-      }
-    }, { signal });
+      // Keyboard events (shift for snap + shortcuts)
+      document.addEventListener('keydown', (e) => this.#onKeyDown(e), { signal });
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'Shift') {
+          this.#isShiftHeld = false;
+          this.#canvasEl?.classList.remove('is-snapping');
+        }
+      }, { signal });
+    }
+
+    // Mark canvas as read-only for CSS
+    if (this.#readOnly) this.#canvasEl.classList.add('is-read-only');
   }
 
   /* ---------------------------------------- */
@@ -174,7 +252,28 @@ export class CanvasEngine {
     this.#dragState = null;
     this.#resizeState = null;
     this.#panelResizeState = null;
-    this.#selectedWidgetId = null;
+    this.#selectedWidgetIds.clear();
+  }
+
+  /**
+   * Whether any widgets are currently selected.
+   * @returns {boolean}
+   */
+  get hasSelection() {
+    return this.#selectedWidgetIds.size > 0;
+  }
+
+  /** @returns {boolean} Whether the canvas is in read-only mode */
+  get readOnly() {
+    return this.#readOnly;
+  }
+
+  /**
+   * Clear the current widget selection.
+   * Useful when a host panel closes and should not keep keyboard ownership.
+   */
+  clearSelection() {
+    this.#deselectAll();
   }
 
   /**
@@ -183,6 +282,8 @@ export class CanvasEngine {
    * @param {object} [config={}] - Type-specific config.
    */
   addWidget(type, config = {}) {
+    if (this.#readOnly) return;
+
     const types = getRegisteredTypes();
     const meta = types.find(t => t.type === type);
     if (!meta) {
@@ -250,20 +351,7 @@ export class CanvasEngine {
 
     if (!confirmed) return;
 
-    // Animate out
-    const el = widget.element;
-    if (el) {
-      el.classList.add('is-removing');
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    widget.destroy('remove');
-    this.#widgets.delete(widgetId);
-
-    if (this.#selectedWidgetId === widgetId) {
-      this.#selectedWidgetId = null;
-    }
-
+    await this.#destroyWidget(widgetId);
     this.#updateEmptyState();
     this.#persistNow();
 
@@ -324,7 +412,7 @@ export class CanvasEngine {
 
     // Don't initiate drag on interactive elements
     if (INTERACTIVE_TAGS.has(target.tagName)) return;
-    if (target.closest('button, a, input, select, textarea, .ProseMirror, .editor-content, .sessionflow-widget-paragraph__content, .sessionflow-widget-paragraph__editor, .sessionflow-teleprompter-popover, .sessionflow-inspiration-popover, .sessionflow-widget-free-image__timer-dropdown, .sessionflow-widget-checklist__drag-handle, .sessionflow-widget-music__selector-dropdown, .sessionflow-widget-music__volume-slider, .sessionflow-widget-ambience__selector-list, .sessionflow-widget-ambience__volume-slider, .sessionflow-widget-soundboard__selector-list, .sessionflow-widget-soundboard__volume-slider, .sessionflow-widget-timer__custom-input, .sessionflow-widget-sticky__text, .sessionflow-widget-sticky__colors, .sessionflow-widget-relationships__slider, .sessionflow-widget-relationships__note, .sessionflow-widget-relationships__note-input, .sessionflow-widget-relationships__dropdown, .sessionflow-widget-relationships__owner-list, .sessionflow-widget-clock__seg-select, .sessionflow-widget-clock__color-input, .sessionflow-widget-clock__title-input, .sessionflow-widget-clock__segment, .sessionflow-widget-clock__style-select, .sessionflow-widget-clock__dot, .sessionflow-widget-clock__broadcast-btn, .sessionflow-widget-clock__flash-btn, .sessionflow-widget-faction__slider, .sessionflow-widget-faction__note, .sessionflow-widget-faction__note-input, .sessionflow-widget-faction__banner, .sessionflow-widget-faction__banner-name, .sessionflow-widget-faction__banner-name-input, .sessionflow-widget-faction__dropdown, .sessionflow-widget-faction__level-editor, .sessionflow-widget-faction__library-panel, .sessionflow-widget-faction__gear-btn, .sessionflow-widget-faction__library-btn, .sessionflow-widget-timetracker__label, .sessionflow-widget-timetracker__label-input, .sessionflow-widget-timetracker__secondary-label, .sessionflow-widget-timetracker__secondary-label-input, .sessionflow-widget-timetracker__note-input, .sessionflow-widget-timetracker__history-toggle, .sessionflow-widget-timetracker__ring-overlay, .sessionflow-widget-timetracker__gear-btn, .sessionflow-widget-timetracker__settings-popover, .sessionflow-widget-journal__search-input, .sessionflow-widget-journal__dropdown, .sessionflow-widget-journal__list-item, .sessionflow-widget-journal__card, .sessionflow-widget-macropad__tile, .sessionflow-widget-macropad__dropdown, .sessionflow-widget-macropad__grid, .sessionflow-widget-scenelink__dropdown, .sessionflow-widget-scenelink__activate-btn, .sessionflow-widget-scenelink__change-btn, .sessionflow-widget-scenelink__empty, .sessionflow-widget-daynight__advance-btn, .sessionflow-widget-daynight__set-btn, .sessionflow-widget-daynight__set-popover, .sessionflow-widget-daynight__set-input, .sessionflow-widget-daynight__set-confirm, .sessionflow-widget-daynight__format-btn, .sessionflow-widget-daynight__broadcast-btn, .sessionflow-widget-daynight__flash-btn, .sessionflow-widget-daynight__label, .sessionflow-widget-daynight__label-input, .sessionflow-widget-sequence__filmstrip-track, .sessionflow-widget-sequence__dropdown, .sessionflow-widget-sequence__empty, .sessionflow-widget-slideshow__controls, .sessionflow-widget-slideshow__dropdown, .sessionflow-widget-slideshow__empty, .sessionflow-widget-slideshow__now-playing')) return;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
 
     // Find the widget element
     const widgetEl = target.closest('.sessionflow-widget');
@@ -338,9 +426,29 @@ export class CanvasEngine {
     const widget = this.#widgets.get(widgetId);
     if (!widget) return;
 
-    // Bring to front on any click
+    // Multi-select: Ctrl/Meta+Click toggles widget in selection
+    const isMultiSelect = event.ctrlKey || event.metaKey;
+
+    if (isMultiSelect) {
+      if (this.#selectedWidgetIds.has(widgetId)) {
+        // Toggle off
+        this.#selectedWidgetIds.delete(widgetId);
+        widget.element?.classList.remove('is-selected');
+      } else {
+        // Add to selection
+        this.#selectedWidgetIds.add(widgetId);
+        widget.element?.classList.add('is-selected');
+      }
+      this.#bringToFront(widgetId);
+      return;
+    }
+
+    // Regular click on already-selected widget in a multi-selection: keep selection (for group drag)
+    // Regular click on unselected widget: replace selection with just this one
     this.#bringToFront(widgetId);
-    this.#selectWidget(widgetId);
+    if (!this.#selectedWidgetIds.has(widgetId)) {
+      this.#selectWidget(widgetId);
+    }
 
     // Check if resize handle
     if (target.closest('.sessionflow-widget__resize-handle')) {
@@ -376,6 +484,100 @@ export class CanvasEngine {
   }
 
   /* ---------------------------------------- */
+  /*  Keyboard Shortcuts                      */
+  /* ---------------------------------------- */
+
+  #onKeyDown(event) {
+    // Guard: canvas must be alive and the host panel must actually be open.
+    if (!this.#isCanvasActive()) {
+      if (this.#selectedWidgetIds.size > 0) this.#deselectAll();
+      if (event.key === 'Shift') {
+        this.#isShiftHeld = false;
+        this.#canvasEl?.classList.remove('is-snapping');
+      }
+      return;
+    }
+
+    // Shift key for snap-to-grid (always active while the canvas is active)
+    if (event.key === 'Shift' && !this.#isShiftHeld) {
+      this.#isShiftHeld = true;
+      this.#canvasEl?.classList.add('is-snapping');
+    }
+
+    // Guard: don't fire shortcuts when typing in interactive elements
+    const target = event.target;
+    if (INTERACTIVE_TAGS.has(target.tagName)) return;
+    if (target.isContentEditable) return;
+    if (target.closest?.('.ProseMirror, .editor-content')) return;
+
+    const mod = event.ctrlKey || event.metaKey;
+
+    // Ctrl/Cmd shortcuts
+    if (mod) {
+      switch (event.key.toLowerCase()) {
+        case 'a': // Select all
+          event.preventDefault();
+          this.#selectAll();
+          return;
+        case 'c': // Copy
+          event.preventDefault();
+          this.#copySelected();
+          return;
+        case 'x': // Cut
+          event.preventDefault();
+          this.#cutSelected();
+          return;
+        case 'v': // Paste
+          event.preventDefault();
+          this.#pasteClipboard();
+          return;
+        case 'd': // Duplicate
+          event.preventDefault();
+          this.#duplicateSelected();
+          return;
+      }
+    }
+
+    // Non-modifier shortcuts (only when not in an input)
+    switch (event.key) {
+      case 'Delete':
+      case 'Backspace':
+        if (this.#selectedWidgetIds.size > 0) {
+          event.preventDefault();
+          this.#removeSelected();
+        }
+        return;
+      case 'Escape':
+        if (this.#selectedWidgetIds.size > 0) {
+          event.preventDefault();
+          this.#deselectAll();
+        }
+        return;
+      case 'ArrowUp':
+      case 'ArrowDown':
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        if (this.#selectedWidgetIds.size > 0) {
+          event.preventDefault();
+          this.#nudgeSelected(event.key, event.shiftKey);
+        }
+        return;
+      case ']':
+        if (this.#selectedWidgetIds.size > 0) {
+          event.preventDefault();
+          this.#bringSelectedToFront();
+        }
+        return;
+      case '[':
+        if (this.#selectedWidgetIds.size > 0) {
+          event.preventDefault();
+          this.#sendSelectedToBack();
+        }
+        return;
+    }
+  }
+
+  /* ---------------------------------------- */
   /*  Drag-to-Move                            */
   /* ---------------------------------------- */
 
@@ -385,14 +587,25 @@ export class CanvasEngine {
 
     event.preventDefault();
 
+    // Capture origins for all selected widgets (for multi-drag)
+    const origins = new Map();
+    for (const id of this.#selectedWidgetIds) {
+      const w = this.#widgets.get(id);
+      if (w) {
+        origins.set(id, {
+          x: w.x,
+          y: w.y,
+          topOverflow: this.#getWidgetTopOverflow(w)
+        });
+      }
+    }
+
     this.#dragState = {
       widgetId,
       startX: event.clientX,
       startY: event.clientY,
-      originX: widget.x,
-      originY: widget.y,
-      hasMoved: false,
-      topOverflow: this.#getWidgetTopOverflow(widget)
+      origins,
+      hasMoved: false
     };
 
     // Capture pointer for reliable tracking outside canvas
@@ -410,61 +623,66 @@ export class CanvasEngine {
       if (Math.abs(dx) < DRAG_DEAD_ZONE && Math.abs(dy) < DRAG_DEAD_ZONE) return;
       this.#dragState.hasMoved = true;
 
-      // Add dragging visual
-      const widget = this.#widgets.get(this.#dragState.widgetId);
-      widget?.element?.classList.add('is-dragging');
+      // Add dragging visual to all selected widgets
+      for (const id of this.#selectedWidgetIds) {
+        this.#widgets.get(id)?.element?.classList.add('is-dragging');
+      }
     }
 
     event.preventDefault();
 
-    let newX = this.#dragState.originX + dx;
-    let newY = this.#dragState.originY + dy;
+    // Move all selected widgets by the same delta
+    for (const [id, origin] of this.#dragState.origins) {
+      const w = this.#widgets.get(id);
+      if (!w?.element) continue;
 
-    // Snap to grid
-    if (this.#isShiftHeld) {
-      newX = this.#snapToGrid(newX);
-      newY = this.#snapToGrid(newY);
-    }
+      let newX = origin.x + dx;
+      let newY = origin.y + dy;
 
-    const widget = this.#widgets.get(this.#dragState.widgetId);
-    if (widget) {
-      ({ x: newX, y: newY } = this.#clampWidgetPosition(widget, newX, newY, this.#dragState.topOverflow));
-    }
+      if (this.#isShiftHeld) {
+        newX = this.#snapToGrid(newX);
+        newY = this.#snapToGrid(newY);
+      }
 
-    // Set position directly during drag
-    if (widget?.element) {
-      widget.element.style.left = `${newX}px`;
-      widget.element.style.top = `${newY}px`;
+      ({ x: newX, y: newY } = this.#clampWidgetPosition(w, newX, newY, origin.topOverflow));
+
+      w.element.style.left = `${newX}px`;
+      w.element.style.top = `${newY}px`;
     }
   }
 
   #onDragEnd(event) {
     if (!this.#dragState) return;
 
-    const { widgetId, hasMoved, originX, originY, startX, startY, topOverflow } = this.#dragState;
-    const widget = this.#widgets.get(widgetId);
+    const { hasMoved, startX, startY, origins } = this.#dragState;
 
-    if (widget) {
-      widget.element?.classList.remove('is-dragging');
+    if (hasMoved) {
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
 
-      if (hasMoved) {
-        // Commit final position
-        const dx = event.clientX - startX;
-        const dy = event.clientY - startY;
-        let newX = originX + dx;
-        let newY = originY + dy;
+      for (const [id, origin] of origins) {
+        const w = this.#widgets.get(id);
+        if (!w) continue;
+
+        w.element?.classList.remove('is-dragging');
+
+        let newX = origin.x + dx;
+        let newY = origin.y + dy;
 
         if (this.#isShiftHeld) {
           newX = this.#snapToGrid(newX);
           newY = this.#snapToGrid(newY);
         }
 
-        if (widget) {
-          ({ x: newX, y: newY } = this.#clampWidgetPosition(widget, newX, newY, topOverflow));
-        }
+        ({ x: newX, y: newY } = this.#clampWidgetPosition(w, newX, newY, origin.topOverflow));
+        w.updatePosition(newX, newY);
+      }
 
-        widget.updatePosition(newX, newY);
-        this.scheduleSave();
+      this.scheduleSave();
+    } else {
+      // No movement — just clear dragging class
+      for (const id of this.#selectedWidgetIds) {
+        this.#widgets.get(id)?.element?.classList.remove('is-dragging');
       }
     }
 
@@ -573,6 +791,59 @@ export class CanvasEngine {
   }
 
   /* ---------------------------------------- */
+  /*  Selection                               */
+  /* ---------------------------------------- */
+
+  #selectWidget(widgetId) {
+    // Replace entire selection with a single widget
+    if (this.#selectedWidgetIds.size === 1 && this.#selectedWidgetIds.has(widgetId)) return;
+
+    // Deselect all previous
+    for (const id of this.#selectedWidgetIds) {
+      this.#widgets.get(id)?.element?.classList.remove('is-selected');
+    }
+    this.#selectedWidgetIds.clear();
+
+    // Select the new widget
+    this.#selectedWidgetIds.add(widgetId);
+    this.#widgets.get(widgetId)?.element?.classList.add('is-selected');
+  }
+
+  #deselectAll() {
+    for (const id of this.#selectedWidgetIds) {
+      this.#widgets.get(id)?.element?.classList.remove('is-selected');
+    }
+    this.#selectedWidgetIds.clear();
+  }
+
+  #isCanvasActive() {
+    if (!this.#canvasEl?.isConnected) return false;
+    if (!this.#canvasEl.offsetParent) return false;
+
+    const hostPanel = this.#canvasEl.closest('.sessionflow-root[data-open]');
+    if (hostPanel && hostPanel.dataset.open !== 'true') return false;
+
+    return true;
+  }
+
+  #selectAll() {
+    for (const [id, widget] of this.#widgets) {
+      this.#selectedWidgetIds.add(id);
+      widget.element?.classList.add('is-selected');
+    }
+  }
+
+  /** @returns {import('./widget.js').Widget[]} */
+  #getSelectedWidgets() {
+    const result = [];
+    for (const id of this.#selectedWidgetIds) {
+      const w = this.#widgets.get(id);
+      if (w) result.push(w);
+    }
+    return result;
+  }
+
+  /* ---------------------------------------- */
   /*  Z-Index Management                      */
   /* ---------------------------------------- */
 
@@ -585,24 +856,234 @@ export class CanvasEngine {
     // Save batched with next scheduled save
   }
 
-  #selectWidget(widgetId) {
-    // Deselect previous
-    if (this.#selectedWidgetId && this.#selectedWidgetId !== widgetId) {
-      const prev = this.#widgets.get(this.#selectedWidgetId);
-      prev?.element?.classList.remove('is-selected');
+  #bringSelectedToFront() {
+    for (const id of this.#selectedWidgetIds) {
+      const widget = this.#widgets.get(id);
+      if (widget) widget.updateZIndex(this.#nextZIndex++);
     }
-
-    this.#selectedWidgetId = widgetId;
-    const widget = this.#widgets.get(widgetId);
-    widget?.element?.classList.add('is-selected');
+    this.scheduleSave();
   }
 
-  #deselectAll() {
-    if (this.#selectedWidgetId) {
-      const widget = this.#widgets.get(this.#selectedWidgetId);
-      widget?.element?.classList.remove('is-selected');
-      this.#selectedWidgetId = null;
+  #sendSelectedToBack() {
+    // Set all selected to z-index 0, then bump all others above
+    for (const id of this.#selectedWidgetIds) {
+      const widget = this.#widgets.get(id);
+      if (widget) widget.updateZIndex(0);
     }
+
+    // Reassign z-indexes for non-selected widgets starting at 1
+    let z = 1;
+    const sorted = [...this.#widgets.values()]
+      .filter(w => !this.#selectedWidgetIds.has(w.id))
+      .sort((a, b) => a.zIndex - b.zIndex);
+    for (const w of sorted) {
+      w.updateZIndex(z++);
+    }
+    this.#nextZIndex = z;
+    this.scheduleSave();
+  }
+
+  /* ---------------------------------------- */
+  /*  Clipboard & Duplication                 */
+  /* ---------------------------------------- */
+
+  #copySelected() {
+    const selected = this.#getSelectedWidgets();
+    if (selected.length === 0) return;
+
+    globalClipboard = selected.map(w => {
+      w.beforeSave();
+      return foundry.utils.deepClone(w.getState());
+    });
+
+    const count = globalClipboard.length;
+    ui.notifications.info(
+      game.i18n.format('SESSIONFLOW.Canvas.WidgetsCopied', { count })
+    );
+  }
+
+  async #cutSelected() {
+    const selected = this.#getSelectedWidgets();
+    if (selected.length === 0) return;
+
+    // Copy first
+    globalClipboard = selected.map(w => {
+      w.beforeSave();
+      return foundry.utils.deepClone(w.getState());
+    });
+
+    // Then remove (with confirmation)
+    const count = selected.length;
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize('SESSIONFLOW.Canvas.RemoveWidget') },
+      content: count === 1
+        ? `<p>${game.i18n.localize('SESSIONFLOW.Canvas.ConfirmRemoveWidget')}</p>`
+        : `<p>${game.i18n.format('SESSIONFLOW.Canvas.ConfirmRemoveWidgets', { count })}</p>`,
+      rejectClose: false,
+      modal: true
+    });
+
+    if (!confirmed) return;
+
+    for (const w of selected) {
+      await this.#destroyWidget(w.id);
+    }
+    this.#updateEmptyState();
+    this.#persistNow();
+  }
+
+  #pasteClipboard() {
+    if (globalClipboard.length === 0) return;
+
+    this.#deselectAll();
+
+    let pasteIndex = 0;
+    for (const snapshot of globalClipboard) {
+      const state = foundry.utils.deepClone(snapshot);
+      state.id = foundry.utils.randomID();
+      state.x += PASTE_OFFSET + (pasteIndex * 4);
+      state.y += PASTE_OFFSET + (pasteIndex * 4);
+      state.zIndex = this.#nextZIndex++;
+
+      const widget = createWidget(state, this.#context, this);
+      if (!widget) continue;
+
+      this.#widgets.set(widget.id, widget);
+      const el = widget.render();
+      this.#canvasEl.appendChild(el);
+      this.#normalizeWidgetPosition(widget);
+
+      // Add to selection
+      this.#selectedWidgetIds.add(widget.id);
+      el.classList.add('is-selected');
+
+      pasteIndex++;
+    }
+
+    this.#updateEmptyState();
+    this.#persistNow();
+
+    const count = pasteIndex;
+    if (count > 0) {
+      ui.notifications.info(
+        game.i18n.format('SESSIONFLOW.Canvas.WidgetsPasted', { count })
+      );
+    }
+  }
+
+  #duplicateSelected() {
+    const selected = this.#getSelectedWidgets();
+    if (selected.length === 0) return;
+
+    this.#deselectAll();
+
+    let dupeIndex = 0;
+    for (const w of selected) {
+      w.beforeSave();
+      const state = foundry.utils.deepClone(w.getState());
+      state.id = foundry.utils.randomID();
+      state.x += PASTE_OFFSET + (dupeIndex * 4);
+      state.y += PASTE_OFFSET + (dupeIndex * 4);
+      state.zIndex = this.#nextZIndex++;
+
+      const newWidget = createWidget(state, this.#context, this);
+      if (!newWidget) continue;
+
+      this.#widgets.set(newWidget.id, newWidget);
+      const el = newWidget.render();
+      this.#canvasEl.appendChild(el);
+      this.#normalizeWidgetPosition(newWidget);
+
+      // Select the new duplicate
+      this.#selectedWidgetIds.add(newWidget.id);
+      el.classList.add('is-selected');
+
+      dupeIndex++;
+    }
+
+    this.#updateEmptyState();
+    this.#persistNow();
+
+    const count = dupeIndex;
+    if (count > 0) {
+      ui.notifications.info(
+        game.i18n.format('SESSIONFLOW.Canvas.WidgetsDuplicated', { count })
+      );
+    }
+  }
+
+  /* ---------------------------------------- */
+  /*  Batch Remove                            */
+  /* ---------------------------------------- */
+
+  async #removeSelected() {
+    const selected = this.#getSelectedWidgets();
+    if (selected.length === 0) return;
+
+    const count = selected.length;
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize('SESSIONFLOW.Canvas.RemoveWidget') },
+      content: count === 1
+        ? `<p>${game.i18n.localize('SESSIONFLOW.Canvas.ConfirmRemoveWidget')}</p>`
+        : `<p>${game.i18n.format('SESSIONFLOW.Canvas.ConfirmRemoveWidgets', { count })}</p>`,
+      rejectClose: false,
+      modal: true
+    });
+
+    if (!confirmed) return;
+
+    for (const w of selected) {
+      await this.#destroyWidget(w.id);
+    }
+
+    this.#updateEmptyState();
+    this.#persistNow();
+
+    ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.WidgetRemoved'));
+  }
+
+  /** Internal: animate out and remove a single widget without confirmation or persist. */
+  async #destroyWidget(widgetId) {
+    const widget = this.#widgets.get(widgetId);
+    if (!widget) return;
+
+    const el = widget.element;
+    if (el) {
+      el.classList.add('is-removing');
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    widget.destroy('remove');
+    this.#widgets.delete(widgetId);
+    this.#selectedWidgetIds.delete(widgetId);
+  }
+
+  /* ---------------------------------------- */
+  /*  Nudge                                   */
+  /* ---------------------------------------- */
+
+  #nudgeSelected(arrowKey, shiftHeld) {
+    const step = shiftHeld ? GRID_SIZE : 1;
+    let dx = 0, dy = 0;
+
+    switch (arrowKey) {
+      case 'ArrowUp':    dy = -step; break;
+      case 'ArrowDown':  dy = step;  break;
+      case 'ArrowLeft':  dx = -step; break;
+      case 'ArrowRight': dx = step;  break;
+    }
+
+    for (const id of this.#selectedWidgetIds) {
+      const widget = this.#widgets.get(id);
+      if (!widget) continue;
+
+      let newX = widget.x + dx;
+      let newY = widget.y + dy;
+      ({ x: newX, y: newY } = this.#clampWidgetPosition(widget, newX, newY));
+      widget.updatePosition(newX, newY);
+    }
+
+    this.scheduleSave();
   }
 
   /* ---------------------------------------- */
@@ -617,6 +1098,9 @@ export class CanvasEngine {
     const element = widget?.element;
     const header = element?.querySelector('.sessionflow-widget__header');
     if (!element || !header) return 0;
+
+    // Hidden headers (display:none) report zero rect — skip overflow calc
+    if (!header.offsetHeight) return 0;
 
     const elementRect = element.getBoundingClientRect();
     const headerRect = header.getBoundingClientRect();

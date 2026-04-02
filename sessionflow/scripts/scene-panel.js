@@ -4,9 +4,15 @@
  * @module scene-panel
  */
 
-import { getScenes, getSession, updateSceneCanvas } from './session-store.js';
-import { CanvasEngine } from './canvas-engine.js';
+import {
+  getScenes, getSession, updateSceneCanvas,
+  resolveScenePageData, createScenePage, updateScenePageCanvas,
+  updateScenePageMeta, deleteScenePage, reorderScenePages, setSceneActivePage
+} from './session-store.js';
+import { CanvasEngine, buildShortcutsPopover } from './canvas-engine.js';
 import { getRegisteredTypes } from './widget.js';
+import { IconPicker } from './icon-picker.js';
+import { resumeManagedVideos, suspendManagedVideos } from './media-utils.js';
 
 // Import widget types so they self-register
 import './widgets/scene-image-widget.js';
@@ -31,6 +37,12 @@ import './widgets/scene-link-widget.js';
 import './widgets/day-night-widget.js';
 import './widgets/sequence-widget.js';
 import './widgets/slideshow-widget.js';
+import './widgets/relationships-widget.js';
+import './widgets/map-widget.js';
+import './widgets/quest-tracker-widget.js';
+import './widgets/currency-widget.js';
+import './widgets/cast-display-widget.js';
+import './widgets/quick-scenes-widget.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -237,6 +249,12 @@ export class ScenePanel {
   /** @type {AbortController|null} */
   #toolbarAbort = null;
 
+  /** @type {string|null} Active page ID (null = single-page / flat mode) */
+  #activePageId = null;
+
+  /** @type {AbortController|null} */
+  #pageTabAbort = null;
+
   /** @type {string} */
   #templatePath = `modules/${MODULE_ID}/templates/scene-panel.hbs`;
 
@@ -267,6 +285,7 @@ export class ScenePanel {
     this.#sessionId = sessionId;
     this.#beatId = beatId;
     this.#sceneId = sceneId;
+    this.#activePageId = null; // Reset — will be resolved from stored data
 
     if (!this.#element) {
       await this.#render();
@@ -276,12 +295,15 @@ export class ScenePanel {
 
     this.#isOpen = true;
     this.#element.dataset.open = 'true';
+    resumeManagedVideos(this.#element);
   }
 
   /** Close the panel. */
   close() {
     if (!this.#isOpen || !this.#element) return;
+    this.#engine?.clearSelection();
     this.#engine?.flushPendingSave();
+    suspendManagedVideos(this.#element);
     this.#isOpen = false;
     this.#element.dataset.open = 'false';
   }
@@ -311,15 +333,19 @@ export class ScenePanel {
   destroy() {
     this.#toolbarAbort?.abort();
     this.#toolbarAbort = null;
+    this.#pageTabAbort?.abort();
+    this.#pageTabAbort = null;
     this.#engine?.flushPendingSave();
     this.#engine?.destroy({ persist: false });
     this.#engine = null;
+    suspendManagedVideos(this.#element);
     this.#element?.remove();
     this.#element = null;
     this.#isOpen = false;
     this.#sessionId = null;
     this.#beatId = null;
     this.#sceneId = null;
+    this.#activePageId = null;
   }
 
   /** @returns {boolean} */
@@ -395,6 +421,10 @@ export class ScenePanel {
 
     // Re-initialize canvas
     this.#initializeCanvas();
+
+    if (this.#isOpen) {
+      resumeManagedVideos(this.#element);
+    }
   }
 
   #getTemplateData() {
@@ -428,7 +458,8 @@ export class ScenePanel {
       // Toolbar
       widgetTypes,
       addWidgetLabel: game.i18n.localize('SESSIONFLOW.Canvas.AddWidget'),
-      templateLabel: game.i18n.localize('SESSIONFLOW.Canvas.TemplateLoad')
+      templateLabel: game.i18n.localize('SESSIONFLOW.Canvas.TemplateLoad'),
+      shortcutsLabel: game.i18n.localize('SESSIONFLOW.Canvas.KeyboardShortcuts')
     };
   }
 
@@ -443,16 +474,23 @@ export class ScenePanel {
     const panelContentEl = this.#element.querySelector('.sessionflow-scene-panel__content');
     if (!canvasEl || !panelContentEl) return;
 
-    // Load widget states from scene data (with backward compatibility)
+    // Resolve page data (handles backward compat with flat fields)
     const scenes = getScenes(this.#sessionId, this.#beatId);
     const scene = scenes.find(sc => sc.id === this.#sceneId);
-    const widgets = scene?.widgets ?? createDefaultWidgets();
-    const canvasHeight = scene?.canvasHeight ?? 420;
-    const nextZIndex = scene?.nextZIndex ?? widgets.length;
+    const pageData = resolveScenePageData(scene, this.#activePageId);
+
+    this.#activePageId = pageData.pageId;
+    const widgets = pageData.widgets.length ? pageData.widgets : (pageData.pages.length ? [] : createDefaultWidgets());
+    const canvasHeight = pageData.canvasHeight;
+    const nextZIndex = pageData.nextZIndex ?? widgets.length;
+
+    // Save function: route to page or flat depending on mode
+    const saveFn = this.#activePageId
+      ? (data) => updateScenePageCanvas(this.#sessionId, this.#beatId, this.#sceneId, this.#activePageId, data)
+      : (data) => updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, data);
 
     // Create and initialize engine
     const context = { sessionId: this.#sessionId, beatId: this.#beatId, sceneId: this.#sceneId };
-    const saveFn = (data) => updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, data);
 
     this.#engine = new CanvasEngine();
     this.#engine.initialize(
@@ -466,8 +504,9 @@ export class ScenePanel {
       this.#engine.attachPanelResize(resizeEdge);
     }
 
-    // Toolbar listeners
+    // Toolbar listeners + page tabs
     this.#activateToolbarListeners();
+    this.#renderPageTabs(pageData.pages);
   }
 
   /* ---------------------------------------- */
@@ -501,11 +540,13 @@ export class ScenePanel {
         Hooks.call('sessionflow:setAnchor', 'scene', this.#sessionId, this.#beatId, this.#sceneId);
       });
 
-    // Escape key — skip if a Foundry dialog/window is open above us
+    // Escape key — skip if a Foundry dialog/window is open above us,
+    // or if canvas has selected widgets (Escape deselects first, then closes on next press)
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.#isOpen) {
         const openDialog = document.querySelector('.dialog .window-content, .app.window-app');
         if (openDialog) return;
+        if (this.#engine?.hasSelection) return;
         event.stopPropagation();
         Hooks.call('sessionflow:navigateBackFromScene');
       }
@@ -542,6 +583,457 @@ export class ScenePanel {
         e.stopPropagation();
         this.#openTemplatePicker(e.currentTarget);
       }, { signal });
+
+    // Keyboard shortcuts help button
+    toolbar.querySelector('[data-action="show-shortcuts"]')
+      ?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#toggleShortcutsPopover(e.currentTarget);
+      }, { signal });
+  }
+
+  /* ---------------------------------------- */
+  /*  Page Tabs                               */
+  /* ---------------------------------------- */
+
+  /**
+   * Render the page tab strip. Always visible so the GM can discover the feature.
+   * When in flat mode (no pages array), shows "Page 1" + [+] button.
+   * @param {object[]} pages - Sorted array of page objects.
+   */
+  #renderPageTabs(pages) {
+    const container = this.#element?.querySelector('.sessionflow-page-tabs');
+    if (!container) return;
+
+    // Abort previous tab listeners
+    this.#pageTabAbort?.abort();
+    this.#pageTabAbort = new AbortController();
+    const signal = this.#pageTabAbort.signal;
+
+    container.style.display = '';
+    container.innerHTML = '';
+
+    // If flat mode (no pages), show a single "Page 1" label + add button
+    if (pages.length === 0) {
+      const label = document.createElement('span');
+      label.className = 'sessionflow-page-tab is-active is-solo';
+      label.innerHTML = `<i class="fas fa-file"></i><span class="sessionflow-page-tab__name">Page 1</span>`;
+      container.appendChild(label);
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'sessionflow-page-tab sessionflow-page-tab--add';
+      addBtn.title = game.i18n.localize('SESSIONFLOW.Pages.AddPage');
+      addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#addPage();
+      }, { signal });
+      container.appendChild(addBtn);
+      return;
+    }
+
+    for (const page of pages) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'sessionflow-page-tab';
+      if (page.id === this.#activePageId) tab.classList.add('is-active');
+      tab.dataset.pageId = page.id;
+      if (page.color) tab.style.setProperty('--sf-page-color', page.color);
+
+      const icon = page.icon || 'fas fa-file';
+      const iconHtml = icon.startsWith('img:')
+        ? `<img class="sessionflow-page-tab__icon-img" src="${icon.slice(4)}" />`
+        : `<i class="${icon}"></i>`;
+      tab.innerHTML = `${iconHtml}<span class="sessionflow-page-tab__name">${page.name}</span>`;
+
+      // Click to switch
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (page.id !== this.#activePageId) this.#switchPage(page.id);
+      }, { signal });
+
+      // Double-click to rename
+      tab.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.#startInlineRename(tab, page.id);
+      }, { signal });
+
+      // Right-click context menu
+      tab.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.#openPageContextMenu(e, page);
+      }, { signal });
+
+      // Drag to reorder
+      tab.draggable = true;
+      tab.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', page.id);
+        e.dataTransfer.effectAllowed = 'move';
+        tab.classList.add('is-dragging');
+      }, { signal });
+      tab.addEventListener('dragend', () => {
+        tab.classList.remove('is-dragging');
+        container.querySelectorAll('.sessionflow-page-tab').forEach(t => t.classList.remove('drag-over'));
+      }, { signal });
+      tab.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tab.classList.add('drag-over');
+      }, { signal });
+      tab.addEventListener('dragleave', () => {
+        tab.classList.remove('drag-over');
+      }, { signal });
+      tab.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        tab.classList.remove('drag-over');
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (!draggedId || draggedId === page.id) return;
+        await this.#reorderPageDrop(draggedId, page.id, pages);
+      }, { signal });
+
+      container.appendChild(tab);
+    }
+
+    // Add page button
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'sessionflow-page-tab sessionflow-page-tab--add';
+    addBtn.title = game.i18n.localize('SESSIONFLOW.Pages.AddPage');
+    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.#addPage();
+    }, { signal });
+    container.appendChild(addBtn);
+
+    // Register page keyboard shortcuts on the panel
+    this.#activatePageKeyboard(signal);
+  }
+
+  /**
+   * Switch to a different page within the current scene.
+   * @param {string} pageId
+   */
+  async #switchPage(pageId) {
+    if (pageId === this.#activePageId) return;
+    if (!this.#engine) return;
+
+    // Save current page
+    await this.#engine.flushPendingSave();
+    this.#engine.destroy({ persist: false });
+    this.#engine = null;
+
+    // Persist active page preference
+    this.#activePageId = pageId;
+    await setSceneActivePage(this.#sessionId, this.#beatId, this.#sceneId, pageId);
+
+    // Re-initialize canvas for the new page
+    this.#initializeCanvas();
+  }
+
+  /**
+   * Add a new page to the current scene.
+   */
+  async #addPage() {
+    // Save current engine state first
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    const page = await createScenePage(this.#sessionId, this.#beatId, this.#sceneId);
+    if (!page) return;
+
+    this.#activePageId = page.id;
+    this.#initializeCanvas();
+  }
+
+  /**
+   * Duplicate a page (copy all widgets).
+   * @param {object} page - The page to duplicate.
+   */
+  async #duplicatePage(page) {
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    // Deep clone widgets with new IDs
+    const clonedWidgets = (page.widgets ?? []).map(w => ({
+      ...foundry.utils.deepClone(w),
+      id: foundry.utils.randomID()
+    }));
+
+    const newPage = await createScenePage(this.#sessionId, this.#beatId, this.#sceneId, {
+      name: `${page.name} (copy)`,
+      icon: page.icon,
+      color: page.color,
+      widgets: clonedWidgets,
+      canvasHeight: page.canvasHeight ?? 420,
+      nextZIndex: page.nextZIndex ?? clonedWidgets.length
+    });
+
+    if (!newPage) return;
+    this.#activePageId = newPage.id;
+    this.#initializeCanvas();
+  }
+
+  /**
+   * Delete a page.
+   * @param {object} page
+   */
+  async #deletePageConfirm(page) {
+    const hasWidgets = (page.widgets?.length ?? 0) > 0;
+    const confirmed = hasWidgets
+      ? await foundry.applications.api.DialogV2.confirm({
+          window: { title: game.i18n.localize('SESSIONFLOW.Pages.DeletePage') },
+          content: `<p>${game.i18n.localize('SESSIONFLOW.Pages.DeleteConfirm')}</p>`,
+          modal: true
+        })
+      : true;
+    if (!confirmed) return;
+
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    const result = await deleteScenePage(this.#sessionId, this.#beatId, this.#sceneId, page.id);
+    if (!result.deleted) return;
+
+    this.#activePageId = result.activePageId;
+    this.#initializeCanvas();
+  }
+
+  /**
+   * Start inline rename on a page tab.
+   * @param {HTMLElement} tabEl
+   * @param {string} pageId
+   */
+  #startInlineRename(tabEl, pageId) {
+    const nameEl = tabEl.querySelector('.sessionflow-page-tab__name');
+    if (!nameEl) return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sessionflow-page-tab__rename-input';
+    input.value = nameEl.textContent;
+    input.size = Math.max(input.value.length, 4);
+
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = async () => {
+      const newName = input.value.trim();
+      if (newName && newName !== nameEl.textContent) {
+        await updateScenePageMeta(this.#sessionId, this.#beatId, this.#sceneId, pageId, { name: newName });
+        nameEl.textContent = newName;
+      }
+      input.replaceWith(nameEl);
+    };
+
+    input.addEventListener('blur', commit, { once: true });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = nameEl.textContent; input.blur(); }
+    });
+  }
+
+  /**
+   * Open a context menu for a page tab.
+   * @param {MouseEvent} event
+   * @param {object} page
+   */
+  #openPageContextMenu(event, page) {
+    // Remove any existing context menu
+    document.querySelector('.sessionflow-page-context-menu')?.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'sessionflow-page-context-menu';
+
+    const items = [
+      { label: game.i18n.localize('SESSIONFLOW.Pages.RenamePage'), icon: 'fas fa-pen', action: () => {
+        const tab = this.#element?.querySelector(`[data-page-id="${page.id}"]`);
+        if (tab) this.#startInlineRename(tab, page.id);
+      }},
+      { label: game.i18n.localize('SESSIONFLOW.Pages.ChangeIcon'), icon: 'fas fa-icons', action: () => this.#changePageIcon(page) },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.ChangeColor'), icon: 'fas fa-palette', action: () => this.#changePageColor(page) },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.DuplicatePage'), icon: 'fas fa-copy', action: () => this.#duplicatePage(page) },
+      { divider: true },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.DeletePage'), icon: 'fas fa-trash', action: () => this.#deletePageConfirm(page), danger: true }
+    ];
+
+    for (const item of items) {
+      if (item.divider) {
+        const hr = document.createElement('hr');
+        hr.className = 'sessionflow-page-context-menu__divider';
+        menu.appendChild(hr);
+        continue;
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sessionflow-page-context-menu__item';
+      if (item.danger) btn.classList.add('is-danger');
+      btn.innerHTML = `<i class="${item.icon}"></i><span>${item.label}</span>`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.remove();
+        item.action();
+      });
+      menu.appendChild(btn);
+    }
+
+    // Position at cursor
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+    document.body.appendChild(menu);
+
+    // Close on outside click
+    const close = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('mousedown', close);
+      }
+    };
+    setTimeout(() => document.addEventListener('mousedown', close), 0);
+  }
+
+  /**
+   * Change page icon via the visual icon picker.
+   * @param {object} page
+   */
+  #changePageIcon(page) {
+    const tab = this.#element?.querySelector(`[data-page-id="${page.id}"]`);
+    if (!tab) return;
+
+    const picker = new IconPicker({
+      anchor: tab,
+      currentIcon: page.icon || 'fas fa-file',
+      onSelect: async (icon) => {
+        await updateScenePageMeta(this.#sessionId, this.#beatId, this.#sceneId, page.id, { icon });
+        this.#refreshPageTabs();
+      }
+    });
+    picker.open();
+  }
+
+  /**
+   * Change page color via a color picker dialog.
+   * @param {object} page
+   */
+  async #changePageColor(page) {
+    const color = await new Promise((resolve) => {
+      const dialog = new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize('SESSIONFLOW.Pages.ChangeColor') },
+        content: `
+          <form>
+            <div class="form-group">
+              <label>${game.i18n.localize('SESSIONFLOW.Pages.ColorPrompt')}</label>
+              <input type="color" name="pageColor" value="${page.color || '#7c5cbf'}" />
+            </div>
+          </form>
+        `,
+        buttons: [{
+          action: 'save',
+          label: game.i18n.localize('Save'),
+          icon: 'fas fa-check',
+          default: true,
+          callback: (event, button, dialog) => resolve(button.form.elements.pageColor?.value || null)
+        }, {
+          action: 'clear',
+          label: game.i18n.localize('SESSIONFLOW.Pages.ClearColor'),
+          icon: 'fas fa-eraser',
+          callback: () => resolve('')
+        }, {
+          action: 'cancel',
+          label: game.i18n.localize('Cancel'),
+          callback: () => resolve(null)
+        }],
+        close: () => resolve(null),
+        modal: true
+      });
+      dialog.render(true);
+    });
+    if (color === null) return;
+
+    await updateScenePageMeta(this.#sessionId, this.#beatId, this.#sceneId, page.id, { color });
+    this.#refreshPageTabs();
+  }
+
+  /**
+   * Reorder pages after a drag-and-drop.
+   * @param {string} draggedId
+   * @param {string} targetId
+   * @param {object[]} currentPages
+   */
+  async #reorderPageDrop(draggedId, targetId, currentPages) {
+    const ids = currentPages.map(p => p.id);
+    const fromIdx = ids.indexOf(draggedId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, draggedId);
+
+    await reorderScenePages(this.#sessionId, this.#beatId, this.#sceneId, ids);
+    this.#refreshPageTabs();
+  }
+
+  /**
+   * Re-read pages from store and re-render the tab strip (without touching the canvas).
+   */
+  #refreshPageTabs() {
+    const scenes = getScenes(this.#sessionId, this.#beatId);
+    const scene = scenes.find(sc => sc.id === this.#sceneId);
+    const pageData = resolveScenePageData(scene, this.#activePageId);
+    this.#renderPageTabs(pageData.pages);
+  }
+
+  /**
+   * Register page navigation keyboard shortcuts.
+   * @param {AbortSignal} signal
+   */
+  #activatePageKeyboard(signal) {
+    const handler = (e) => {
+      if (!this.#isOpen) return;
+      // Skip if focus is on an interactive element
+      if (e.target.closest('input, textarea, select, .ProseMirror')) return;
+
+      const scenes = getScenes(this.#sessionId, this.#beatId);
+      const scene = scenes.find(sc => sc.id === this.#sceneId);
+      const pages = [...(scene?.pages ?? [])].sort((a, b) => a.order - b.order);
+      if (pages.length < 2) return;
+
+      const currentIdx = pages.findIndex(p => p.id === this.#activePageId);
+
+      if (e.ctrlKey && e.key === 'PageDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = pages[(currentIdx + 1) % pages.length];
+        if (next) this.#switchPage(next.id);
+      } else if (e.ctrlKey && e.key === 'PageUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        const prev = pages[(currentIdx - 1 + pages.length) % pages.length];
+        if (prev) this.#switchPage(prev.id);
+      } else if (e.ctrlKey && e.key >= '1' && e.key <= '9') {
+        const idx = parseInt(e.key) - 1;
+        if (idx < pages.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.#switchPage(pages[idx].id);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handler, { signal });
   }
 
   /* ---------------------------------------- */
@@ -657,7 +1149,7 @@ export class ScenePanel {
   }
 
   /**
-   * Apply a built-in template to the current scene.
+   * Apply a built-in template to the current scene (active page only).
    * @param {{ widgets: () => object[] }} template
    */
   async #applyTemplate(template) {
@@ -670,16 +1162,18 @@ export class ScenePanel {
     this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
-      widgets: newWidgets,
-      nextZIndex: newWidgets.length
-    });
+    const changes = { widgets: newWidgets, nextZIndex: newWidgets.length };
+    if (this.#activePageId) {
+      await updateScenePageCanvas(this.#sessionId, this.#beatId, this.#sceneId, this.#activePageId, changes);
+    } else {
+      await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, changes);
+    }
 
     this.#initializeCanvas();
   }
 
   /**
-   * Apply a custom template.
+   * Apply a custom template (active page only).
    * @param {{ widgets: object[] }} ct
    */
   async #applyCustomTemplate(ct) {
@@ -692,11 +1186,12 @@ export class ScenePanel {
     this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, {
-      widgets: newWidgets,
-      canvasHeight,
-      nextZIndex: newWidgets.length
-    });
+    const changes = { widgets: newWidgets, canvasHeight, nextZIndex: newWidgets.length };
+    if (this.#activePageId) {
+      await updateScenePageCanvas(this.#sessionId, this.#beatId, this.#sceneId, this.#activePageId, changes);
+    } else {
+      await updateSceneCanvas(this.#sessionId, this.#beatId, this.#sceneId, changes);
+    }
 
     this.#initializeCanvas();
   }
@@ -707,18 +1202,17 @@ export class ScenePanel {
   async #saveCurrentAsTemplate() {
     if (!this.#engine) return;
 
-    // Prompt for name using Foundry-native dialog (prompt() is unreliable in Electron)
     const name = await this.#promptTemplateName();
     if (!name) return;
 
-    // Flush pending save and WAIT for it to complete before reading
     await this.#engine.flushPendingSave();
 
-    // Now read the fresh data from settings
+    // Read from the active page or flat data
     const scenes = getScenes(this.#sessionId, this.#beatId);
     const scene = scenes.find(sc => sc.id === this.#sceneId);
-    const currentWidgets = scene?.widgets ?? [];
-    const canvasHeight = scene?.canvasHeight ?? 420;
+    const pageData = resolveScenePageData(scene, this.#activePageId);
+    const currentWidgets = pageData.widgets;
+    const canvasHeight = pageData.canvasHeight;
 
     const templateWidgets = currentWidgets.map(serializeWidgetForTemplate);
 
@@ -785,6 +1279,34 @@ export class ScenePanel {
     const customs = this.#getCustomTemplates().filter(t => t.id !== id);
     await game.settings.set(MODULE_ID, 'sceneTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateDeleted'));
+  }
+
+  /* ---------------------------------------- */
+  /*  Keyboard Shortcuts Help                 */
+  /* ---------------------------------------- */
+
+  #toggleShortcutsPopover(anchorBtn) {
+    // Close existing popover if any
+    const existing = this.#element?.querySelector('.sessionflow-shortcuts-popover');
+    if (existing) { existing.remove(); return; }
+
+    const hasPages = !!this.#activePageId;
+    const popover = buildShortcutsPopover({ showPageShortcuts: hasPages });
+
+    const toolbar = this.#element?.querySelector('.sessionflow-scene-panel__toolbar');
+    if (toolbar) {
+      toolbar.style.position = 'relative';
+      toolbar.appendChild(popover);
+    }
+
+    // Close on outside click
+    const closeHandler = (e) => {
+      if (!popover.contains(e.target) && e.target !== anchorBtn) {
+        popover.remove();
+        document.removeEventListener('mousedown', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('mousedown', closeHandler), 0);
   }
 
   /* ---------------------------------------- */

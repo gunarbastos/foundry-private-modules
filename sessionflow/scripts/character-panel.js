@@ -5,9 +5,15 @@
  * @module character-panel
  */
 
-import { getCharacterCanvas, updateCharacterCanvas } from './session-store.js';
-import { CanvasEngine } from './canvas-engine.js';
+import {
+  getCharacterCanvas, updateCharacterCanvas,
+  resolveCharacterPageData, createCharacterPage, updateCharacterPageCanvas,
+  updateCharacterPageMeta, deleteCharacterPage, reorderCharacterPages, setCharacterActivePage
+} from './session-store.js';
+import { CanvasEngine, buildShortcutsPopover } from './canvas-engine.js';
 import { getRegisteredTypes } from './widget.js';
+import { IconPicker } from './icon-picker.js';
+import { resumeManagedVideos, suspendManagedVideos } from './media-utils.js';
 
 // Import widget types so they self-register (shared with scene-panel)
 import './widgets/paragraph-widget.js';
@@ -27,11 +33,13 @@ import './widgets/time-tracker-widget.js';
 import './widgets/journal-board-widget.js';
 import './widgets/macro-widget.js';
 import './widgets/day-night-widget.js';
+import './widgets/quest-tracker-widget.js';
+import './widgets/currency-widget.js';
 
 const MODULE_ID = 'sessionflow';
 
 /** Widget types excluded from the character panel toolbar */
-const EXCLUDED_TYPES = new Set(['scene-image', 'characters', 'timer', 'scene-link', 'sequence', 'slideshow']);
+const EXCLUDED_TYPES = new Set(['scene-image', 'characters', 'timer', 'scene-link', 'sequence', 'slideshow', 'cast-display', 'quick-scenes']);
 
 /** Panel width constraints */
 const DEFAULT_PANEL_WIDTH = 580;
@@ -175,6 +183,12 @@ export class CharacterPanel {
   /** @type {number|null} Debounce timer for width save */
   #widthSaveTimer = null;
 
+  /** @type {string|null} Active page ID (null = single-page / flat mode) */
+  #activePageId = null;
+
+  /** @type {AbortController|null} */
+  #pageTabAbort = null;
+
   /** @type {string} */
   #templatePath = `modules/${MODULE_ID}/templates/character-panel.hbs`;
 
@@ -202,6 +216,7 @@ export class CharacterPanel {
 
     this.#characterId = characterId;
     this.#sceneContext = sceneContext;
+    this.#activePageId = null; // Reset — will be resolved from stored data
 
     if (!this.#element) {
       await this.#render();
@@ -211,14 +226,17 @@ export class CharacterPanel {
 
     this.#isOpen = true;
     this.#element.dataset.open = 'true';
+    resumeManagedVideos(this.#element);
     this.#updateSlotState();
   }
 
   /** Close the panel. */
   close() {
     if (!this.#isOpen || !this.#element) return;
+    this.#engine?.clearSelection();
     this.#engine?.flushPendingSave();
     this.#flushPendingWidthSave();
+    suspendManagedVideos(this.#element);
     this.#isOpen = false;
     this.#element.dataset.open = 'false';
   }
@@ -244,15 +262,19 @@ export class CharacterPanel {
   destroy() {
     this.#toolbarAbort?.abort();
     this.#toolbarAbort = null;
+    this.#pageTabAbort?.abort();
+    this.#pageTabAbort = null;
     this.#engine?.flushPendingSave();
     this.#flushPendingWidthSave();
     this.#engine?.destroy({ persist: false });
     this.#engine = null;
+    suspendManagedVideos(this.#element);
     this.#element?.remove();
     this.#element = null;
     this.#isOpen = false;
     this.#characterId = null;
     this.#sceneContext = null;
+    this.#activePageId = null;
   }
 
   /** @returns {boolean} */
@@ -314,6 +336,10 @@ export class CharacterPanel {
 
     // Re-initialize canvas
     this.#initializeCanvas();
+
+    if (this.#isOpen) {
+      resumeManagedVideos(this.#element);
+    }
   }
 
   #getTemplateData() {
@@ -347,7 +373,8 @@ export class CharacterPanel {
 
       // Toolbar
       widgetTypes,
-      templateLabel: game.i18n.localize('SESSIONFLOW.Canvas.TemplateLoad')
+      templateLabel: game.i18n.localize('SESSIONFLOW.Canvas.TemplateLoad'),
+      shortcutsLabel: game.i18n.localize('SESSIONFLOW.Canvas.KeyboardShortcuts')
     };
   }
 
@@ -362,19 +389,26 @@ export class CharacterPanel {
     const panelContentEl = this.#element.querySelector('.sessionflow-character-panel__canvas-wrapper');
     if (!canvasEl || !panelContentEl) return;
 
-    // Load widget states from character data
+    // Resolve page data (handles backward compat with flat fields)
     const charData = getCharacterCanvas(this.#characterId);
-    const widgets = charData?.widgets ?? [];
-    const canvasHeight = charData?.canvasHeight ?? 420;
-    const nextZIndex = charData?.nextZIndex ?? widgets.length;
+    const pageData = resolveCharacterPageData(charData, this.#activePageId);
+
+    this.#activePageId = pageData.pageId;
+    const widgets = pageData.widgets;
+    const canvasHeight = pageData.canvasHeight;
+    const nextZIndex = pageData.nextZIndex ?? widgets.length;
 
     // Restore saved panel width
     this.#panelWidth = charData?.panelWidth ?? DEFAULT_PANEL_WIDTH;
     this.#applyPanelWidth();
 
+    // Save function: route to page or flat depending on mode
+    const saveFn = this.#activePageId
+      ? (data) => updateCharacterPageCanvas(this.#characterId, this.#activePageId, data)
+      : (data) => updateCharacterCanvas(this.#characterId, data);
+
     // Create and initialize engine
     const context = { characterId: this.#characterId };
-    const saveFn = (data) => updateCharacterCanvas(this.#characterId, data);
 
     this.#engine = new CanvasEngine();
     this.#engine.initialize(
@@ -382,8 +416,9 @@ export class CharacterPanel {
       context, widgets, canvasHeight, nextZIndex, saveFn
     );
 
-    // Toolbar listeners
+    // Toolbar listeners + page tabs
     this.#activateToolbarListeners();
+    this.#renderPageTabs(pageData.pages);
   }
 
   /* ---------------------------------------- */
@@ -411,11 +446,13 @@ export class CharacterPanel {
         Hooks.call('sessionflow:navigateBackFromCharacter');
       });
 
-    // Escape key — skip if a Foundry dialog/window is open above us
+    // Escape key — skip if a Foundry dialog/window is open above us,
+    // or if canvas has selected widgets (Escape deselects first, then closes on next press)
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.#isOpen) {
         const openDialog = document.querySelector('.dialog .window-content, .app.window-app');
         if (openDialog) return;
+        if (this.#engine?.hasSelection) return;
         event.stopPropagation();
         Hooks.call('sessionflow:navigateBackFromCharacter');
       }
@@ -462,6 +499,13 @@ export class CharacterPanel {
       ?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.#openTemplatePicker(e.currentTarget);
+      }, { signal });
+
+    // Keyboard shortcuts help button
+    toolbar.querySelector('[data-action="show-shortcuts"]')
+      ?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#toggleShortcutsPopover(e.currentTarget);
       }, { signal });
   }
 
@@ -599,6 +643,386 @@ export class CharacterPanel {
   }
 
   /* ---------------------------------------- */
+  /*  Page Tabs                               */
+  /* ---------------------------------------- */
+
+  /**
+   * Render the page tab strip. Always visible so the GM can discover the feature.
+   * When in flat mode (no pages array), shows "Page 1" + [+] button.
+   * @param {object[]} pages - Sorted array of page objects.
+   */
+  #renderPageTabs(pages) {
+    const container = this.#element?.querySelector('.sessionflow-page-tabs');
+    if (!container) return;
+
+    this.#pageTabAbort?.abort();
+    this.#pageTabAbort = new AbortController();
+    const signal = this.#pageTabAbort.signal;
+
+    container.style.display = '';
+    container.innerHTML = '';
+
+    // If flat mode (no pages), show a single "Page 1" label + add button
+    if (pages.length === 0) {
+      const label = document.createElement('span');
+      label.className = 'sessionflow-page-tab is-active is-solo';
+      label.innerHTML = `<i class="fas fa-file"></i><span class="sessionflow-page-tab__name">Page 1</span>`;
+      container.appendChild(label);
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'sessionflow-page-tab sessionflow-page-tab--add';
+      addBtn.title = game.i18n.localize('SESSIONFLOW.Pages.AddPage');
+      addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.#addPage();
+      }, { signal });
+      container.appendChild(addBtn);
+      return;
+    }
+
+    for (const page of pages) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'sessionflow-page-tab';
+      if (page.id === this.#activePageId) tab.classList.add('is-active');
+      tab.dataset.pageId = page.id;
+      if (page.color) tab.style.setProperty('--sf-page-color', page.color);
+
+      const icon = page.icon || 'fas fa-file';
+      const iconHtml = icon.startsWith('img:')
+        ? `<img class="sessionflow-page-tab__icon-img" src="${icon.slice(4)}" />`
+        : `<i class="${icon}"></i>`;
+      tab.innerHTML = `${iconHtml}<span class="sessionflow-page-tab__name">${page.name}</span>`;
+
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (page.id !== this.#activePageId) this.#switchPage(page.id);
+      }, { signal });
+
+      tab.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.#startInlineRename(tab, page.id);
+      }, { signal });
+
+      tab.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.#openPageContextMenu(e, page);
+      }, { signal });
+
+      tab.draggable = true;
+      tab.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', page.id);
+        e.dataTransfer.effectAllowed = 'move';
+        tab.classList.add('is-dragging');
+      }, { signal });
+      tab.addEventListener('dragend', () => {
+        tab.classList.remove('is-dragging');
+        container.querySelectorAll('.sessionflow-page-tab').forEach(t => t.classList.remove('drag-over'));
+      }, { signal });
+      tab.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tab.classList.add('drag-over');
+      }, { signal });
+      tab.addEventListener('dragleave', () => {
+        tab.classList.remove('drag-over');
+      }, { signal });
+      tab.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        tab.classList.remove('drag-over');
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (!draggedId || draggedId === page.id) return;
+        await this.#reorderPageDrop(draggedId, page.id, pages);
+      }, { signal });
+
+      container.appendChild(tab);
+    }
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'sessionflow-page-tab sessionflow-page-tab--add';
+    addBtn.title = game.i18n.localize('SESSIONFLOW.Pages.AddPage');
+    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.#addPage();
+    }, { signal });
+    container.appendChild(addBtn);
+
+    this.#activatePageKeyboard(signal);
+  }
+
+  async #switchPage(pageId) {
+    if (pageId === this.#activePageId) return;
+    if (!this.#engine) return;
+
+    await this.#engine.flushPendingSave();
+    this.#engine.destroy({ persist: false });
+    this.#engine = null;
+
+    this.#activePageId = pageId;
+    await setCharacterActivePage(this.#characterId, pageId);
+
+    this.#initializeCanvas();
+  }
+
+  async #addPage() {
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    const page = await createCharacterPage(this.#characterId);
+    if (!page) return;
+
+    this.#activePageId = page.id;
+    this.#initializeCanvas();
+  }
+
+  async #duplicatePage(page) {
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    const clonedWidgets = (page.widgets ?? []).map(w => ({
+      ...foundry.utils.deepClone(w),
+      id: foundry.utils.randomID()
+    }));
+
+    const newPage = await createCharacterPage(this.#characterId, {
+      name: `${page.name} (copy)`,
+      icon: page.icon,
+      color: page.color,
+      widgets: clonedWidgets,
+      canvasHeight: page.canvasHeight ?? 420,
+      nextZIndex: page.nextZIndex ?? clonedWidgets.length
+    });
+
+    if (!newPage) return;
+    this.#activePageId = newPage.id;
+    this.#initializeCanvas();
+  }
+
+  async #deletePageConfirm(page) {
+    const hasWidgets = (page.widgets?.length ?? 0) > 0;
+    const confirmed = hasWidgets
+      ? await foundry.applications.api.DialogV2.confirm({
+          window: { title: game.i18n.localize('SESSIONFLOW.Pages.DeletePage') },
+          content: `<p>${game.i18n.localize('SESSIONFLOW.Pages.DeleteConfirm')}</p>`,
+          modal: true
+        })
+      : true;
+    if (!confirmed) return;
+
+    if (this.#engine) {
+      await this.#engine.flushPendingSave();
+      this.#engine.destroy({ persist: false });
+      this.#engine = null;
+    }
+
+    const result = await deleteCharacterPage(this.#characterId, page.id);
+    if (!result.deleted) return;
+
+    this.#activePageId = result.activePageId;
+    this.#initializeCanvas();
+  }
+
+  #startInlineRename(tabEl, pageId) {
+    const nameEl = tabEl.querySelector('.sessionflow-page-tab__name');
+    if (!nameEl) return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sessionflow-page-tab__rename-input';
+    input.value = nameEl.textContent;
+    input.size = Math.max(input.value.length, 4);
+
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = async () => {
+      const newName = input.value.trim();
+      if (newName && newName !== nameEl.textContent) {
+        await updateCharacterPageMeta(this.#characterId, pageId, { name: newName });
+        nameEl.textContent = newName;
+      }
+      input.replaceWith(nameEl);
+    };
+
+    input.addEventListener('blur', commit, { once: true });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = nameEl.textContent; input.blur(); }
+    });
+  }
+
+  #openPageContextMenu(event, page) {
+    document.querySelector('.sessionflow-page-context-menu')?.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'sessionflow-page-context-menu';
+
+    const items = [
+      { label: game.i18n.localize('SESSIONFLOW.Pages.RenamePage'), icon: 'fas fa-pen', action: () => {
+        const tab = this.#element?.querySelector(`[data-page-id="${page.id}"]`);
+        if (tab) this.#startInlineRename(tab, page.id);
+      }},
+      { label: game.i18n.localize('SESSIONFLOW.Pages.ChangeIcon'), icon: 'fas fa-icons', action: () => this.#changePageIcon(page) },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.ChangeColor'), icon: 'fas fa-palette', action: () => this.#changePageColor(page) },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.DuplicatePage'), icon: 'fas fa-copy', action: () => this.#duplicatePage(page) },
+      { divider: true },
+      { label: game.i18n.localize('SESSIONFLOW.Pages.DeletePage'), icon: 'fas fa-trash', action: () => this.#deletePageConfirm(page), danger: true }
+    ];
+
+    for (const item of items) {
+      if (item.divider) {
+        const hr = document.createElement('hr');
+        hr.className = 'sessionflow-page-context-menu__divider';
+        menu.appendChild(hr);
+        continue;
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sessionflow-page-context-menu__item';
+      if (item.danger) btn.classList.add('is-danger');
+      btn.innerHTML = `<i class="${item.icon}"></i><span>${item.label}</span>`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.remove();
+        item.action();
+      });
+      menu.appendChild(btn);
+    }
+
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+    document.body.appendChild(menu);
+
+    const close = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('mousedown', close);
+      }
+    };
+    setTimeout(() => document.addEventListener('mousedown', close), 0);
+  }
+
+  #changePageIcon(page) {
+    const tab = this.#element?.querySelector(`[data-page-id="${page.id}"]`);
+    if (!tab) return;
+
+    const picker = new IconPicker({
+      anchor: tab,
+      currentIcon: page.icon || 'fas fa-file',
+      onSelect: async (icon) => {
+        await updateCharacterPageMeta(this.#characterId, page.id, { icon });
+        this.#refreshPageTabs();
+      }
+    });
+    picker.open();
+  }
+
+  async #changePageColor(page) {
+    const color = await new Promise((resolve) => {
+      const dialog = new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize('SESSIONFLOW.Pages.ChangeColor') },
+        content: `
+          <form>
+            <div class="form-group">
+              <label>${game.i18n.localize('SESSIONFLOW.Pages.ColorPrompt')}</label>
+              <input type="color" name="pageColor" value="${page.color || '#7c5cbf'}" />
+            </div>
+          </form>
+        `,
+        buttons: [{
+          action: 'save',
+          label: game.i18n.localize('Save'),
+          icon: 'fas fa-check',
+          default: true,
+          callback: (event, button, dialog) => resolve(button.form.elements.pageColor?.value || null)
+        }, {
+          action: 'clear',
+          label: game.i18n.localize('SESSIONFLOW.Pages.ClearColor'),
+          icon: 'fas fa-eraser',
+          callback: () => resolve('')
+        }, {
+          action: 'cancel',
+          label: game.i18n.localize('Cancel'),
+          callback: () => resolve(null)
+        }],
+        close: () => resolve(null),
+        modal: true
+      });
+      dialog.render(true);
+    });
+    if (color === null) return;
+
+    await updateCharacterPageMeta(this.#characterId, page.id, { color });
+    this.#refreshPageTabs();
+  }
+
+  async #reorderPageDrop(draggedId, targetId, currentPages) {
+    const ids = currentPages.map(p => p.id);
+    const fromIdx = ids.indexOf(draggedId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, draggedId);
+
+    await reorderCharacterPages(this.#characterId, ids);
+    this.#refreshPageTabs();
+  }
+
+  #refreshPageTabs() {
+    const charData = getCharacterCanvas(this.#characterId);
+    const pageData = resolveCharacterPageData(charData, this.#activePageId);
+    this.#renderPageTabs(pageData.pages);
+  }
+
+  #activatePageKeyboard(signal) {
+    const handler = (e) => {
+      if (!this.#isOpen) return;
+      if (e.target.closest('input, textarea, select, .ProseMirror')) return;
+
+      const charData = getCharacterCanvas(this.#characterId);
+      const pages = [...(charData?.pages ?? [])].sort((a, b) => a.order - b.order);
+      if (pages.length < 2) return;
+
+      const currentIdx = pages.findIndex(p => p.id === this.#activePageId);
+
+      if (e.ctrlKey && e.key === 'PageDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = pages[(currentIdx + 1) % pages.length];
+        if (next) this.#switchPage(next.id);
+      } else if (e.ctrlKey && e.key === 'PageUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        const prev = pages[(currentIdx - 1 + pages.length) % pages.length];
+        if (prev) this.#switchPage(prev.id);
+      } else if (e.ctrlKey && e.key >= '1' && e.key <= '9') {
+        const idx = parseInt(e.key) - 1;
+        if (idx < pages.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.#switchPage(pages[idx].id);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handler, { signal });
+  }
+
+  /* ---------------------------------------- */
   /*  Template Picker                         */
   /* ---------------------------------------- */
 
@@ -711,7 +1135,7 @@ export class CharacterPanel {
   }
 
   /**
-   * Apply a built-in template to the current character canvas.
+   * Apply a built-in template to the current character canvas (active page only).
    * @param {{ widgets: () => object[], canvasHeight?: number }} template
    */
   async #applyTemplate(template) {
@@ -720,22 +1144,22 @@ export class CharacterPanel {
     const newWidgets = template.widgets();
     const canvasHeight = template.canvasHeight ?? 420;
 
-    // Destroy current engine, save new widgets, re-initialize
     await this.#engine.flushPendingSave();
     this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    await updateCharacterCanvas(this.#characterId, {
-      widgets: newWidgets,
-      nextZIndex: newWidgets.length,
-      canvasHeight
-    });
+    const changes = { widgets: newWidgets, nextZIndex: newWidgets.length, canvasHeight };
+    if (this.#activePageId) {
+      await updateCharacterPageCanvas(this.#characterId, this.#activePageId, changes);
+    } else {
+      await updateCharacterCanvas(this.#characterId, changes);
+    }
 
     this.#initializeCanvas();
   }
 
   /**
-   * Apply a custom template.
+   * Apply a custom template (active page only).
    * @param {{ widgets: object[], canvasHeight?: number }} ct
    */
   async #applyCustomTemplate(ct) {
@@ -748,11 +1172,12 @@ export class CharacterPanel {
     this.#engine.destroy({ persist: false });
     this.#engine = null;
 
-    await updateCharacterCanvas(this.#characterId, {
-      widgets: newWidgets,
-      nextZIndex: newWidgets.length,
-      canvasHeight
-    });
+    const changes = { widgets: newWidgets, nextZIndex: newWidgets.length, canvasHeight };
+    if (this.#activePageId) {
+      await updateCharacterPageCanvas(this.#characterId, this.#activePageId, changes);
+    } else {
+      await updateCharacterCanvas(this.#characterId, changes);
+    }
 
     this.#initializeCanvas();
   }
@@ -763,17 +1188,16 @@ export class CharacterPanel {
   async #saveCurrentAsTemplate() {
     if (!this.#engine) return;
 
-    // Prompt for name using Foundry-native dialog (prompt() is unreliable in Electron)
     const name = await this.#promptTemplateName();
     if (!name) return;
 
-    // Flush pending save and WAIT for it to complete before reading
     await this.#engine.flushPendingSave();
 
-    // Now read the fresh data from settings
+    // Read from the active page or flat data
     const charData = getCharacterCanvas(this.#characterId);
-    const currentWidgets = charData?.widgets ?? [];
-    const canvasHeight = charData?.canvasHeight ?? 420;
+    const pageData = resolveCharacterPageData(charData, this.#activePageId);
+    const currentWidgets = pageData.widgets;
+    const canvasHeight = pageData.canvasHeight;
 
     const templateWidgets = currentWidgets.map(serializeWidgetForTemplate);
 
@@ -840,6 +1264,32 @@ export class CharacterPanel {
     const customs = this.#getCustomTemplates().filter(t => t.id !== id);
     await game.settings.set(MODULE_ID, 'characterTemplates', customs);
     ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.TemplateDeleted'));
+  }
+
+  /* ---------------------------------------- */
+  /*  Keyboard Shortcuts Help                 */
+  /* ---------------------------------------- */
+
+  #toggleShortcutsPopover(anchorBtn) {
+    const existing = this.#element?.querySelector('.sessionflow-shortcuts-popover');
+    if (existing) { existing.remove(); return; }
+
+    const hasPages = !!this.#activePageId;
+    const popover = buildShortcutsPopover({ showPageShortcuts: hasPages });
+
+    const toolbar = this.#element?.querySelector('.sessionflow-character-panel__toolbar');
+    if (toolbar) {
+      toolbar.style.position = 'relative';
+      toolbar.appendChild(popover);
+    }
+
+    const closeHandler = (e) => {
+      if (!popover.contains(e.target) && e.target !== anchorBtn) {
+        popover.remove();
+        document.removeEventListener('mousedown', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('mousedown', closeHandler), 0);
   }
 
   /* ---------------------------------------- */

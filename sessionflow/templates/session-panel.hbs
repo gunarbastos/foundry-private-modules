@@ -13,6 +13,23 @@
               title="{{ anchorLabel }}">
         <i class="fas fa-anchor"></i>
       </button>
+      {{#if showPlayerPanelEditor}}
+        <button class="sessionflow-panel__editor-btn" type="button"
+                data-action="edit-player-panel"
+                title="{{ playerPanelEditorLabel }}">
+          <i class="fas fa-users-cog"></i>
+        </button>
+      {{/if}}
+      {{#if showChronicleReview}}
+        <button class="sessionflow-panel__editor-btn" type="button"
+                data-action="open-chronicle-review"
+                title="{{ chronicleReviewLabel }}">
+          <i class="fas fa-book-reader"></i>
+          {{#if chronicleUnreadCount}}
+            <span class="sessionflow-panel__editor-badge">{{ chronicleUnreadCount }}</span>
+          {{/if}}
+        </button>
+      {{/if}}
       <button class="sessionflow-panel__close" type="button" aria-label="Close" data-action="close">
         <i class="fas fa-times"></i>
       </button>

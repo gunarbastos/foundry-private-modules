@@ -33,6 +33,9 @@
           </button>
         </div>
       {{/if}}
+      {{#if canEdit}}
+        <div class="sessionflow-page-tabs" style="display: none;"></div>
+      {{/if}}
       <button class="sessionflow-character-panel__close" type="button"
               aria-label="Close" data-action="close">
         <i class="fas fa-times"></i>
@@ -44,15 +47,13 @@
 
       {{!-- Hero Image (character portrait) --}}
       {{#if hasCharacterImage}}
-        {{#if isCharacterImageVideo}}
-          <div class="sessionflow-character-panel__hero">
-            <video src="{{ characterImage }}" autoplay loop muted playsinline></video>
-          </div>
-        {{else}}
-          <div class="sessionflow-character-panel__hero"
-               style="background-image: url('{{ characterImage }}');">
-          </div>
-        {{/if}}
+        <div class="sessionflow-character-panel__hero">
+          {{#if isCharacterImageVideo}}
+            <video src="{{ characterImage }}" autoplay loop muted playsinline preload="metadata"></video>
+          {{else}}
+            <img src="{{ characterImage }}" alt="{{ characterName }}" decoding="async" />
+          {{/if}}
+        </div>
       {{/if}}
 
       {{!-- Character Name --}}
@@ -76,6 +77,11 @@
                   type="button" data-action="open-templates"
                   title="{{ templateLabel }}">
             <i class="fas fa-layer-group"></i>
+          </button>
+          <button class="sessionflow-character-panel__toolbar-btn sessionflow-character-panel__toolbar-btn--shortcuts"
+                  type="button" data-action="show-shortcuts"
+                  title="{{ shortcutsLabel }}">
+            <i class="fas fa-keyboard"></i>
           </button>
         </div>
       {{/if}}

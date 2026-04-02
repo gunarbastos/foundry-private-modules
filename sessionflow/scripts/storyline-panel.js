@@ -5,6 +5,8 @@
  */
 
 import { getSession, getBeats, createBeat, updateBeat, deleteBeat, reorderBeats } from './session-store.js';
+import { resumeManagedVideos, suspendManagedVideos } from './media-utils.js';
+import { getCachedMediaPreview, requestMediaPreview, warmMediaPreviews } from './preview-cache.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -53,12 +55,15 @@ export class StorylinePanel {
 
     this.#isOpen = true;
     this.#element.dataset.open = 'true';
+    resumeManagedVideos(this.#element);
   }
 
   /** Close the panel. */
   close() {
     if (!this.#isOpen || !this.#element) return;
-    this.#cancelEdit();
+    suspendManagedVideos(this.#element);
+    this.#editingBeatId = null;
+    this.#dragBeatId = null;
     this.#isOpen = false;
     this.#element.dataset.open = 'false';
   }
@@ -72,6 +77,7 @@ export class StorylinePanel {
 
   /** Remove the panel from DOM entirely. */
   destroy() {
+    suspendManagedVideos(this.#element);
     this.#element?.remove();
     this.#element = null;
     this.#isOpen = false;
@@ -103,6 +109,7 @@ export class StorylinePanel {
 
     this.#activateShellListeners();
     this.#activateBodyListeners();
+    this.#hydrateDeferredPreviews();
   }
 
   async #rerenderBody() {
@@ -145,6 +152,11 @@ export class StorylinePanel {
     }
 
     this.#activateBodyListeners();
+    this.#hydrateDeferredPreviews();
+
+    if (this.#isOpen) {
+      resumeManagedVideos(this.#element);
+    }
   }
 
   #getTemplateData() {
@@ -165,14 +177,20 @@ export class StorylinePanel {
       backLabel: game.i18n.localize('SESSIONFLOW.Storyline.Back'),
       beatCount: beats.length > 0 ? beats.length : null,
       isAnchored: anchor?.panel === 'storyline' && anchor?.sessionId === this.#sessionId,
+      layout: game.settings.get(MODULE_ID, 'storylineLayout'),
       canEdit: game.user.isGM,
       beats: beats.map((b, i) => ({
         ...b,
+        previewSource: b.image || '',
+        previewImage: this.#isVideoSource(b.image) ? (b.image || '') : (b.image ? getCachedMediaPreview(b.image) : ''),
         isEditing: b.id === this.#editingBeatId,
-        hasImage: !!b.image,
+        hasPreviewImage: this.#isVideoSource(b.image) ? !!b.image : !!(b.image ? getCachedMediaPreview(b.image) : ''),
+        needsDeferredPreview: !!b.image && !this.#isVideoSource(b.image) && !(b.image ? getCachedMediaPreview(b.image) : ''),
+        renderPreviewAsVideo: this.#isVideoSource(b.image),
         isVideo: this.#isVideoSource(b.image),
         displayNumber: i + 1,
-        index: i
+        index: i,
+        sceneCount: b.scenes?.length || 0
       }))
     };
   }
@@ -297,10 +315,12 @@ export class StorylinePanel {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
-        // Determine drop position (left half = before, right half = after)
+        // Determine drop position (vertical: top/bottom, horizontal: left/right)
+        const isVertical = this.#element?.dataset.layout === 'vertical';
         const rect = card.getBoundingClientRect();
-        const midX = rect.left + rect.width / 2;
-        const isBefore = e.clientX < midX;
+        const isBefore = isVertical
+          ? e.clientY < (rect.top + rect.height / 2)
+          : e.clientX < (rect.left + rect.width / 2);
 
         card.classList.toggle('is-drop-before', isBefore);
         card.classList.toggle('is-drop-after', !isBefore);
@@ -315,9 +335,11 @@ export class StorylinePanel {
         card.classList.remove('is-drop-before', 'is-drop-after');
         if (!this.#dragBeatId || this.#dragBeatId === card.dataset.beatId) return;
 
+        const isVertical = this.#element?.dataset.layout === 'vertical';
         const rect = card.getBoundingClientRect();
-        const midX = rect.left + rect.width / 2;
-        const insertBefore = e.clientX < midX;
+        const insertBefore = isVertical
+          ? e.clientY < (rect.top + rect.height / 2)
+          : e.clientX < (rect.left + rect.width / 2);
 
         this.#onReorderBeat(this.#dragBeatId, card.dataset.beatId, insertBefore);
       });
@@ -426,53 +448,58 @@ export class StorylinePanel {
 
     card.classList.add('is-editing');
 
-    // Build image button HTML
-    const imagePreview = beat.image
-      ? (this.#isVideoSource(beat.image)
-          ? `<video src="${beat.image}" autoplay loop muted playsinline></video>`
-          : `<img src="${beat.image}" />`)
-      : '';
-    const imageHtml = beat.image
-      ? `${imagePreview}<span class="sessionflow-beat-edit__image-overlay"><i class="fas fa-camera"></i></span>`
-      : `<i class="fas fa-image"></i> <span>${game.i18n.localize('SESSIONFLOW.Storyline.BeatImageLabel')}</span>`;
-
     // Get session color for default
     const session = getSession(this.#sessionId);
     const defaultColor = beat.color || session?.color || '#7c5cbf';
 
-    // Replace card content with edit form
+    // Build background media
+    let mediaBg = '';
+    if (beat.image) {
+      mediaBg = this.#isVideoSource(beat.image)
+        ? `<video src="${beat.image}" autoplay loop muted playsinline preload="metadata"></video>`
+        : `<img src="${beat.image}" alt="" />`;
+    }
+
+    // Build image hint
+    const imageHint = beat.image
+      ? `<div class="sessionflow-beat-card__change-image-hint"><i class="fas fa-camera"></i></div>`
+      : `<div class="sessionflow-beat-card__empty-media-slot">
+          <div class="sessionflow-beat-card__add-image-hint">
+            <i class="fas fa-camera"></i>
+            <span>${game.i18n.localize('SESSIONFLOW.Storyline.ClickToAddImage')}</span>
+          </div>
+        </div>`;
+
+    // Replace card content with immersive edit form
     card.innerHTML = `
-      <button class="sessionflow-beat-edit__image-btn" type="button" data-action="pick-image">
-        ${imageHtml}
-      </button>
-      <div class="sessionflow-beat-edit__fields">
-        <div class="sessionflow-beat-edit__title-row">
-          <input class="sessionflow-beat-edit__title" type="text"
-                 value="${this.#escapeHtml(beat.title)}"
-                 placeholder="${game.i18n.localize('SESSIONFLOW.Storyline.BeatTitlePlaceholder')}"
-                 data-field="title" />
-          <input class="sessionflow-beat-edit__color" type="color"
-                 value="${defaultColor}"
-                 data-field="color"
-                 title="${game.i18n.localize('SESSIONFLOW.Storyline.BeatColorLabel')}" />
-        </div>
-        <textarea class="sessionflow-beat-edit__text"
-                  placeholder="${game.i18n.localize('SESSIONFLOW.Storyline.BeatTextPlaceholder')}"
-                  data-field="text" rows="2">${this.#escapeHtml(beat.text)}</textarea>
-        <div class="sessionflow-beat-edit__actions">
-          <button type="button" data-action="save-edit" title="${game.i18n.localize('SESSIONFLOW.Panel.SaveEdit')}">
-            <i class="fas fa-check"></i>
-          </button>
-          <button type="button" data-action="cancel-edit" title="${game.i18n.localize('SESSIONFLOW.Panel.CancelEdit')}">
-            <i class="fas fa-times"></i>
-          </button>
+      <div class="sessionflow-beat-card__media">${mediaBg}</div>
+      <div class="sessionflow-beat-card__edit-overlay" data-image-path="${this.#escapeAttr(beat.image || '')}">
+        ${imageHint}
+        <div class="sessionflow-beat-edit__fields">
+          <div class="sessionflow-beat-edit__title-row">
+            <input class="sessionflow-beat-edit__title" type="text"
+                   value="${this.#escapeHtml(beat.title)}"
+                   placeholder="${game.i18n.localize('SESSIONFLOW.Storyline.BeatTitlePlaceholder')}"
+                   data-field="title" />
+            <input class="sessionflow-beat-edit__color" type="color"
+                   value="${defaultColor}"
+                   data-field="color"
+                   title="${game.i18n.localize('SESSIONFLOW.Storyline.BeatColorLabel')}" />
+          </div>
+          <textarea class="sessionflow-beat-edit__text"
+                    placeholder="${game.i18n.localize('SESSIONFLOW.Storyline.BeatTextPlaceholder')}"
+                    data-field="text" rows="3">${this.#escapeHtml(beat.text)}</textarea>
+          <div class="sessionflow-beat-edit__actions">
+            <button type="button" data-action="save-edit" title="${game.i18n.localize('SESSIONFLOW.Panel.SaveEdit')}">
+              <i class="fas fa-check"></i>
+            </button>
+            <button type="button" data-action="cancel-edit" title="${game.i18n.localize('SESSIONFLOW.Panel.CancelEdit')}">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
-
-    // Store current image path on the image button
-    const imgBtn = card.querySelector('[data-action="pick-image"]');
-    if (beat.image) imgBtn.dataset.imagePath = beat.image;
 
     this.#activateEditListeners();
 
@@ -491,13 +518,13 @@ export class StorylinePanel {
     const titleInput = card.querySelector('[data-field="title"]');
     const textInput = card.querySelector('[data-field="text"]');
     const colorInput = card.querySelector('[data-field="color"]');
-    const imgBtn = card.querySelector('[data-action="pick-image"]');
+    const overlay = card.querySelector('.sessionflow-beat-card__edit-overlay');
 
     const changes = {};
     if (titleInput) changes.title = titleInput.value.trim() || game.i18n.localize('SESSIONFLOW.Storyline.DefaultBeatTitle');
     if (textInput) changes.text = textInput.value.trim();
     if (colorInput) changes.color = colorInput.value;
-    if (imgBtn) changes.image = imgBtn.dataset.imagePath || '';
+    if (overlay) changes.image = overlay.dataset.imagePath || '';
 
     await updateBeat(this.#sessionId, this.#editingBeatId, changes);
     this.#editingBeatId = null;
@@ -541,11 +568,12 @@ export class StorylinePanel {
         }
       });
 
-    // Image picker button
-    const imgBtn = editingCard.querySelector('[data-action="pick-image"]');
-    imgBtn?.addEventListener('click', (e) => {
+    // Image picker — click on the overlay background (not on form fields)
+    const overlay = editingCard.querySelector('.sessionflow-beat-card__edit-overlay');
+    overlay?.addEventListener('click', (e) => {
+      if (e.target.closest('input, textarea, button, .sessionflow-beat-edit__actions')) return;
       e.stopPropagation();
-      this.#openImagePicker(imgBtn);
+      this.#openImagePicker(overlay);
     });
   }
 
@@ -553,22 +581,38 @@ export class StorylinePanel {
   /*  Image Picker (FilePicker)               */
   /* ---------------------------------------- */
 
-  #openImagePicker(imageButton) {
-    const current = imageButton.dataset.imagePath || '';
+  #openImagePicker(overlayElement) {
+    const current = overlayElement.dataset.imagePath || '';
+    const card = overlayElement.closest('.sessionflow-beat-card');
 
     const picker = new FilePicker({
       type: 'image',
       current,
       callback: (path) => {
-        // Update the button preview
-        imageButton.dataset.imagePath = path;
-        const preview = this.#isVideoSource(path)
-          ? `<video src="${path}" autoplay loop muted playsinline></video>`
-          : `<img src="${path}" />`;
-        imageButton.innerHTML = `
-          ${preview}
-          <span class="sessionflow-beat-edit__image-overlay"><i class="fas fa-camera"></i></span>
-        `;
+        // Update the data attribute
+        overlayElement.dataset.imagePath = path;
+
+        // Update background media
+        const mediaDiv = card.querySelector('.sessionflow-beat-card__media');
+        const cachedPreview = getCachedMediaPreview(path);
+        if (cachedPreview) {
+          mediaDiv.innerHTML = `<img src="${this.#escapeAttr(cachedPreview)}" alt="" />`;
+        } else {
+          mediaDiv.innerHTML = this.#isVideoSource(path)
+            ? `<div class="sessionflow-beat-card__video-placeholder"><i class="fas fa-film"></i></div>`
+            : `<div class="sessionflow-beat-card__video-placeholder"><i class="fas fa-image"></i></div>`;
+
+          requestMediaPreview(path).then((previewPath) => {
+            if (!previewPath || !card?.isConnected) return;
+            mediaDiv.innerHTML = `<img src="${this.#escapeAttr(previewPath)}" alt="" />`;
+          });
+        }
+
+        // Swap hint from "add" to "change"
+        const emptyMediaSlot = overlayElement.querySelector('.sessionflow-beat-card__empty-media-slot');
+        if (emptyMediaSlot) {
+          emptyMediaSlot.outerHTML = `<div class="sessionflow-beat-card__change-image-hint"><i class="fas fa-camera"></i></div>`;
+        }
       }
     });
 
@@ -600,5 +644,58 @@ export class StorylinePanel {
     const div = document.createElement('div');
     div.textContent = str ?? '';
     return div.innerHTML;
+  }
+
+  #escapeAttr(str) {
+    return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+
+  #hydrateDeferredPreviews() {
+    if (!this.#element) return;
+
+    const pendingSources = new Set();
+
+    this.#element.querySelectorAll('[data-preview-src]').forEach((el) => {
+      const src = el.dataset.previewSrc;
+      if (!src) return;
+
+      const cached = getCachedMediaPreview(src);
+      if (cached) {
+        this.#applyDeferredPreview(el, cached);
+        return;
+      }
+
+      pendingSources.add(src);
+      requestMediaPreview(src).then((previewPath) => {
+        if (!previewPath || !this.#element?.contains(el)) return;
+        this.#applyDeferredPreview(el, previewPath);
+      });
+    });
+
+    if (pendingSources.size > 1) {
+      warmMediaPreviews([...pendingSources]);
+    }
+  }
+
+  #applyDeferredPreview(target, previewPath) {
+    if (!target || !previewPath) return;
+
+    target.innerHTML = `
+      <img src="${this.#escapeAttr(previewPath)}"
+           alt="${this.#escapeAttr(target.dataset.previewAlt || '')}"
+           loading="lazy"
+           decoding="async"
+           fetchpriority="low" />
+    `;
+
+    if (target.dataset.videoBackground === 'true' && !target.querySelector('.sessionflow-beat-card__media-badge')) {
+      target.insertAdjacentHTML('beforeend', `
+        <span class="sessionflow-beat-card__media-badge">
+          <i class="fas fa-film"></i>
+        </span>
+      `);
+    }
+
+    target.removeAttribute('data-preview-src');
   }
 }

@@ -54,7 +54,8 @@ export function getRegisteredTypes() {
       minHeight: WidgetClass.MIN_HEIGHT ?? 80,
       defaultWidth: WidgetClass.DEFAULT_WIDTH ?? 280,
       defaultHeight: WidgetClass.DEFAULT_HEIGHT ?? 200,
-      maxInstances: WidgetClass.MAX_INSTANCES ?? null
+      maxInstances: WidgetClass.MAX_INSTANCES ?? null,
+      playerModes: WidgetClass.PLAYER_MODES ?? null
     });
   }
   return types;
@@ -92,6 +93,19 @@ export class Widget {
   /** @type {number|null} Max instances of this widget type per canvas (null = unlimited) */
   static MAX_INSTANCES = null;
 
+  /** @type {string|null} i18n key for help tooltip text (null = no help button) */
+  static HELP = null;
+
+  /**
+   * Declares whether this widget is available in the player panel and in which modes.
+   * null           = GM-only (never shown in player panel)
+   * ['view']       = read-only display on player panel (GM-synced)
+   * ['own']        = available on player's own pages only (full control)
+   * ['view','own'] = read-only on GM base page, full control on player's own pages
+   * @type {string[]|null}
+   */
+  static PLAYER_MODES = null;
+
   /* -- Private fields -- */
 
   /** @type {string} */
@@ -114,6 +128,9 @@ export class Widget {
 
   /** @type {{ sessionId: string, beatId: string, sceneId: string }} */
   #context;
+
+  /** @type {'gm'|'player-view'|'player-own'} */
+  #mode;
 
   /* ---------------------------------------- */
   /*  Constructor                             */
@@ -138,6 +155,7 @@ export class Widget {
     this.#config = state.config ?? {};
     this.#context = context;
     this.#engine = engine;
+    this.#mode = context?.mode ?? 'gm';
   }
 
   /* ---------------------------------------- */
@@ -161,6 +179,26 @@ export class Widget {
 
   /** @returns {object} */
   get engine() { return this.#engine; }
+
+  /**
+   * Current widget mode.
+   * 'gm'          = full control (default, GM scene/character/editor panels)
+   * 'player-view' = read-only display (GM's base page on player panel)
+   * 'player-own'  = player has full control (player's own pages)
+   * @returns {'gm'|'player-view'|'player-own'}
+   */
+  get mode() { return this.#mode; }
+
+  /**
+   * Whether the current user can edit this widget's content.
+   * True for GMs (always) and players on their own pages.
+   * @returns {boolean}
+   */
+  get canEdit() {
+    if (this.#mode === 'player-view') return false;
+    if (this.#mode === 'player-own') return true;
+    return game.user.isGM;
+  }
 
   /** @returns {number} */
   get x() { return this.#state.x; }
@@ -214,6 +252,23 @@ export class Widget {
     title.textContent = this.getTitle();
     header.appendChild(title);
 
+    // Help button (if widget defines HELP)
+    if (this.constructor.HELP) {
+      const helpBtn = document.createElement('button');
+      helpBtn.className = 'sessionflow-widget__help-btn';
+      helpBtn.type = 'button';
+      helpBtn.textContent = '?';
+      helpBtn.addEventListener('mouseenter', (e) => {
+        e.stopPropagation();
+        this.#showHelpTooltip(helpBtn);
+      });
+      helpBtn.addEventListener('mouseleave', () => {
+        this.#hideHelpTooltip();
+      });
+      helpBtn.addEventListener('click', (e) => e.stopPropagation());
+      header.appendChild(helpBtn);
+    }
+
     const collapseBtn = document.createElement('button');
     collapseBtn.className = 'sessionflow-widget__collapse-btn';
     collapseBtn.type = 'button';
@@ -225,7 +280,7 @@ export class Widget {
     });
     header.appendChild(collapseBtn);
 
-    if (game.user.isGM) {
+    if (this.canEdit) {
       const removeBtn = document.createElement('button');
       removeBtn.className = 'sessionflow-widget__remove-btn';
       removeBtn.type = 'button';
@@ -349,6 +404,83 @@ export class Widget {
   }
 
   /* ---------------------------------------- */
+  /*  Help Tooltip                            */
+  /* ---------------------------------------- */
+
+  /** @type {HTMLElement|null} Active tooltip element */
+  #helpTooltip = null;
+
+  #showHelpTooltip(anchorEl) {
+    this.#hideHelpTooltip();
+
+    const raw = game.i18n.localize(this.constructor.HELP);
+    const lines = raw.split('\n').filter(l => l.trim());
+
+    const tip = document.createElement('div');
+    tip.className = 'sessionflow-widget__help-tooltip';
+
+    // Header: icon + widget name
+    const header = document.createElement('div');
+    header.className = 'sessionflow-help__header';
+    header.innerHTML = `<i class="${this.constructor.ICON}"></i><span>${this.getTitle()}</span>`;
+    tip.appendChild(header);
+
+    // Tagline (first line)
+    if (lines.length > 0) {
+      const tagline = document.createElement('div');
+      tagline.className = 'sessionflow-help__tagline';
+      tagline.textContent = lines[0];
+      tip.appendChild(tagline);
+    }
+
+    // Body lines
+    if (lines.length > 1) {
+      const body = document.createElement('div');
+      body.className = 'sessionflow-help__body';
+      for (let i = 1; i < lines.length; i++) {
+        const line = document.createElement('div');
+        const text = lines[i];
+        if (text.toLowerCase().startsWith('tip:')) {
+          line.className = 'sessionflow-help__tip';
+          line.innerHTML = `<i class="fas fa-lightbulb"></i><span>${text.substring(4).trim()}</span>`;
+        } else {
+          line.className = 'sessionflow-help__line';
+          line.textContent = text;
+        }
+        body.appendChild(line);
+      }
+      tip.appendChild(body);
+    }
+
+    document.body.appendChild(tip);
+
+    // Position below the button
+    const rect = anchorEl.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    let top = rect.bottom + 8;
+
+    // Keep within viewport
+    if (left + tipRect.width > window.innerWidth - 8) left = window.innerWidth - tipRect.width - 8;
+    if (left < 8) left = 8;
+    if (top + tipRect.height > window.innerHeight - 8) top = rect.top - tipRect.height - 8;
+
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+    tip.classList.add('is-visible');
+
+    this.#helpTooltip = tip;
+  }
+
+  #hideHelpTooltip() {
+    if (this.#helpTooltip) {
+      this.#helpTooltip.remove();
+      this.#helpTooltip = null;
+    }
+  }
+
+  /* ---------------------------------------- */
   /*  Collapse                                */
   /* ---------------------------------------- */
 
@@ -406,6 +538,7 @@ export class Widget {
    * @param {string} [reason='dispose'] - Destruction cause ('remove', 'engine-destroy', etc.).
    */
   destroy(reason = 'dispose') {
+    this.#hideHelpTooltip();
     this.#element?.remove();
     this.#element = null;
   }

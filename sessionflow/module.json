@@ -2,7 +2,7 @@
   "id": "sessionflow",
   "title": "SessionFlow",
   "description": "A session preparation and organization tool for Game Masters. Manage characters, events, notes and everything you need for your sessions.",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -22,7 +22,14 @@
     "styles/sessionflow-beat.css",
     "styles/sessionflow-scene.css",
     "styles/sessionflow-canvas.css",
-    "styles/sessionflow-character.css"
+    "styles/sessionflow-character.css",
+    "styles/sessionflow-map.css",
+    "styles/sessionflow-quest.css",
+    "styles/sessionflow-currency.css",
+    "styles/sessionflow-player.css",
+    "styles/sessionflow-player-widgets.css",
+    "styles/sessionflow-scribe.css",
+    "styles/sessionflow-chronicle.css"
   ],
   "languages": [
     {

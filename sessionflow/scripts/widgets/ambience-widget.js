@@ -18,6 +18,7 @@ export class AmbienceWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 240;
   static DEFAULT_HEIGHT = 260;
+  static HELP = 'SESSIONFLOW.Help.Ambience';
 
   /** @type {Record<string, number>} Hook IDs for Hooks.off cleanup */
   #hookIds = {};

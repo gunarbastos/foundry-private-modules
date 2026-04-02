@@ -11,7 +11,9 @@ const MODULE_ID = 'sessionflow';
 
 /** Duration presets in seconds */
 const PRESETS = [
+  { seconds: 30,   label: 'SESSIONFLOW.Canvas.TimerPreset30s' },
   { seconds: 60,   label: 'SESSIONFLOW.Canvas.TimerPreset1m' },
+  { seconds: 90,   label: 'SESSIONFLOW.Canvas.TimerPreset90s' },
   { seconds: 300,  label: 'SESSIONFLOW.Canvas.TimerPreset5m' },
   { seconds: 600,  label: 'SESSIONFLOW.Canvas.TimerPreset10m' },
   { seconds: 1800, label: 'SESSIONFLOW.Canvas.TimerPreset30m' }
@@ -26,6 +28,8 @@ export class TimerWidget extends Widget {
   static MIN_HEIGHT = 260;
   static DEFAULT_WIDTH = 300;
   static DEFAULT_HEIGHT = 260;
+  static PLAYER_MODES = ['view'];
+  static HELP = 'SESSIONFLOW.Help.Timer';
 
   /* -- Private fields -- */
 
@@ -52,6 +56,9 @@ export class TimerWidget extends Widget {
 
   /** @type {boolean} Whether initial state restoration has been done */
   #restored = false;
+
+  /** @type {Function|null} Bound socket handler for cleanup */
+  #socketHandler = null;
 
   /* ---------------------------------------- */
   /*  Helpers                                 */
@@ -91,6 +98,115 @@ export class TimerWidget extends Widget {
         requestAnimationFrame(() => this.#emitTimerState('startTimer'));
       }
     }
+
+    // In player-view mode, listen directly on socket for real-time sync
+    if (this.mode === 'player-view') {
+      this.#registerSocketSync();
+    }
+  }
+
+  /**
+   * Register a direct socket listener so the player-view widget syncs
+   * with the GM's timer in real-time (independent of Hooks pipeline).
+   */
+  #registerSocketSync() {
+    this.#socketHandler = (data) => {
+      if (!data?.action) return;
+      switch (data.action) {
+        case 'startTimer':  this.#onRemoteStart(data); break;
+        case 'pauseTimer':  this.#onRemotePause(data); break;
+        case 'stopTimer':   this.#onRemoteStop(); break;
+        case 'timerEnd':    this.#onRemoteEnd(); break;
+      }
+    };
+    game.socket.on(`module.${MODULE_ID}`, this.#socketHandler);
+  }
+
+  #onRemoteStart(data) {
+    // Stop any existing tick
+    if (this.#tickIntervalId) {
+      clearInterval(this.#tickIntervalId);
+      this.#tickIntervalId = null;
+    }
+
+    this.#isRunning = true;
+    this.#alertFired = false;
+
+    if (data.mode === 'countdown' && data.endTimestamp) {
+      // Derive timestamps: the GM's timer will end at endTimestamp
+      // elapsed = duration - remaining, but we use wall-clock: startTimestamp = endTimestamp - duration*1000
+      const durationMs = (data.duration ?? 300) * 1000;
+      this.#baseElapsedMs = 0;
+      this.#startTimestamp = data.endTimestamp - durationMs;
+      this.updateConfig({ mode: 'countdown', duration: data.duration ?? 300 });
+    } else if (data.startTimestamp) {
+      // Stopwatch: startTimestamp is the effective start
+      this.#baseElapsedMs = 0;
+      this.#startTimestamp = data.startTimestamp;
+      this.updateConfig({ mode: 'stopwatch' });
+    }
+
+    this.#tickIntervalId = setInterval(() => this.#onTick(), 100);
+    this.#updateDisplay();
+    this.#syncVisualState();
+  }
+
+  #onRemotePause(data) {
+    if (this.#tickIntervalId) {
+      clearInterval(this.#tickIntervalId);
+      this.#tickIntervalId = null;
+    }
+    this.#isRunning = false;
+    this.#baseElapsedMs = 0;
+    this.#startTimestamp = null;
+
+    // Compute baseElapsedMs from remaining so display is correct
+    if ((data.mode ?? 'countdown') === 'countdown') {
+      const elapsed = (data.duration ?? 300) - (data.remaining ?? 0);
+      this.#baseElapsedMs = elapsed * 1000;
+    } else {
+      this.#baseElapsedMs = (data.remaining ?? 0) * 1000;
+    }
+
+    this.#updateDisplay();
+    this.#syncVisualState();
+  }
+
+  #onRemoteStop() {
+    if (this.#tickIntervalId) {
+      clearInterval(this.#tickIntervalId);
+      this.#tickIntervalId = null;
+    }
+    this.#isRunning = false;
+    this.#baseElapsedMs = 0;
+    this.#startTimestamp = null;
+    this.#alertFired = false;
+
+    // Remove flash class
+    const container = this.element?.querySelector('.sessionflow-widget-timer');
+    if (container) container.classList.remove('is-ended');
+
+    this.#updateDisplay();
+    this.#syncVisualState();
+  }
+
+  #onRemoteEnd() {
+    if (this.#tickIntervalId) {
+      clearInterval(this.#tickIntervalId);
+      this.#tickIntervalId = null;
+    }
+    this.#isRunning = false;
+    this.#alertFired = true;
+
+    // Set display to 0 for countdown
+    if ((this.config.mode ?? 'countdown') === 'countdown') {
+      this.#baseElapsedMs = (this.config.duration ?? 300) * 1000;
+    }
+    this.#startTimestamp = null;
+
+    this.#updateDisplay();
+    this.#flashAnimation();
+    this.#syncVisualState();
   }
 
   /**
@@ -157,18 +273,22 @@ export class TimerWidget extends Widget {
       container.style.setProperty('--sf-timer-custom-color', this.config.color);
     }
 
-    // Mode toggle
-    this.#buildModeToggle(container);
+    // Mode toggle (editable mode only)
+    if (this.canEdit) {
+      this.#buildModeToggle(container);
+    }
 
     // Display area (ring + time)
     this.#buildDisplay(container);
 
-    // Controls row
-    this.#buildControls(container);
+    // Controls row (editable mode only)
+    if (this.canEdit) {
+      this.#buildControls(container);
 
-    // Presets (countdown only)
-    if ((this.config.mode ?? 'countdown') === 'countdown') {
-      this.#buildPresets(container);
+      // Presets (countdown only)
+      if ((this.config.mode ?? 'countdown') === 'countdown') {
+        this.#buildPresets(container);
+      }
     }
 
     bodyEl.appendChild(container);
@@ -347,53 +467,66 @@ export class TimerWidget extends Widget {
     });
     presets.appendChild(customBtn);
 
-    // Custom input
+    // Custom input (MM:SS)
     if (this.#showCustomInput) {
       const inputWrap = document.createElement('div');
       inputWrap.className = 'sessionflow-widget-timer__custom-wrap';
 
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.className = 'sessionflow-widget-timer__custom-input';
-      input.min = '1';
-      input.max = '999';
-      input.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.TimerCustomPlaceholder');
-      input.value = String(Math.round(currentDuration / 60));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const mins = parseInt(e.target.value);
-          if (mins > 0) {
-            this.#setDuration(mins * 60);
-            this.#showCustomInput = false;
-          }
-        }
-        if (e.key === 'Escape') {
-          e.preventDefault();
+      const currentMin = Math.floor(currentDuration / 60);
+      const currentSec = currentDuration % 60;
+
+      const minInput = document.createElement('input');
+      minInput.type = 'number';
+      minInput.className = 'sessionflow-widget-timer__custom-input sessionflow-widget-timer__custom-input--min';
+      minInput.min = '0';
+      minInput.max = '999';
+      minInput.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.TimerCustomMinPlaceholder');
+      minInput.value = String(currentMin);
+
+      const separator = document.createElement('span');
+      separator.className = 'sessionflow-widget-timer__custom-separator';
+      separator.textContent = ':';
+
+      const secInput = document.createElement('input');
+      secInput.type = 'number';
+      secInput.className = 'sessionflow-widget-timer__custom-input sessionflow-widget-timer__custom-input--sec';
+      secInput.min = '0';
+      secInput.max = '59';
+      secInput.placeholder = game.i18n.localize('SESSIONFLOW.Canvas.TimerCustomSecPlaceholder');
+      secInput.value = String(currentSec).padStart(2, '0');
+
+      const confirmCustom = () => {
+        const mins = parseInt(minInput.value) || 0;
+        const secs = Math.min(59, Math.max(0, parseInt(secInput.value) || 0));
+        const total = mins * 60 + secs;
+        if (total > 0) {
+          this.#setDuration(total);
           this.#showCustomInput = false;
-          this.#rerender();
         }
-      });
+      };
+
+      const handleKeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); confirmCustom(); }
+        if (e.key === 'Escape') { e.preventDefault(); this.#showCustomInput = false; this.#rerender(); }
+      };
+
+      minInput.addEventListener('keydown', handleKeydown);
+      secInput.addEventListener('keydown', handleKeydown);
 
       const confirmBtn = document.createElement('button');
       confirmBtn.type = 'button';
       confirmBtn.className = 'sessionflow-widget-timer__custom-confirm';
       confirmBtn.innerHTML = '<i class="fas fa-check"></i>';
-      confirmBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const mins = parseInt(input.value);
-        if (mins > 0) {
-          this.#setDuration(mins * 60);
-          this.#showCustomInput = false;
-        }
-      });
+      confirmBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmCustom(); });
 
-      inputWrap.appendChild(input);
+      inputWrap.appendChild(minInput);
+      inputWrap.appendChild(separator);
+      inputWrap.appendChild(secInput);
       inputWrap.appendChild(confirmBtn);
       presets.appendChild(inputWrap);
 
-      // Auto-focus
-      requestAnimationFrame(() => { input.focus(); input.select(); });
+      // Auto-focus minutes input
+      requestAnimationFrame(() => { minInput.focus(); minInput.select(); });
     }
 
     container.appendChild(presets);
@@ -426,6 +559,9 @@ export class TimerWidget extends Widget {
 
     this.#tickIntervalId = setInterval(() => this.#onTick(), 100);
     this.#updateDisplay();
+
+    // Persist running state so player panel can sync via playerPanelUpdate
+    this.engine.scheduleSave();
 
     if (this.#isBroadcasting) {
       this.#emitTimerState('startTimer');
@@ -717,6 +853,11 @@ export class TimerWidget extends Widget {
     if (this.#tickIntervalId) {
       clearInterval(this.#tickIntervalId);
       this.#tickIntervalId = null;
+    }
+    // Unregister socket sync (player-view mode)
+    if (this.#socketHandler) {
+      game.socket.off(`module.${MODULE_ID}`, this.#socketHandler);
+      this.#socketHandler = null;
     }
     // Don't stop broadcast — timer state is persisted and will auto-resume
     // when the panel reopens. Only clear the local interval.

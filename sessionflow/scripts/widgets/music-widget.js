@@ -17,6 +17,7 @@ export class MusicWidget extends Widget {
   static MIN_HEIGHT = 120;
   static DEFAULT_WIDTH = 240;
   static DEFAULT_HEIGHT = 260;
+  static HELP = 'SESSIONFLOW.Help.Music';
 
   /** @type {Record<string, number>} Hook IDs for Hooks.off cleanup */
   #hookIds = {};

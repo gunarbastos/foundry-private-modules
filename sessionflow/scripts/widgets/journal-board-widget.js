@@ -20,6 +20,7 @@ export class JournalBoardWidget extends Widget {
   static MIN_HEIGHT = 200;
   static DEFAULT_WIDTH = 360;
   static DEFAULT_HEIGHT = 340;
+  static HELP = 'SESSIONFLOW.Help.JournalBoard';
 
   /** @type {boolean} */
   #isSearchOpen = false;

@@ -4,7 +4,8 @@
  * @module panel
  */
 
-import { getSessions, createSession, updateSession, deleteSession } from './session-store.js';
+import { getSessions, createSession, updateSession, deleteSession, reorderSessions } from './session-store.js';
+import { listPlayerChronicles } from './chronicle-store.js';
 
 const MODULE_ID = 'sessionflow';
 
@@ -24,6 +25,9 @@ export class SessionPanel {
 
   /** @type {object|null} Temporary data for a session being created */
   #pendingCreate = null;
+
+  /** @type {string|null} Session ID currently being dragged for reorder */
+  #dragSessionId = null;
 
   /** @type {object|null} Active icon picker instance */
   #activeIconPicker = null;
@@ -154,6 +158,9 @@ export class SessionPanel {
   #getTemplateData() {
     const sessions = getSessions();
     const sessionCount = sessions.length;
+    const playerPanelEnabled = game.settings.get(MODULE_ID, 'playerPanelEnabled');
+    const chronicleEntries = game.user.isGM && playerPanelEnabled ? listPlayerChronicles() : [];
+    const chronicleUnreadCount = chronicleEntries.filter(entry => entry.unread).length;
 
     // Mark active session and determine icon type
     const sessionsData = sessions.map(s => ({
@@ -177,6 +184,11 @@ export class SessionPanel {
       sessionCount: sessionCount > 0 ? sessionCount : null,
       isAnchored: anchor?.panel === 'sessions',
       canCreate: game.user.isGM,
+      showPlayerPanelEditor: game.user.isGM && playerPanelEnabled,
+      playerPanelEditorLabel: game.i18n.localize('SESSIONFLOW.PlayerPanel.EditPlayerPanel'),
+      showChronicleReview: game.user.isGM && playerPanelEnabled,
+      chronicleReviewLabel: game.i18n.localize('SESSIONFLOW.ChronicleReview.Open'),
+      chronicleUnreadCount: chronicleUnreadCount > 0 ? chronicleUnreadCount : null,
       exportLabel: game.i18n.localize('SESSIONFLOW.Panel.ExportData'),
       importLabel: game.i18n.localize('SESSIONFLOW.Panel.ImportData'),
       sessions: sessionsData
@@ -211,6 +223,19 @@ export class SessionPanel {
     // Import button
     this.#element.querySelector('[data-action="import-data"]')
       ?.addEventListener('click', () => this.#importData());
+
+    // Edit Player Panel button (opens GM editor)
+    this.#element.querySelector('[data-action="edit-player-panel"]')
+      ?.addEventListener('click', () => {
+        this.closeQuiet();
+        Hooks.call('sessionflow:openPlayerPanelEditor');
+      });
+
+    this.#element.querySelector('[data-action="open-chronicle-review"]')
+      ?.addEventListener('click', () => {
+        this.closeQuiet();
+        Hooks.call('sessionflow:openChronicleReview');
+      });
 
     // Escape key
     document.addEventListener('keydown', (event) => {
@@ -269,6 +294,55 @@ export class SessionPanel {
 
     // Edit mode listeners (if in edit mode)
     this.#activateEditListeners();
+
+    // Drag-and-drop reorder (skip items being edited)
+    body.querySelectorAll('.sessionflow-session-list__item:not(.is-editing)').forEach(item => {
+      item.setAttribute('draggable', 'true');
+
+      item.addEventListener('dragstart', (e) => {
+        if (e.target.closest('.sessionflow-session-list__edit-btn, .sessionflow-session-list__delete-btn')) {
+          e.preventDefault();
+          return;
+        }
+        this.#dragSessionId = item.dataset.sessionId;
+        item.classList.add('is-drag-source');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.dataset.sessionId);
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('is-drag-source');
+        this.#dragSessionId = null;
+        body.querySelectorAll('.is-drop-before, .is-drop-after').forEach(el => {
+          el.classList.remove('is-drop-before', 'is-drop-after');
+        });
+      });
+
+      item.addEventListener('dragover', (e) => {
+        if (!this.#dragSessionId || this.#dragSessionId === item.dataset.sessionId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const rect = item.getBoundingClientRect();
+        const isBefore = e.clientY < (rect.top + rect.height / 2);
+        item.classList.toggle('is-drop-before', isBefore);
+        item.classList.toggle('is-drop-after', !isBefore);
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('is-drop-before', 'is-drop-after');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.classList.remove('is-drop-before', 'is-drop-after');
+        if (!this.#dragSessionId || this.#dragSessionId === item.dataset.sessionId) return;
+
+        const rect = item.getBoundingClientRect();
+        const insertBefore = e.clientY < (rect.top + rect.height / 2);
+        this.#onReorderSession(this.#dragSessionId, item.dataset.sessionId, insertBefore);
+      });
+    });
   }
 
   /* ---------------------------------------- */
@@ -312,6 +386,28 @@ export class SessionPanel {
       ui.notifications.info(game.i18n.localize('SESSIONFLOW.Notifications.SessionDeleted'));
       await this.rerender();
     }
+  }
+
+  /* ---------------------------------------- */
+  /*  Session Reorder (Drag & Drop)           */
+  /* ---------------------------------------- */
+
+  async #onReorderSession(draggedId, targetId, insertBefore) {
+    const sessions = getSessions();
+    const orderedIds = sessions.map(s => s.id);
+
+    const fromIndex = orderedIds.indexOf(draggedId);
+    if (fromIndex === -1) return;
+    orderedIds.splice(fromIndex, 1);
+
+    let toIndex = orderedIds.indexOf(targetId);
+    if (toIndex === -1) return;
+    if (!insertBefore) toIndex += 1;
+
+    orderedIds.splice(toIndex, 0, draggedId);
+
+    await reorderSessions(orderedIds);
+    await this.rerender();
   }
 
   /* ---------------------------------------- */
