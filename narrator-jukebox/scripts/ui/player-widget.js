@@ -6,6 +6,7 @@
 import { JUKEBOX, PROGRESS_UPDATE_INTERVAL } from '../core/constants.js';
 import { formatTime } from '../utils/time-format.js';
 import { playbackService } from '../services/playback-service.js';
+import { syncService } from '../services/sync-service.js';
 import { ambienceLayerManager } from '../core/ambience-layer-manager.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 
@@ -24,6 +25,10 @@ export class PlayerWidget {
     this._expectedLayerCount = 0; // Expected layer count when autoplay blocked
     this._userHasInteracted = false; // True after first user interaction
     this._pendingSync = null; // Pending sync state to apply after interaction
+    this._lastResyncRequestAt = 0;
+    this._domListenersBound = false;
+    this._dragListenersBound = false;
+    this._dragContext = null;
 
     // Bind methods
     this._onRemoteCommand = this._onRemoteCommand.bind(this);
@@ -31,6 +36,14 @@ export class PlayerWidget {
     this._onWindowResize = this._onWindowResize.bind(this);
     this._onAutoplayBlocked = this._onAutoplayBlocked.bind(this);
     this._onFirstInteraction = this._onFirstInteraction.bind(this);
+    this._onWindowFocus = this._onWindowFocus.bind(this);
+    this._onVisibilityChange = this._onVisibilityChange.bind(this);
+    this._onPageShow = this._onPageShow.bind(this);
+    this._onWidgetClick = this._onWidgetClick.bind(this);
+    this._onWidgetInput = this._onWidgetInput.bind(this);
+    this._onWidgetMouseDown = this._onWidgetMouseDown.bind(this);
+    this._onWidgetMouseMove = this._onWidgetMouseMove.bind(this);
+    this._onWidgetMouseUp = this._onWidgetMouseUp.bind(this);
   }
 
   /**
@@ -51,6 +64,9 @@ export class PlayerWidget {
 
     // Listen for window resize
     window.addEventListener('resize', this._onWindowResize);
+    window.addEventListener('focus', this._onWindowFocus);
+    window.addEventListener('pageshow', this._onPageShow);
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
 
     // Listen for first user interaction to unlock audio
     document.addEventListener('click', this._onFirstInteraction, { once: true });
@@ -163,8 +179,8 @@ export class PlayerWidget {
     if (this.activeTab === 'music') {
       return playbackService.channels?.music?.volume ?? 0.8;
     } else {
-      // Ambience tab uses master volume for layers
-      return playbackService.getAmbienceMasterVolume?.() ?? 0.8;
+      // Ambience tab uses a player-local global volume for ambience layers
+      return playbackService.getAmbienceClientVolume?.() ?? 1;
     }
   }
 
@@ -175,8 +191,8 @@ export class PlayerWidget {
     if (this.activeTab === 'music') {
       return playbackService.isMuted;
     } else {
-      // Ambience tab uses master mute for layers
-      return playbackService.isAmbienceMasterMuted?.() ?? false;
+      // Ambience tab uses a player-local mute for ambience layers
+      return playbackService.isAmbienceClientMuted?.() ?? false;
     }
   }
 
@@ -252,9 +268,9 @@ export class PlayerWidget {
       percent = progress.percent;
     }
 
-    // Ambience master volume
-    const masterVolume = playbackService.getAmbienceMasterVolume?.() ?? 0.8;
-    const isMasterMuted = playbackService.isAmbienceMasterMuted?.() ?? false;
+    // Player-local ambience layer volume
+    const ambienceVolume = playbackService.getAmbienceClientVolume?.() ?? 1;
+    const isAmbienceMuted = playbackService.isAmbienceClientMuted?.() ?? false;
 
     return `
       <div class="pw-header">
@@ -352,10 +368,10 @@ export class PlayerWidget {
         </div>
 
         <div class="pw-volume">
-          <button class="pw-vol-btn" id="pw-mute" title="${isMasterMuted ? 'Unmute All' : 'Mute All'}">
-            <i class="fas ${this._getVolumeIcon(masterVolume, isMasterMuted)}"></i>
+          <button class="pw-vol-btn" id="pw-mute" title="${isAmbienceMuted ? 'Unmute All' : 'Mute All'}">
+            <i class="fas ${this._getVolumeIcon(ambienceVolume, isAmbienceMuted)}"></i>
           </button>
-          <input type="range" class="pw-vol-slider" id="pw-volume-slider" min="0" max="100" value="${isMasterMuted ? 0 : masterVolume * 100}">
+          <input type="range" class="pw-vol-slider" id="pw-volume-slider" min="0" max="100" value="${isAmbienceMuted ? 0 : ambienceVolume * 100}">
         </div>
       `}
     `;
@@ -367,96 +383,169 @@ export class PlayerWidget {
     return 'fa-volume-down';
   }
 
+  _getTrackDisplayData(track, fallbackName = 'No Track', hiddenName = 'Now Playing') {
+    const isHidden = track?.hidden;
+    return {
+      displayName: isHidden ? hiddenName : (track?.name || fallbackName),
+      displayThumb: isHidden ? null : track?.thumbnail,
+      iconClass: isHidden ? 'fa-mask' : 'fa-music'
+    };
+  }
+
+  _renderArtworkContent(displayThumb, displayName, iconClass) {
+    return displayThumb
+      ? `<img src="${displayThumb}" alt="${displayName}">`
+      : `<div class="pw-art-placeholder"><i class="fas ${iconClass}"></i></div>`;
+  }
+
+  _updateMusicDisplay() {
+    if (!this.element || this.activeTab !== 'music' || this.isCompact) {
+      return;
+    }
+
+    const track = this._getCurrentTrack();
+    const isPlaying = this._isCurrentlyPlaying();
+    const { displayName, displayThumb, iconClass } = this._getTrackDisplayData(track);
+
+    const artworkEl = this.element.querySelector('.pw-artwork');
+    if (artworkEl) {
+      artworkEl.classList.toggle('pulsing', isPlaying);
+      artworkEl.innerHTML = this._renderArtworkContent(displayThumb, displayName, iconClass);
+    }
+
+    const nameEl = this.element.querySelector('.pw-track-name');
+    if (nameEl) {
+      nameEl.textContent = displayName;
+      nameEl.title = displayName;
+    }
+
+    this._updateProgress();
+    this._updateVolumeIcon();
+    this._updateVolumeSlider();
+  }
+
   /**
    * Activate widget event listeners
    */
   _activateListeners() {
-    // Compact mode listeners
-    if (this.isCompact) {
-      // Expand button
-      const expandBtn = this.element.querySelector('.pw-expand-btn');
-      if (expandBtn) {
-        expandBtn.addEventListener('click', () => {
-          this.isCompact = false;
-          this._updateCompactClass();
-          this._render();
-        });
-      }
-      // Drag functionality
-      this._initDrag();
+    if (!this.element || this._domListenersBound) {
       return;
     }
 
-    // Expanded mode listeners
+    this.element.addEventListener('click', this._onWidgetClick);
+    this.element.addEventListener('input', this._onWidgetInput);
+    this.element.addEventListener('mousedown', this._onWidgetMouseDown);
+    this._domListenersBound = true;
 
-    // Tab switching
-    this.element.querySelectorAll('.pw-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        const newTab = e.currentTarget.dataset.tab;
-        if (newTab !== this.activeTab) {
-          this.activeTab = newTab;
-          this._render();
-        }
-      });
-    });
+    if (!this._dragListenersBound) {
+      document.addEventListener('mousemove', this._onWidgetMouseMove);
+      document.addEventListener('mouseup', this._onWidgetMouseUp);
+      this._dragListenersBound = true;
+    }
+  }
 
-    // Minimize button
-    const minimizeBtn = this.element.querySelector('.pw-minimize-btn');
-    if (minimizeBtn) {
-      minimizeBtn.addEventListener('click', () => {
-        this.isCompact = true;
-        this._updateCompactClass();
+  _onWidgetClick(event) {
+    const expandBtn = event.target.closest('.pw-expand-btn');
+    if (expandBtn) {
+      this.isCompact = false;
+      this._updateCompactClass();
+      this._render();
+      return;
+    }
+
+    const tab = event.target.closest('.pw-tab');
+    if (tab) {
+      const newTab = tab.dataset.tab;
+      if (newTab && newTab !== this.activeTab) {
+        this.activeTab = newTab;
         this._render();
-      });
+      }
+      return;
     }
 
-    // Close button
-    this.element.querySelector('.pw-close').addEventListener('click', () => {
+    const minimizeBtn = event.target.closest('.pw-minimize-btn');
+    if (minimizeBtn) {
+      this.isCompact = true;
+      this._updateCompactClass();
+      this._render();
+      return;
+    }
+
+    if (event.target.closest('.pw-close')) {
       this.hide();
-    });
-
-    // Volume slider
-    const volSlider = this.element.querySelector('#pw-volume-slider');
-    if (volSlider) {
-      volSlider.addEventListener('input', (e) => {
-        const vol = parseFloat(e.target.value) / 100;
-
-        if (this.activeTab === 'music') {
-          playbackService.setVolume('music', vol);
-          // Persist preference
-          game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.VOLUME, vol);
-        } else {
-          // Ambience tab - use master volume for layers
-          playbackService.setAmbienceMasterVolume?.(vol);
-        }
-
-        this._updateVolumeIcon();
-      });
+      return;
     }
 
-    // Mute button
-    const muteBtn = this.element.querySelector('#pw-mute');
-    if (muteBtn) {
-      muteBtn.addEventListener('click', () => {
-        if (this.activeTab === 'music') {
-          playbackService.toggleMute('music');
-        } else {
-          // Ambience tab - use master mute for layers
-          playbackService.toggleAmbienceMasterMute?.();
-        }
-        this._updateVolumeIcon();
-        this._updateVolumeSlider();
-      });
+    if (event.target.closest('#pw-mute')) {
+      if (this.activeTab === 'music') {
+        playbackService.toggleMute('music');
+      } else {
+        playbackService.toggleAmbienceClientMute?.();
+      }
+      this._updateVolumeIcon();
+      this._updateVolumeSlider();
+      return;
     }
 
-    // Enable audio button (for autoplay blocked)
-    const enableAudioBtn = this.element.querySelector('.pw-enable-audio-btn');
-    if (enableAudioBtn) {
-      enableAudioBtn.addEventListener('click', () => this._enableAudio());
+    if (event.target.closest('.pw-enable-audio-btn')) {
+      void this._enableAudio();
+    }
+  }
+
+  _onWidgetInput(event) {
+    const slider = event.target.closest('#pw-volume-slider');
+    if (!slider) return;
+
+    const vol = parseFloat(slider.value) / 100;
+
+    if (this.activeTab === 'music') {
+      playbackService.setVolume('music', vol);
+      void game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.VOLUME, vol);
+    } else {
+      playbackService.setAmbienceClientVolume?.(vol);
     }
 
-    // Drag functionality
-    this._initDrag();
+    this._updateVolumeIcon();
+  }
+
+  _onWidgetMouseDown(event) {
+    if (!this.element || event.target.closest('button, input, .pw-tab')) {
+      return;
+    }
+
+    this.isDragging = true;
+    this._dragContext = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: this.position.left,
+      startTop: this.position.top
+    };
+    this.element.classList.add('dragging');
+    event.preventDefault();
+  }
+
+  _onWidgetMouseMove(event) {
+    if (!this.isDragging || !this._dragContext || !this.element) return;
+
+    const dx = event.clientX - this._dragContext.startX;
+    const dy = event.clientY - this._dragContext.startY;
+    const maxLeft = window.innerWidth - 150;
+    const maxTop = window.innerHeight - 250;
+
+    this.position.left = Math.max(10, Math.min(maxLeft, this._dragContext.startLeft + dx));
+    this.position.top = Math.max(10, Math.min(maxTop, this._dragContext.startTop + dy));
+
+    this.element.style.left = `${this.position.left}px`;
+    this.element.style.top = `${this.position.top}px`;
+  }
+
+  _onWidgetMouseUp() {
+    if (!this.isDragging || !this.element) return;
+
+    this.isDragging = false;
+    this._dragContext = null;
+    this.element.classList.remove('dragging');
+    this._savePosition();
   }
 
   /**
@@ -468,57 +557,6 @@ export class PlayerWidget {
     } else {
       this.element.classList.remove('compact');
     }
-  }
-
-  /**
-   * Initialize drag functionality (entire widget is draggable)
-   */
-  _initDrag() {
-    let startX, startY, startLeft, startTop;
-
-    const onMouseDown = (e) => {
-      // Skip if clicking on interactive elements
-      if (e.target.closest('button, input, .pw-tab')) {
-        return;
-      }
-
-      this.isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      startLeft = this.position.left;
-      startTop = this.position.top;
-      this.element.classList.add('dragging');
-      e.preventDefault();
-    };
-
-    const onMouseMove = (e) => {
-      if (!this.isDragging) return;
-
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-
-      // Bounds checking
-      const maxLeft = window.innerWidth - 150;
-      const maxTop = window.innerHeight - 250;
-
-      this.position.left = Math.max(10, Math.min(maxLeft, startLeft + dx));
-      this.position.top = Math.max(10, Math.min(maxTop, startTop + dy));
-
-      this.element.style.left = `${this.position.left}px`;
-      this.element.style.top = `${this.position.top}px`;
-    };
-
-    const onMouseUp = () => {
-      if (this.isDragging) {
-        this.isDragging = false;
-        this.element.classList.remove('dragging');
-        this._savePosition();
-      }
-    };
-
-    this.element.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
   }
 
   /**
@@ -580,6 +618,8 @@ export class PlayerWidget {
   _render() {
     if (!this.element) return;
     this.element.innerHTML = this._renderHTML();
+    this._updateCompactClass();
+    this._applyPosition();
     this._activateListeners();
   }
 
@@ -667,6 +707,32 @@ export class PlayerWidget {
     }
   }
 
+  _requestStateRefresh(reason = 'manual') {
+    if (game.user.isGM || document.visibilityState === 'hidden') return;
+    if (!syncService?.socket) return;
+
+    const now = Date.now();
+    if ((now - this._lastResyncRequestAt) < 1500) return;
+    this._lastResyncRequestAt = now;
+
+    debugLog(`PlayerWidget requesting sync refresh after ${reason}`);
+    syncService.requestState();
+  }
+
+  _onWindowFocus() {
+    this._requestStateRefresh('window focus');
+  }
+
+  _onVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+      this._requestStateRefresh('tab visible');
+    }
+  }
+
+  _onPageShow() {
+    this._requestStateRefresh('page show');
+  }
+
   // ==========================================
   // Event Handlers
   // ==========================================
@@ -740,22 +806,42 @@ export class PlayerWidget {
   /**
    * Handle general state changes
    */
-  _onStateChanged() {
-    if (this.isVisible) {
-      // If on ambience tab, do a full re-render to update layer list
+  _onStateChanged(payload = {}) {
+    if (!this.isVisible || !this.element) {
+      return;
+    }
+
+    const scope = payload.scope || 'full';
+
+    if (this.isCompact) {
+      if (scope !== 'soundboard' && scope !== 'mode') {
+        this._render();
+      }
+      return;
+    }
+
+    if (scope === 'playback') {
+      this._updateTabIndicators();
+      if (this.activeTab === 'music') {
+        this._updateMusicDisplay();
+      }
+      return;
+    }
+
+    if (scope === 'ambienceLayers') {
       if (this.activeTab === 'ambience') {
         this._render();
-        return;
+      } else {
+        this._updateTabIndicators();
       }
-
-      this._updateTabIndicators();
-      // Update artwork pulsing state
-      const artworkEl = this.element.querySelector('.pw-artwork');
-      if (artworkEl) {
-        const isPlaying = this._isCurrentlyPlaying();
-        artworkEl.classList.toggle('pulsing', isPlaying);
-      }
+      return;
     }
+
+    if (scope === 'soundboard' || scope === 'mode') {
+      return;
+    }
+
+    this._render();
   }
 
   /**
@@ -839,8 +925,24 @@ export class PlayerWidget {
     Hooks.off('narratorJukeboxStateChanged', this._onStateChanged);
     Hooks.off('narratorJukeboxAutoplayBlocked', this._onAutoplayBlocked);
     window.removeEventListener('resize', this._onWindowResize);
+    window.removeEventListener('focus', this._onWindowFocus);
+    window.removeEventListener('pageshow', this._onPageShow);
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
     document.removeEventListener('click', this._onFirstInteraction);
     document.removeEventListener('keydown', this._onFirstInteraction);
+    if (this.element && this._domListenersBound) {
+      this.element.removeEventListener('click', this._onWidgetClick);
+      this.element.removeEventListener('input', this._onWidgetInput);
+      this.element.removeEventListener('mousedown', this._onWidgetMouseDown);
+      this._domListenersBound = false;
+    }
+    if (this._dragListenersBound) {
+      document.removeEventListener('mousemove', this._onWidgetMouseMove);
+      document.removeEventListener('mouseup', this._onWidgetMouseUp);
+      this._dragListenersBound = false;
+    }
+    this._dragContext = null;
+    this.isDragging = false;
     if (this.element) {
       this.element.remove();
       this.element = null;

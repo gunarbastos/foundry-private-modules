@@ -143,6 +143,15 @@ function registerSettings() {
     default: 0.5
   });
 
+  // Ambience Layers Global Volume (per-client)
+  game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MASTER_VOLUME, {
+    name: "Ambience Layers Volume",
+    scope: "client",
+    config: false,
+    type: Number,
+    default: 1
+  });
+
   // Music Muted State (per-client)
   game.settings.register(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_MUTED, {
     name: "Music Muted",
@@ -450,7 +459,13 @@ Hooks.on('getSceneControlButtons', (controls) => {
 // Hooks - State Change Listener
 // ==========================================
 
-Hooks.on('narratorJukeboxStateChanged', () => {
+Hooks.on('narratorJukeboxStateChanged', (payload = {}) => {
   const app = Object.values(ui.windows).find(w => w.id === 'narrator-jukebox');
-  if (app) app.render(false);
+  if (!app) return;
+
+  if (typeof app.handleStateChange === 'function') {
+    app.handleStateChange(payload);
+  } else {
+    app.render(false);
+  }
 });

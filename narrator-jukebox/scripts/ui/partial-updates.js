@@ -5,8 +5,52 @@
  * @module ui/partial-updates
  */
 
+import { JUKEBOX } from '../core/constants.js';
 import { formatTime } from '../utils/time-format.js';
 import { localize } from '../utils/i18n.js';
+
+function escapeHTML(value) {
+    if (foundry?.utils?.escapeHTML) {
+        return foundry.utils.escapeHTML(String(value ?? ''));
+    }
+
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function buildNowPlayingSubtitle(app) {
+    const currentTrack = app.jukebox.channels.music.currentTrack;
+    const currentPlaylist = app.jukebox.currentPlaylist;
+
+    if (currentPlaylist?.name) {
+        return `<i class="fas fa-list-music"></i> ${escapeHTML(currentPlaylist.name)}`;
+    }
+
+    if (currentTrack) {
+        return '<i class="fas fa-music"></i> Library';
+    }
+
+    return 'Music';
+}
+
+function setBadgeCount(container, count, className = '') {
+    if (!container?.length) return;
+
+    let badge = container.find(`.badge${className ? `.${className}` : ''}`).first();
+    if (count > 0) {
+        if (!badge.length) {
+            badge = $(`<span class="badge${className ? ` ${className}` : ''}"></span>`);
+            container.append(badge);
+        }
+        badge.text(count).show();
+    } else if (badge.length) {
+        badge.remove();
+    }
+}
 
 /**
  * Update the "Now Playing" section for music
@@ -17,10 +61,11 @@ export function updateNowPlayingInfo(app, track) {
     const html = app.element;
     if (!html || !html.length) return;
 
-    const artEl = html.find('.music-section .now-playing-art img, .music-section .now-playing-art .art-placeholder');
+    const artContainer = html.find('.music-section .now-playing-art');
     const titleEl = html.find('#music-title');
     const artistEl = html.find('.np-artist');
     const tooltipEl = html.find('#music-title-tooltip');
+    const subtitleEl = html.find('.music-section .np-subtitle');
 
     if (track && track.name) {
         // Hide track info from non-GM players when track is marked as hidden (spoiler protection)
@@ -30,10 +75,11 @@ export function updateNowPlayingInfo(app, track) {
         // Update thumbnail
         if (isHidden) {
             // Replace with mask placeholder
-            const artContainer = html.find('.music-section .now-playing-art');
             artContainer.html('<div class="art-placeholder"><i class="fas fa-mask"></i></div>');
         } else if (track.thumbnail) {
-            artEl.attr('src', track.thumbnail).removeClass('art-placeholder');
+            artContainer.html(`<img src="${track.thumbnail}" alt="${escapeHTML(displayName)}">`);
+        } else {
+            artContainer.html('<div class="art-placeholder"><i class="fas fa-music"></i></div>');
         }
 
         // Update title text and tooltip
@@ -41,10 +87,13 @@ export function updateNowPlayingInfo(app, track) {
         tooltipEl.text(displayName);
         const tags = isHidden ? '' : (track.tags ? track.tags.join(', ') : localize('Player.SelectTrackToBegin'));
         artistEl.text(tags);
+        subtitleEl.html(buildNowPlayingSubtitle(app));
     } else {
+        artContainer.html('<div class="art-placeholder"><i class="fas fa-music"></i></div>');
         titleEl.text(localize('Player.NoMusicPlaying'));
         tooltipEl.text(localize('Player.NoMusicPlaying'));
         artistEl.text(localize('Player.SelectTrackToBegin'));
+        subtitleEl.html(buildNowPlayingSubtitle(app));
     }
 }
 
@@ -57,20 +106,23 @@ export function updateAmbienceInfo(app, track) {
     const html = app.element;
     if (!html || !html.length) return;
 
-    const artEl = html.find('.ambience-section .now-playing-art img, .ambience-section .now-playing-art .art-placeholder');
+    const artContainer = html.find('.ambience-section .now-playing-art');
     const titleEl = html.find('#ambience-title');
     const tooltipEl = html.find('#ambience-title-tooltip');
     const tagsEl = html.find('.ambience-np-tags');
 
     if (track && track.name) {
         if (track.thumbnail) {
-            artEl.attr('src', track.thumbnail).removeClass('art-placeholder');
+            artContainer.html(`<img src="${track.thumbnail}" alt="${escapeHTML(track.name)}">`);
+        } else {
+            artContainer.html('<div class="art-placeholder"><i class="fas fa-cloud-sun"></i></div>');
         }
         titleEl.text(track.name);
         tooltipEl.text(track.name);
         const tags = track.tags ? track.tags.join(', ') : '';
         tagsEl.text(tags);
     } else {
+        artContainer.html('<div class="art-placeholder"><i class="fas fa-cloud-sun"></i></div>');
         titleEl.text(localize('Player.NoAmbience'));
         tooltipEl.text(localize('Player.NoAmbience'));
         tagsEl.text(localize('Player.SelectAnAmbience'));
@@ -92,12 +144,17 @@ export function updatePlaybackState(app) {
     const loopBtn = html.find('#loop-btn i');
     const ambiencePlayBtn = html.find('#ambience-play-btn i');
     const ambienceLoopBtn = html.find('#ambience-loop-btn i');
+    const playBtnEl = html.find('#play-pause-btn');
+    const shuffleBtnEl = html.find('#shuffle-btn');
+    const loopBtnEl = html.find('#loop-btn');
 
     // Update music play/pause icon
     if (jukebox.isPlaying) {
-        playBtn.removeClass('fa-play-circle').addClass('fa-pause-circle');
+        playBtn.removeClass('fa-play fa-play-circle fa-pause-circle').addClass('fa-pause');
+        playBtnEl.attr('data-tooltip', localize('Player.Pause'));
     } else {
-        playBtn.removeClass('fa-pause-circle').addClass('fa-play-circle');
+        playBtn.removeClass('fa-pause fa-play-circle fa-pause-circle').addClass('fa-play');
+        playBtnEl.attr('data-tooltip', localize('Player.Play'));
     }
 
     // Update ambience play/pause icon
@@ -109,10 +166,12 @@ export function updatePlaybackState(app) {
 
     // Update shuffle state
     shuffleBtn.toggleClass('active', jukebox.shuffle);
+    shuffleBtnEl.attr('data-tooltip', jukebox.shuffle ? localize('Player.ShuffleOn') : localize('Player.ShuffleOff'));
 
     // Update loop states
     loopBtn.toggleClass('active', jukebox.musicLoop);
     ambienceLoopBtn.toggleClass('active', jukebox.ambienceLoop);
+    loopBtnEl.attr('data-tooltip', jukebox.musicLoop ? localize('Player.LoopOn') : localize('Player.LoopOff'));
 }
 
 /**
@@ -123,11 +182,11 @@ export function updatePlaybackState(app) {
 export function updatePlayButton(btn, isPlaying) {
     const icon = $(btn).find('i');
     if (isPlaying) {
-        icon.removeClass('fa-play-circle').addClass('fa-pause-circle');
-        btn.title = localize('Player.Pause');
+        icon.removeClass('fa-play fa-play-circle').addClass('fa-pause');
+        $(btn).attr('data-tooltip', localize('Player.Pause'));
     } else {
-        icon.removeClass('fa-pause-circle').addClass('fa-play-circle');
-        btn.title = localize('Player.Play');
+        icon.removeClass('fa-pause fa-pause-circle').addClass('fa-play');
+        $(btn).attr('data-tooltip', localize('Player.Play'));
     }
 }
 
@@ -155,6 +214,109 @@ export function updateModeToggle(app) {
         ? localize('Mode.PreviewTooltip')
         : localize('Mode.BroadcastTooltip');
     toggle.attr('data-tooltip', tooltipText);
+
+    const broadcastIndicator = html.find('.broadcast-indicator');
+    if (broadcastIndicator.length) {
+        broadcastIndicator.removeClass('preview broadcast').addClass(isPreview ? 'preview' : 'broadcast');
+        broadcastIndicator.find('i')
+            .removeClass('fa-headphones fa-broadcast-tower')
+            .addClass(isPreview ? 'fa-headphones' : 'fa-broadcast-tower');
+        broadcastIndicator.attr('data-tooltip', isPreview
+            ? 'Preview Mode - Only you can hear'
+            : 'Broadcast Mode - All players can hear');
+    }
+}
+
+/**
+ * Update music volume slider and mute icon without re-rendering the app.
+ * @param {NarratorsJukeboxApp} app - The application instance
+ */
+export function updateMusicVolume(app) {
+    const html = app.element;
+    if (!html || !html.length) return;
+
+    const volume = Math.round((app.jukebox.channels.music.volume || 0) * 100);
+    const isMuted = app.jukebox.isMuted;
+    const slider = html.find('#volume-slider');
+    const button = html.find('#mute-btn');
+    const icon = button.find('i');
+
+    if (slider.length) {
+        slider.val(volume);
+    }
+
+    icon.removeClass('fa-volume-mute fa-volume-off fa-volume-down fa-volume-up');
+    if (isMuted || volume === 0) {
+        icon.addClass('fa-volume-mute');
+        button.attr('data-tooltip', localize('Player.Unmute'));
+    } else if (volume > 50) {
+        icon.addClass('fa-volume-up');
+        button.attr('data-tooltip', localize('Player.Mute'));
+    } else {
+        icon.addClass('fa-volume-down');
+        button.attr('data-tooltip', localize('Player.Mute'));
+    }
+}
+
+/**
+ * Update active/playing classes for visible music items without re-rendering lists.
+ * @param {NarratorsJukeboxApp} app - The application instance
+ */
+export function updateMusicTrackRows(app) {
+    const html = app.element;
+    if (!html || !html.length) return;
+
+    const currentId = app.jukebox.channels.music.currentTrack?.id || null;
+    const nextId = app._getNextTrack()?.id || null;
+    const isPlaying = app.jukebox.isPlaying;
+
+    html.find('.play-music-btn[data-music-id]').each((_, element) => {
+        const row = $(element);
+        const musicId = row.data('musicId');
+        const isCurrent = musicId === currentId;
+        const isNext = musicId === nextId;
+
+        row.toggleClass('active', isCurrent);
+        row.toggleClass('playing', isCurrent && isPlaying);
+        row.toggleClass('paused', isCurrent && !isPlaying);
+        row.toggleClass('up-next', isNext);
+
+        const titleWrapper = row.find('.t-name').first();
+        if (titleWrapper.length) {
+            let nextBadge = titleWrapper.find('.next-badge');
+            if (isNext) {
+                if (!nextBadge.length) {
+                    titleWrapper.append('<span class="next-badge" data-tooltip="Up Next" data-tooltip-position="top">NEXT</span>');
+                }
+            } else if (nextBadge.length) {
+                nextBadge.remove();
+            }
+        }
+    });
+}
+
+/**
+ * Update sidebar/header badges that reflect active ambience layers, soundboard sounds, and suggestions.
+ * @param {NarratorsJukeboxApp} app - The application instance
+ */
+export function updateSidebarBadges(app) {
+    const html = app.element;
+    if (!html || !html.length) return;
+
+    const ambienceCount = app.jukebox.getAmbienceLayerCount?.() || 0;
+    const soundboardCount = app.jukebox.activeSoundboardSounds?.size || 0;
+    const suggestionsCount = (game.settings.get(JUKEBOX.ID, 'suggestions') || []).length;
+
+    setBadgeCount(html.find('.nav-item[data-view="ambience"]'), ambienceCount, 'ambience-badge');
+    setBadgeCount(html.find('.nav-item[data-view="soundboard"]'), soundboardCount, 'soundboard-badge');
+    setBadgeCount(html.find('.nav-item[data-view="suggestions"]'), suggestionsCount);
+
+    const ambienceLayerBadge = html.find('.ambience-layer-badge');
+    if (ambienceLayerBadge.length) {
+        ambienceLayerBadge
+            .text(`${ambienceCount}/8`)
+            .toggleClass('at-limit', ambienceCount >= 8);
+    }
 }
 
 /**

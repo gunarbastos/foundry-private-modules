@@ -150,10 +150,10 @@ export function validateRange(value, min, max) {
  */
 export function normalizeTags(tagsStr) {
   if (!tagsStr) return [];
-  return tagsStr
+  return [...new Set(tagsStr
     .split(',')
     .map(t => t.trim().toLowerCase())
-    .filter(t => t.length > 0);
+    .filter(t => t.length > 0))];
 }
 
 /**

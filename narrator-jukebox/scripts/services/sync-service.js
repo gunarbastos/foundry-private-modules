@@ -674,6 +674,59 @@ class SyncService {
     }
   }
 
+  _applySyncedChannelVolume(channel, volume) {
+    if (volume === undefined) return;
+
+    if (game.user.isGM) {
+      this.playbackService.channels[channel].setVolume(volume);
+      return;
+    }
+
+    const settingKey = channel === 'music'
+      ? JUKEBOX.SETTINGS.VOLUME
+      : JUKEBOX.SETTINGS.AMBIENCE_VOLUME;
+    const muteKey = channel === 'music'
+      ? JUKEBOX.SETTINGS.MUSIC_MUTED
+      : JUKEBOX.SETTINGS.AMBIENCE_MUTED;
+    const playerVolume = game.settings.get(JUKEBOX.ID, settingKey);
+    const isMuted = game.settings.get(JUKEBOX.ID, muteKey);
+    this.playbackService.channels[channel].setVolume(isMuted ? 0 : playerVolume);
+  }
+
+  _channelHasPlaybackInstance(channel) {
+    return !!(channel?.audioElement || channel?.youtubePlayer);
+  }
+
+  _isChannelActivelyPlaying(channel) {
+    if (!channel) return false;
+
+    if (channel.audioElement) {
+      return !channel.audioElement.paused && !channel.audioElement.ended;
+    }
+
+    if (typeof YT !== 'undefined' && channel.youtubePlayer?.getPlayerState) {
+      try {
+        const state = channel.youtubePlayer.getPlayerState();
+        return state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING;
+      } catch (error) {}
+    }
+
+    return false;
+  }
+
+  _shouldResyncMusicPosition(channel, targetTime = 0) {
+    if (!targetTime) return false;
+    const currentTime = channel?.currentTime || 0;
+    return Math.abs(currentTime - targetTime) > 2;
+  }
+
+  _seekMusicChannelToTime(channel, targetTime = 0) {
+    if (!targetTime) return;
+    const duration = channel?.duration;
+    if (!duration) return;
+    channel.seek(targetTime / duration * 100);
+  }
+
   async _handleSyncState(payload) {
     // Ensure data is loaded (use || to ensure both are loaded)
     if (this.dataService.music.length === 0 || this.dataService.ambience.length === 0) {
@@ -699,33 +752,23 @@ class SyncService {
       }
 
       const currentId = this.playbackService.channels.music.currentTrack?.id;
+      const musicChannel = this.playbackService.channels.music;
+      const sameTrack = currentId === payload.musicTrackId;
+      const hasInstance = this._channelHasPlaybackInstance(musicChannel);
+      const isActuallyPlaying = this._isChannelActivelyPlaying(musicChannel);
 
-      if (track && currentId !== payload.musicTrackId) {
-        // Set playing state BEFORE calling play() (matches _handlePlayCommand pattern)
+      this._applySyncedChannelVolume('music', payload.volume);
+
+      if (track && (!sameTrack || !hasInstance)) {
         if (payload.isPlaying) {
           this.playbackService.isPlaying = true;
         }
 
-        // Apply volume: players use their own saved preference, GM uses broadcast volume
-        if (game.user.isGM) {
-          if (payload.volume !== undefined) {
-            this.playbackService.channels.music.setVolume(payload.volume);
-          }
-        } else {
-          const playerVolume = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.VOLUME);
-          const isMuted = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_MUTED);
-          this.playbackService.channels.music.setVolume(isMuted ? 0 : playerVolume);
-        }
-
         try {
-          await this.playbackService.channels.music.play(track, () => {
-            // Seek to GM's current position after track loads
-            const duration = this.playbackService.channels.music.duration;
-            if (duration && payload.musicTime) {
-              this.playbackService.channels.music.seek(payload.musicTime / duration * 100);
-            }
+          await musicChannel.play(track, () => {
+            this._seekMusicChannelToTime(musicChannel, payload.musicTime);
             if (!payload.isPlaying) {
-              this.playbackService.channels.music.pause();
+              musicChannel.pause();
               this.playbackService.isPlaying = false;
             }
           });
@@ -733,7 +776,30 @@ class SyncService {
           debugError(' Sync state music playback failed:', err);
           this.playbackService.isPlaying = false;
         }
+      } else if (track && sameTrack) {
+        this._seekMusicChannelToTime(
+          musicChannel,
+          this._shouldResyncMusicPosition(musicChannel, payload.musicTime) ? payload.musicTime : 0
+        );
+
+        if (payload.isPlaying) {
+          if (!isActuallyPlaying) {
+            musicChannel.resume();
+          }
+          this.playbackService.isPlaying = true;
+        } else {
+          if (isActuallyPlaying) {
+            musicChannel.pause();
+          }
+          this.playbackService.isPlaying = false;
+        }
       }
+    } else {
+      const musicChannel = this.playbackService.channels.music;
+      if (musicChannel.currentTrack || this.playbackService.isPlaying || this._channelHasPlaybackInstance(musicChannel)) {
+        musicChannel.stop();
+      }
+      this.playbackService.isPlaying = false;
     }
 
     // Sync Ambience (legacy single-track mode)
@@ -749,28 +815,22 @@ class SyncService {
       }
 
       const currentId = this.playbackService.channels.ambience.currentTrack?.id;
+      const ambienceChannel = this.playbackService.channels.ambience;
+      const sameTrack = currentId === payload.ambienceTrackId;
+      const hasInstance = this._channelHasPlaybackInstance(ambienceChannel);
+      const isActuallyPlaying = this._isChannelActivelyPlaying(ambienceChannel);
 
-      if (track && currentId !== payload.ambienceTrackId) {
-        // Set playing state BEFORE calling play()
+      this._applySyncedChannelVolume('ambience', payload.ambienceVolume);
+
+      if (track && (!sameTrack || !hasInstance)) {
         if (payload.isAmbiencePlaying) {
           this.playbackService.isAmbiencePlaying = true;
         }
 
-        // Apply volume: players use their own saved preference
-        if (game.user.isGM) {
-          if (payload.ambienceVolume !== undefined) {
-            this.playbackService.channels.ambience.setVolume(payload.ambienceVolume);
-          }
-        } else {
-          const playerVolume = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_VOLUME);
-          const isMuted = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MUTED);
-          this.playbackService.channels.ambience.setVolume(isMuted ? 0 : playerVolume);
-        }
-
         try {
-          await this.playbackService.channels.ambience.play(track, () => {
+          await ambienceChannel.play(track, () => {
             if (!payload.isAmbiencePlaying) {
-              this.playbackService.channels.ambience.pause();
+              ambienceChannel.pause();
               this.playbackService.isAmbiencePlaying = false;
             }
           });
@@ -778,7 +838,25 @@ class SyncService {
           debugError(' Sync state ambience playback failed:', err);
           this.playbackService.isAmbiencePlaying = false;
         }
+      } else if (track && sameTrack) {
+        if (payload.isAmbiencePlaying) {
+          if (!isActuallyPlaying) {
+            ambienceChannel.resume();
+          }
+          this.playbackService.isAmbiencePlaying = true;
+        } else {
+          if (isActuallyPlaying) {
+            ambienceChannel.pause();
+          }
+          this.playbackService.isAmbiencePlaying = false;
+        }
       }
+    } else {
+      const ambienceChannel = this.playbackService.channels.ambience;
+      if (ambienceChannel.currentTrack || this.playbackService.isAmbiencePlaying || this._channelHasPlaybackInstance(ambienceChannel)) {
+        ambienceChannel.stop();
+      }
+      this.playbackService.isAmbiencePlaying = false;
     }
 
     // Sync Ambience Layers (new multi-layer mode)
@@ -923,8 +1001,6 @@ class SyncService {
           }
         }
     }
-
-    Hooks.call('narratorJukeboxStateChanged');
   }
 }
 

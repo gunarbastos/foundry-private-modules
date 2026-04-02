@@ -51,13 +51,38 @@ export function activateSelectionListeners(app, html) {
     html.on('click', '.select-all-checkbox', (e) => {
         e.stopPropagation();
         const checked = e.currentTarget.checked;
-        const visibleIds = getVisibleIds(html, 'library');
+        const visibleIds = getRootLevelIds(html, 'library');
 
         if (checked) {
             app.selectAllVisible(visibleIds);
         } else {
-            app.deselectAll();
+            app.setTrackSelection(visibleIds, false);
         }
+    });
+
+    // Folder selection button
+    html.on('click', '.folder-select-btn', (e) => {
+        if (!app.selectionMode) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const section = $(e.currentTarget).closest('.folder-section');
+        toggleFolderSelection(app, section, app.view);
+    });
+
+    // Folder header selection (selection mode only; chevron keeps collapse behavior)
+    html.on('click', '.folder-header', (e) => {
+        if (!app.selectionMode) return;
+        if ($(e.target).closest('.folder-actions, .folder-edit-btn, .folder-toggle, .folder-select-btn').length) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const section = $(e.currentTarget).closest('.folder-section');
+        toggleFolderSelection(app, section, app.view);
     });
 
     // Ctrl+Click and Shift+Click on music track rows
@@ -312,11 +337,15 @@ export function activateSelectionListeners(app, html) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
             if (app.selectionMode) {
                 e.preventDefault();
-                const visibleIds = getVisibleIds(html, app.view);
+                const visibleIds = getRootLevelIds(html, app.view);
                 app.selectAllVisible(visibleIds);
             }
         }
     });
+
+    if (app.selectionMode) {
+        app._updateSelectionUI();
+    }
 }
 
 /**
@@ -344,6 +373,76 @@ function getVisibleIds(html, view) {
         });
     }
     return ids;
+}
+
+/**
+ * Get root-level visible item IDs only, excluding items already inside folders.
+ * @param {jQuery} html - The HTML element
+ * @param {string} view - The current view ('library', 'ambience', 'soundboard')
+ * @returns {string[]} Array of item IDs
+ */
+function getRootLevelIds(html, view) {
+    const ids = [];
+
+    if (view === 'library') {
+        html.find('#view-library .track-list > .track-row[data-music-id]').each((_, el) => {
+            const id = $(el).data('musicId');
+            if (id) ids.push(id);
+        });
+    } else if (view === 'ambience') {
+        html.find('#view-ambience > .ambience-layer-grid > .ambience-card[data-ambience-id]').each((_, el) => {
+            const id = $(el).data('ambienceId');
+            if (id) ids.push(id);
+        });
+    } else if (view === 'soundboard') {
+        html.find('#view-soundboard > .soundboard-grid > .soundboard-card[data-sound-id]').each((_, el) => {
+            const id = $(el).data('soundId');
+            if (id) ids.push(id);
+        });
+    }
+
+    return ids;
+}
+
+/**
+ * Get all item IDs inside a folder section for the given view.
+ * @param {jQuery} section - Folder section element
+ * @param {string} view - Current view
+ * @returns {string[]} Array of contained item IDs
+ */
+function getFolderIds(section, view) {
+    const ids = [];
+
+    if (view === 'library') {
+        section.find('.track-row[data-music-id]').each((_, el) => {
+            const id = $(el).data('musicId');
+            if (id) ids.push(id);
+        });
+    } else if (view === 'ambience') {
+        section.find('.ambience-card[data-ambience-id]').each((_, el) => {
+            const id = $(el).data('ambienceId');
+            if (id) ids.push(id);
+        });
+    } else if (view === 'soundboard') {
+        section.find('.soundboard-card[data-sound-id]').each((_, el) => {
+            const id = $(el).data('soundId');
+            if (id) ids.push(id);
+        });
+    }
+
+    return ids;
+}
+
+/**
+ * Toggle selection for every item inside a folder.
+ * @param {NarratorsJukeboxApp} app - The application instance
+ * @param {jQuery} section - Folder section element
+ * @param {string} view - Current view
+ */
+function toggleFolderSelection(app, section, view) {
+    const ids = getFolderIds(section, view);
+    if (!ids.length) return;
+    app.toggleTrackGroup(ids);
 }
 
 // ==========================================

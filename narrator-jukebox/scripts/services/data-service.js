@@ -7,6 +7,17 @@ import { JUKEBOX } from '../core/constants.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { extractYouTubeVideoId, getYouTubeThumbnail, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
 
+const SETTING_BY_COLLECTION = Object.freeze({
+  music: JUKEBOX.SETTINGS.MUSIC,
+  ambience: JUKEBOX.SETTINGS.AMBIENCE,
+  soundboard: JUKEBOX.SETTINGS.SOUNDBOARD,
+  playlists: JUKEBOX.SETTINGS.PLAYLISTS,
+  ambiencePresets: JUKEBOX.SETTINGS.AMBIENCE_PRESETS,
+  musicFolders: JUKEBOX.SETTINGS.MUSIC_FOLDERS,
+  ambienceFolders: JUKEBOX.SETTINGS.AMBIENCE_FOLDERS,
+  soundboardFolders: JUKEBOX.SETTINGS.SOUNDBOARD_FOLDERS
+});
+
 /**
  * DataService - Manages persistent data operations
  * All data is stored in Foundry's game.settings
@@ -22,6 +33,9 @@ class DataService {
     this.ambienceFolders = [];
     this.soundboardFolders = [];
     this._initialized = false;
+    this._dirtyCollections = new Set();
+    this._pendingSavePromise = null;
+    this._batchDepth = 0;
   }
 
   /**
@@ -67,7 +81,7 @@ class DataService {
       if (musicMigration.changed || ambienceMigration.changed || soundboardMigration.changed) {
         debugLog(' Healed stored track metadata for YouTube entries');
         if (game.user?.isGM) {
-          await this.saveAllData();
+          await this.saveAllData({ collections: ['music', 'ambience', 'soundboard'] });
         }
       }
     } catch (err) {
@@ -79,20 +93,102 @@ class DataService {
   /**
    * Save all data to Foundry settings
    */
-  async saveAllData() {
-    debugLog(" DataService saving all data...");
+  async saveAllData({ collections = null, immediate = false } = {}) {
+    this._markDirtyCollections(collections);
+
+    if (this._batchDepth > 0 && !immediate) {
+      return;
+    }
+
+    await this._flushDirtyCollections();
+  }
+
+  async runInBatch(work) {
+    this._batchDepth++;
     try {
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC, JSON.stringify(this.music));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE, JSON.stringify(this.ambience));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD, JSON.stringify(this.soundboard));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.PLAYLISTS, JSON.stringify(this.playlists));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.MUSIC_FOLDERS, JSON.stringify(this.musicFolders));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_FOLDERS, JSON.stringify(this.ambienceFolders));
-      await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.SOUNDBOARD_FOLDERS, JSON.stringify(this.soundboardFolders));
-      debugLog(" DataService saved all data successfully.");
-    } catch (err) {
-      debugError("DataService save failed:", err);
-      throw err;
+      return await work();
+    } finally {
+      this._batchDepth = Math.max(0, this._batchDepth - 1);
+      if (this._batchDepth === 0) {
+        await this._flushDirtyCollections();
+      }
+    }
+  }
+
+  _markDirtyCollections(collections = null) {
+    for (const collection of this._normalizeCollectionList(collections)) {
+      this._dirtyCollections.add(collection);
+    }
+  }
+
+  _normalizeCollectionList(collections = null) {
+    const list = Array.isArray(collections) && collections.length
+      ? collections
+      : Object.keys(SETTING_BY_COLLECTION);
+
+    return [...new Set(list)].filter(collection => collection in SETTING_BY_COLLECTION);
+  }
+
+  async _flushDirtyCollections() {
+    if (this._pendingSavePromise) {
+      return this._pendingSavePromise;
+    }
+
+    if (!this._dirtyCollections.size) {
+      return;
+    }
+
+    this._pendingSavePromise = (async () => {
+      try {
+        while (this._dirtyCollections.size) {
+          const collections = Array.from(this._dirtyCollections);
+          this._dirtyCollections.clear();
+
+          debugLog(` DataService saving collections: ${collections.join(', ')}`);
+          for (let i = 0; i < collections.length; i++) {
+            const collection = collections[i];
+
+            try {
+              await this._saveCollection(collection);
+            } catch (err) {
+              for (const unsavedCollection of collections.slice(i)) {
+                this._dirtyCollections.add(unsavedCollection);
+              }
+              throw err;
+            }
+          }
+        }
+
+        debugLog(' DataService saved pending collections successfully.');
+      } catch (err) {
+        debugError('DataService save failed:', err);
+        throw err;
+      } finally {
+        this._pendingSavePromise = null;
+      }
+    })();
+
+    return this._pendingSavePromise;
+  }
+
+  async _saveCollection(collection) {
+    const settingKey = SETTING_BY_COLLECTION[collection];
+    if (!settingKey) return;
+
+    await game.settings.set(JUKEBOX.ID, settingKey, JSON.stringify(this._getCollectionValue(collection)));
+  }
+
+  _getCollectionValue(collection) {
+    switch (collection) {
+      case 'music': return this.music;
+      case 'ambience': return this.ambience;
+      case 'soundboard': return this.soundboard;
+      case 'playlists': return this.playlists;
+      case 'ambiencePresets': return this.ambiencePresets;
+      case 'musicFolders': return this.musicFolders;
+      case 'ambienceFolders': return this.ambienceFolders;
+      case 'soundboardFolders': return this.soundboardFolders;
+      default: return null;
     }
   }
 
@@ -110,7 +206,7 @@ class DataService {
       track.id = foundry.utils.randomID();
     }
     this.music.push(track);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['music'] });
     debugLog(" Music saved. Total tracks:", this.music.length);
     return track;
   }
@@ -123,8 +219,8 @@ class DataService {
   async updateMusic(id, data) {
     const index = this.music.findIndex(m => m.id === id);
     if (index !== -1) {
-      this.music[index] = { ...this.music[index], ...data };
-      await this.saveAllData();
+      Object.assign(this.music[index], data);
+      await this.saveAllData({ collections: ['music'] });
       return this.music[index];
     }
     return null;
@@ -141,7 +237,7 @@ class DataService {
       p.musicIds = p.musicIds.filter(mid => mid !== id);
       if (p.trackSettings) delete p.trackSettings[id];
     });
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['music', 'playlists'] });
   }
 
   /**
@@ -160,7 +256,7 @@ class DataService {
         for (const id of ids) delete p.trackSettings[id];
       }
     });
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['music', 'playlists'] });
     return before - this.music.length;
   }
 
@@ -181,7 +277,7 @@ class DataService {
         count++;
       }
     }
-    if (count > 0) await this.saveAllData();
+    if (count > 0) await this.saveAllData({ collections: ['music'] });
     return count;
   }
 
@@ -202,7 +298,7 @@ class DataService {
         count++;
       }
     }
-    if (count > 0) await this.saveAllData();
+    if (count > 0) await this.saveAllData({ collections: ['music'] });
     return count;
   }
 
@@ -219,6 +315,33 @@ class DataService {
    */
   getAllMusic() {
     return [...this.music];
+  }
+
+  async addTracksBatch(library, tracks = []) {
+    if (!Array.isArray(tracks) || tracks.length === 0) {
+      return [];
+    }
+
+    if (!['music', 'ambience', 'soundboard'].includes(library)) {
+      throw new Error(`Unknown track library "${library}".`);
+    }
+
+    const trackArray = this._getTrackArray(library);
+
+    return this.runInBatch(async () => {
+      const createdTracks = tracks.map(track => {
+        const preparedTrack = this._normalizeStoredTrack({
+          ...track,
+          id: track.id || foundry.utils.randomID()
+        }).track;
+        trackArray.push(preparedTrack);
+        return preparedTrack;
+      });
+
+      await this.saveAllData({ collections: [library] });
+      debugLog(` Bulk-saved ${createdTracks.length} ${library} track(s).`);
+      return createdTracks;
+    });
   }
 
   /**
@@ -295,7 +418,7 @@ class DataService {
       track.id = foundry.utils.randomID();
     }
     this.ambience.push(track);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['ambience'] });
     debugLog(" Ambience saved. Total tracks:", this.ambience.length);
     return track;
   }
@@ -309,7 +432,7 @@ class DataService {
     const index = this.ambience.findIndex(a => a.id === id);
     if (index !== -1) {
       this.ambience[index] = { ...this.ambience[index], ...data };
-      await this.saveAllData();
+      await this.saveAllData({ collections: ['ambience'] });
       return this.ambience[index];
     }
     return null;
@@ -321,7 +444,7 @@ class DataService {
    */
   async deleteAmbience(id) {
     this.ambience = this.ambience.filter(a => a.id !== id);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['ambience'] });
   }
 
   /**
@@ -348,7 +471,7 @@ class DataService {
     const idSet = new Set(ids);
     const before = this.ambience.length;
     this.ambience = this.ambience.filter(a => !idSet.has(a.id));
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['ambience'] });
     return before - this.ambience.length;
   }
 
@@ -369,7 +492,7 @@ class DataService {
         count++;
       }
     }
-    if (count > 0) await this.saveAllData();
+    if (count > 0) await this.saveAllData({ collections: ['ambience'] });
     return count;
   }
 
@@ -390,7 +513,7 @@ class DataService {
         count++;
       }
     }
-    if (count > 0) await this.saveAllData();
+    if (count > 0) await this.saveAllData({ collections: ['ambience'] });
     return count;
   }
 
@@ -408,7 +531,7 @@ class DataService {
       sound.id = foundry.utils.randomID();
     }
     this.soundboard.push(sound);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['soundboard'] });
     debugLog(" Soundboard saved. Total sounds:", this.soundboard.length);
     return sound;
   }
@@ -422,7 +545,7 @@ class DataService {
     const index = this.soundboard.findIndex(s => s.id === id);
     if (index !== -1) {
       this.soundboard[index] = { ...this.soundboard[index], ...data };
-      await this.saveAllData();
+      await this.saveAllData({ collections: ['soundboard'] });
       return this.soundboard[index];
     }
     return null;
@@ -434,7 +557,7 @@ class DataService {
    */
   async deleteSoundboardSound(id) {
     this.soundboard = this.soundboard.filter(s => s.id !== id);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['soundboard'] });
   }
 
   /**
@@ -446,7 +569,7 @@ class DataService {
     const idSet = new Set(ids);
     const before = this.soundboard.length;
     this.soundboard = this.soundboard.filter(s => !idSet.has(s.id));
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['soundboard'] });
     return before - this.soundboard.length;
   }
 
@@ -483,7 +606,7 @@ class DataService {
       trackSettings: {}
     };
     this.playlists.push(playlist);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return playlist;
   }
 
@@ -498,7 +621,7 @@ class DataService {
     if (!playlist) return null;
 
     Object.assign(playlist, data);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return playlist;
   }
 
@@ -517,7 +640,7 @@ class DataService {
     duplicate.name = name?.trim() || `${playlist.name} Copy`;
 
     this.playlists.push(duplicate);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return duplicate;
   }
 
@@ -538,7 +661,7 @@ class DataService {
 
     const [playlist] = this.playlists.splice(currentIndex, 1);
     this.playlists.splice(boundedIndex, 0, playlist);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return playlist;
   }
 
@@ -548,7 +671,7 @@ class DataService {
    */
   async deletePlaylist(id) {
     this.playlists = this.playlists.filter(p => p.id !== id);
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
   }
 
   /**
@@ -562,7 +685,7 @@ class DataService {
 
     if (!playlist.musicIds.includes(musicId)) {
       playlist.musicIds.push(musicId);
-      await this.saveAllData();
+      await this.saveAllData({ collections: ['playlists'] });
     }
     return playlist;
   }
@@ -590,7 +713,7 @@ class DataService {
     }
 
     if (added > 0) {
-      await this.saveAllData();
+      await this.saveAllData({ collections: ['playlists'] });
     }
 
     return { added, skipped, playlist };
@@ -610,7 +733,7 @@ class DataService {
     if (playlist.trackSettings) {
       delete playlist.trackSettings[musicId];
     }
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return playlist;
   }
 
@@ -630,7 +753,7 @@ class DataService {
     const current = playlist.trackSettings[musicId].loop || false;
     playlist.trackSettings[musicId].loop = !current;
 
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return !current;
   }
 
@@ -644,7 +767,7 @@ class DataService {
     if (!playlist) return false;
 
     playlist.loop = !playlist.loop;
-    await this.saveAllData();
+    await this.saveAllData({ collections: ['playlists'] });
     return playlist.loop;
   }
 
@@ -723,6 +846,15 @@ class DataService {
     }
   }
 
+  _getFolderCollectionKey(library) {
+    switch (library) {
+      case 'music': return 'musicFolders';
+      case 'ambience': return 'ambienceFolders';
+      case 'soundboard': return 'soundboardFolders';
+      default: return null;
+    }
+  }
+
   async createFolder(library, { name, color, icon }) {
     const folders = this._getFolderArray(library);
     const folder = {
@@ -733,7 +865,7 @@ class DataService {
       order: folders.length
     };
     folders.push(folder);
-    await this.saveAllData();
+    await this.saveAllData({ collections: [this._getFolderCollectionKey(library)] });
     debugLog(` Created folder "${name}" in ${library}`);
     return folder;
   }
@@ -743,7 +875,7 @@ class DataService {
     const idx = folders.findIndex(f => f.id === id);
     if (idx === -1) return null;
     folders[idx] = { ...folders[idx], ...data };
-    await this.saveAllData();
+    await this.saveAllData({ collections: [this._getFolderCollectionKey(library)] });
     return folders[idx];
   }
 
@@ -754,7 +886,7 @@ class DataService {
     this._getTrackArray(library).forEach(track => {
       if (track.folderId === id) delete track.folderId;
     });
-    await this.saveAllData();
+    await this.saveAllData({ collections: [library, this._getFolderCollectionKey(library)] });
     debugLog(` Deleted folder ${id} from ${library}`);
   }
 
@@ -770,7 +902,7 @@ class DataService {
         }
       }
     }
-    await this.saveAllData();
+    await this.saveAllData({ collections: [library] });
   }
 
   async reorderFolders(library, orderedIds) {
@@ -782,7 +914,7 @@ class DataService {
       return f;
     }).filter(Boolean);
     this._setFolderArray(library, reordered);
-    await this.saveAllData();
+    await this.saveAllData({ collections: [this._getFolderCollectionKey(library)] });
   }
 
   getFolders(library) {
@@ -1000,7 +1132,7 @@ class DataService {
    * @private
    */
   async _saveAmbiencePresets() {
-    await game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_PRESETS, JSON.stringify(this.ambiencePresets));
+    await this.saveAllData({ collections: ['ambiencePresets'] });
   }
 }
 

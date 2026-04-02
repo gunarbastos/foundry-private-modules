@@ -29,6 +29,15 @@ export class AudioChannel {
 
     // Tracks an in-flight YouTube load so we can retry or fail deterministically.
     this._pendingYouTubeLoad = null;
+
+    // Tracks an in-flight YouTube player creation so we don't stack players.
+    this._pendingYouTubePlayerCreation = null;
+
+    // Monotonic token for the active YouTube player instance.
+    this._youtubePlayerToken = 0;
+
+    // Delayed fallback that forces a fade-in if YouTube playback starts muted.
+    this._youtubeFadeSafetyTimeout = null;
   }
 
   async initialize() {
@@ -75,6 +84,30 @@ export class AudioChannel {
     }
   }
 
+  _clampVolume(value) {
+    const numeric = Number.isFinite(value) ? value : parseFloat(value);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.max(0, Math.min(numeric, 1));
+  }
+
+  /**
+   * Keep the slider value for UI/settings, but shape music playback so
+   * low values are easier to control and max volume is less aggressive.
+   */
+  _getEffectiveVolume(value = this.volume) {
+    const normalized = this._clampVolume(value);
+
+    if (this.name !== 'music') {
+      return normalized;
+    }
+
+    return Math.min(Math.pow(normalized, 2) * 0.7, 1);
+  }
+
+  _getEffectiveYouTubeVolume(value = this.volume) {
+    return Math.round(this._getEffectiveVolume(value) * 100);
+  }
+
   /**
    * Start an interval that is NOT tracked in activeIntervals.
    * Used for fade-outs on detached audio elements that must complete
@@ -94,6 +127,7 @@ export class AudioChannel {
     // 1. Atomic Reset: Stop all pending fades/actions
     this.clearAllIntervals();
     this._clearYouTubeCrossfade();
+    this._clearYouTubeFadeSafetyTimeout();
 
     // Normalize legacy/embedded track shapes before validating.
     // Older suggestion payloads used `path` instead of `url` and sometimes omitted `source`.
@@ -142,9 +176,7 @@ export class AudioChannel {
             // Check if this play was superseded by a newer play() call during the await
             if (this._playGeneration !== generation) {
                 debugLog(`Play superseded for ${track.name}, cleaning up stale audio`);
-                newAudio.pause();
-                this._removeAudioListeners(newAudio);
-                if (newAudio.remove) newAudio.remove();
+                this._teardownLocalAudio(newAudio);
                 return;
             }
 
@@ -221,20 +253,7 @@ export class AudioChannel {
     this._ensureYouTubeDiv();
     await this._loadYouTubeVideo(videoId);
 
-    // Safety net: if onStateChange(PLAYING) fired but volume stayed at 0, force fade-in.
-    setTimeout(() => {
-      if (this.youtubePlayer && this.currentTrack) {
-        try {
-          const currentVol = this.youtubePlayer.getVolume?.() || 0;
-          if (currentVol === 0) {
-            debugWarn(`YouTube ${this.name}: volume still 0 after 3s, forcing fade-in`);
-            this.fadeInYouTube();
-          }
-        } catch (e) {
-          debugWarn(`YouTube ${this.name}: volume check failed:`, e);
-        }
-      }
-    }, 3000);
+    this._scheduleYouTubeFadeSafety();
   }
 
   _clearPendingYouTubeLoad() {
@@ -255,7 +274,55 @@ export class AudioChannel {
     pending?.reject?.(error);
   }
 
+  _clearPendingYouTubePlayerCreation() {
+    const pending = this._pendingYouTubePlayerCreation;
+    if (!pending) return null;
+    clearTimeout(pending.timeoutId);
+    this._pendingYouTubePlayerCreation = null;
+    return pending;
+  }
+
+  _rejectPendingYouTubePlayerCreation(error) {
+    const pending = this._clearPendingYouTubePlayerCreation();
+    pending?.reject?.(error);
+  }
+
+  _clearYouTubeFadeSafetyTimeout() {
+    if (this._youtubeFadeSafetyTimeout) {
+      clearTimeout(this._youtubeFadeSafetyTimeout);
+      this._youtubeFadeSafetyTimeout = null;
+    }
+  }
+
+  _scheduleYouTubeFadeSafety() {
+    this._clearYouTubeFadeSafetyTimeout();
+
+    const player = this.youtubePlayer;
+    const token = this._youtubePlayerToken;
+
+    this._youtubeFadeSafetyTimeout = setTimeout(() => {
+      this._youtubeFadeSafetyTimeout = null;
+
+      if (!player || this.youtubePlayer !== player || token !== this._youtubePlayerToken || !this.currentTrack) {
+        return;
+      }
+
+      try {
+        const currentVol = player.getVolume?.() || 0;
+        if (currentVol === 0) {
+          debugWarn(`YouTube ${this.name}: volume still 0 after 3s, forcing fade-in`);
+          this.fadeInYouTube();
+        }
+      } catch (e) {
+        debugWarn(`YouTube ${this.name}: volume check failed:`, e);
+      }
+    }, 3000);
+  }
+
   _destroyYouTubePlayer() {
+    this._youtubePlayerToken++;
+    this._clearYouTubeFadeSafetyTimeout();
+    this._rejectPendingYouTubePlayerCreation(new Error(`YouTube player reset for ${this.name}`));
     this._rejectPendingYouTubeLoad(new Error(`YouTube player reset for ${this.name}`));
     this._clearYouTubeCrossfade();
 
@@ -322,22 +389,35 @@ export class AudioChannel {
   async createYouTubePlayer() {
     await window.NarratorJukeboxYTReady;
 
+    if (this.youtubePlayer && this.youtubeReady && this.youtubePlayer.loadVideoById) {
+      return;
+    }
+
+    if (this._pendingYouTubePlayerCreation?.promise) {
+      return this._pendingYouTubePlayerCreation.promise;
+    }
+
+    if (this.youtubePlayer && !this.youtubeReady) {
+      this._destroyYouTubePlayer();
+    }
+
     // Ensure container div exists
     this._ensureYouTubeDiv();
 
-    return new Promise((resolve, reject) => {
+    const token = ++this._youtubePlayerToken;
+
+    let creationPromise;
+    creationPromise = new Promise((resolve, reject) => {
         let settled = false;
 
-        // Timeout: if onReady never fires (blocked iframe, network issue), don't hang forever
-        const timeout = setTimeout(() => {
-            if (!settled) {
-                settled = true;
-                debugError(`YouTube player creation timed out for ${this.name}`);
-                this.youtubePlayer = null;
-                this.youtubeReady = false;
-                reject(new Error(`YouTube player creation timed out for ${this.name}`));
+        const finish = (callback, value) => {
+            if (settled) return;
+            settled = true;
+            if (this._pendingYouTubePlayerCreation?.token === token) {
+                this._clearPendingYouTubePlayerCreation();
             }
-        }, 15000);
+            callback(value);
+        };
 
         // Note: Do NOT use host: 'youtube-nocookie.com' — it causes error 150
         // on HTTP pages (cross-origin postMessage fails HTTP↔HTTPS).
@@ -351,21 +431,31 @@ export class AudioChannel {
             autoplay: 0,
             controls: 0
         };
-        this.youtubePlayer = new YT.Player(`jukebox-yt-${this.name}`, {
+        const player = new YT.Player(`jukebox-yt-${this.name}`, {
             height: '200', width: '200',
             playerVars: playerConfig,
             events: {
                 'onReady': () => {
-                    if (!settled) {
-                        settled = true;
-                        clearTimeout(timeout);
-                        this.youtubeReady = true;
-                        debugLog(`YouTube player ready for ${this.name}`);
-                        Hooks.call('narratorJukeboxTrackLoaded', this.name);
-                        resolve();
+                    if (token !== this._youtubePlayerToken || this.youtubePlayer !== player) {
+                        try {
+                            player.destroy?.();
+                        } catch (error) {}
+                        return;
                     }
+
+                    this.youtubeReady = true;
+                    debugLog(`YouTube player ready for ${this.name}`);
+                    Hooks.call('narratorJukeboxTrackLoaded', this.name);
+                    finish(resolve);
                 },
                 'onError': (e) => {
+                    if (token !== this._youtubePlayerToken || this.youtubePlayer !== player) {
+                        try {
+                            player.destroy?.();
+                        } catch (error) {}
+                        return;
+                    }
+
                     const failingUrl = this.currentTrack?.url || this.currentTrack?.path || null;
                     const failingVideoId = failingUrl ? this.extractYouTubeId(failingUrl) : null;
                     const error = this._createYouTubeError(e.data);
@@ -382,14 +472,14 @@ export class AudioChannel {
                         classifiedError: error
                     });
                     this._rejectPendingYouTubeLoad(error);
-                    if (!settled) {
-                        settled = true;
-                        clearTimeout(timeout);
-                        reject(error);
-                    }
+                    finish(reject, error);
                     // Errors after player was ready are logged but don't crash
                 },
                 'onStateChange': (e) => {
+                    if (token !== this._youtubePlayerToken || this.youtubePlayer !== player) {
+                        return;
+                    }
+
                     if (e.data === YT.PlayerState.PLAYING) {
                         this._resolvePendingYouTubeLoad();
                         this.fadeInYouTube();
@@ -406,7 +496,32 @@ export class AudioChannel {
                 }
             }
         });
+
+        this.youtubePlayer = player;
+        this.youtubeReady = false;
+
+        const timeoutId = setTimeout(() => {
+            if (settled || token !== this._youtubePlayerToken || this.youtubePlayer !== player) {
+                return;
+            }
+
+            debugError(`YouTube player creation timed out for ${this.name}`);
+            this.youtubePlayer = null;
+            this.youtubeReady = false;
+            finish(reject, new Error(`YouTube player creation timed out for ${this.name}`));
+        }, 15000);
+
+        this._pendingYouTubePlayerCreation = {
+            promise: null,
+            reject,
+            timeoutId,
+            token
+        };
     });
+
+    this._pendingYouTubePlayerCreation.promise = creationPromise;
+
+    return creationPromise;
   }
 
   /**
@@ -415,7 +530,7 @@ export class AudioChannel {
    */
   fadeIn(audio) {
     const duration = this.crossfadeDuration;
-    const targetVol = this.volume;
+    const targetVol = this._getEffectiveVolume();
 
     if (duration <= 0) {
       if (audio) audio.volume = targetVol;
@@ -446,7 +561,7 @@ export class AudioChannel {
     if (!this.youtubePlayer) return;
 
     const duration = this.crossfadeDuration;
-    const target = this.volume * 100;
+    const target = this._getEffectiveYouTubeVolume();
 
     if (duration <= 0) {
       if (this.youtubePlayer?.setVolume) this.youtubePlayer.setVolume(target);
@@ -484,8 +599,7 @@ export class AudioChannel {
     const initialVol = audio.volume;
 
     if (duration <= 0) {
-      audio.pause();
-      if (audio.remove) audio.remove();
+      this._teardownLocalAudio(audio, { removeListeners: false });
       return;
     }
 
@@ -497,8 +611,7 @@ export class AudioChannel {
 
       if (progress >= 1.0) {
         audio.volume = 0;
-        audio.pause();
-        if (audio.remove) audio.remove();
+        this._teardownLocalAudio(audio, { removeListeners: false });
         clearInterval(id);
       } else {
         audio.volume = Math.max(initialVol * curve, 0);
@@ -514,7 +627,7 @@ export class AudioChannel {
     if (!this.youtubePlayer) return;
 
     const duration = this.crossfadeDuration;
-    const currentVol = this.youtubePlayer.getVolume?.() ?? this.volume * 100;
+    const currentVol = this.youtubePlayer.getVolume?.() ?? this._getEffectiveYouTubeVolume();
 
     if (duration <= 0) {
       this.youtubePlayer.stopVideo?.();
@@ -539,11 +652,12 @@ export class AudioChannel {
   }
 
   stop() {
+    this._playGeneration++; // Cancel any play() call that is still resolving on this channel.
     this.clearAllIntervals(); // Stop any fades
+    this._clearYouTubeFadeSafetyTimeout();
 
     if (this.audioElement) {
-        this._removeAudioListeners(this.audioElement); // Prevent phantom triggers
-        this.audioElement.pause();
+        this._teardownLocalAudio(this.audioElement);
         this.audioElement = null;
     }
     if (this.youtubePlayer) {
@@ -554,6 +668,7 @@ export class AudioChannel {
 
   pause() {
     this.clearAllIntervals(); // Stop fades
+    this._clearYouTubeFadeSafetyTimeout();
     if (this.audioElement) this.audioElement.pause();
     if (this.youtubePlayer && this.youtubePlayer.pauseVideo) this.youtubePlayer.pauseVideo();
   }
@@ -565,14 +680,17 @@ export class AudioChannel {
   }
 
   setVolume(val) {
-    this.volume = val;
+    this.volume = this._clampVolume(val);
     // If a fade is happening, we don't want to snap volume, BUT
     // the user expects immediate feedback.
     // Decision: Clear fades and set volume immediately.
     this.clearAllIntervals();
 
-    if (this.audioElement) this.audioElement.volume = val;
-    if (this.youtubePlayer && this.youtubePlayer.setVolume) this.youtubePlayer.setVolume(val * 100);
+    const effectiveVolume = this._getEffectiveVolume();
+    const youtubeVolume = this._getEffectiveYouTubeVolume();
+
+    if (this.audioElement) this.audioElement.volume = effectiveVolume;
+    if (this.youtubePlayer && this.youtubePlayer.setVolume) this.youtubePlayer.setVolume(youtubeVolume);
   }
 
   get currentTime() {
@@ -667,6 +785,38 @@ export class AudioChannel {
       audio.removeEventListener('canplaythrough', audio._jbOnLoaded);
       audio._jbOnLoaded = null;
     }
+  }
+
+  /**
+   * Fully tear down a local audio element so browsers don't keep ghost playback alive.
+   * @param {HTMLAudioElement} audio
+   * @param {object} [options]
+   * @param {boolean} [options.removeListeners=true]
+   */
+  _teardownLocalAudio(audio, { removeListeners = true } = {}) {
+    if (!audio) return;
+
+    if (removeListeners) {
+      this._removeAudioListeners(audio);
+    }
+
+    try {
+      audio.pause();
+    } catch (error) {}
+
+    try {
+      audio.currentTime = 0;
+    } catch (error) {}
+
+    try {
+      audio.removeAttribute?.('src');
+      audio.src = '';
+      audio.load?.();
+    } catch (error) {}
+
+    try {
+      audio.remove?.();
+    } catch (error) {}
   }
 
   /**

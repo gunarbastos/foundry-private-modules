@@ -3,10 +3,10 @@
  * Complex dialog for bulk importing audio files from computer or Foundry data
  */
 
-import { JUKEBOX } from '../core/constants.js';
 import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses } from './base-dialog.js';
+import { findDuplicateTrack, normalizeTrackData, partitionUniqueTrackEntries } from '../services/track-data-service.js';
 import { debugLog, debugError, debugWarn } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
 
@@ -83,7 +83,6 @@ export function showBulkImportDialog({ type = 'music', jukebox, onSuccess }) {
   let selectedColor = SOUNDBOARD_COLORS[0];
   let isImporting = false;
   let sourceMode = 'computer';
-  let skipAllDuplicates = false;
 
   const dialog = new Dialog({
     title: localize(config.titleKey),
@@ -258,7 +257,6 @@ export function showBulkImportDialog({ type = 'music', jukebox, onSuccess }) {
         }
 
         isImporting = true;
-        skipAllDuplicates = false;
         html.find('.bulk-import-import-btn').prop('disabled', true);
         html.find('.bulk-import-progress-section').addClass('visible');
 
@@ -273,8 +271,7 @@ export function showBulkImportDialog({ type = 'music', jukebox, onSuccess }) {
           config,
           jukebox,
           html,
-          isImportingRef: { value: isImporting },
-          skipAllRef: { value: skipAllDuplicates }
+          isImportingRef: { value: isImporting }
         });
 
         isImporting = false;
@@ -620,12 +617,14 @@ function setupColorPicker(html, onColorChange) {
 /**
  * Perform the actual import
  */
-async function performImport({ selectedFiles, sourceMode, destination, type, selectedColor, config, jukebox, html, isImportingRef, skipAllRef }) {
+async function performImport({ selectedFiles, sourceMode, destination, type, selectedColor, config, jukebox, html, isImportingRef }) {
   let imported = 0;
   let errors = 0;
   let skipped = 0;
 
   const FP = getFilePicker();
+  const ensuredFolders = new Set();
+  const pendingLibraryEntries = [];
 
   for (let i = 0; i < selectedFiles.length; i++) {
     if (!isImportingRef.value) break;
@@ -647,20 +646,15 @@ async function performImport({ selectedFiles, sourceMode, destination, type, sel
         const relativePath = file.path.split('/').slice(1).join('/');
         const destPath = relativePath ? `${destination}/${relativePath}` : `${destination}/${file.file.name}`;
         const destFolder = destPath.substring(0, destPath.lastIndexOf('/'));
+        const duplicate = findDuplicateTrack(jukebox, type, { url: destPath, source: 'local' });
+
+        if (duplicate) {
+          skipped++;
+          continue;
+        }
 
         // Ensure destination folder exists
-        await ensureFolder(FP, destFolder);
-
-        // Check for duplicates
-        if (skipAllRef.value) {
-          try {
-            const existsCheck = await FP.browse("data", destFolder);
-            if (existsCheck.files.some(f => f.endsWith('/' + file.file.name))) {
-              skipped++;
-              continue;
-            }
-          } catch (e) {}
-        }
+        await ensureFolder(FP, destFolder, ensuredFolders);
 
         // Upload the file
         try {
@@ -678,15 +672,23 @@ async function performImport({ selectedFiles, sourceMode, destination, type, sel
         continue;
       }
 
+      if (sourceMode !== 'computer') {
+        const duplicate = findDuplicateTrack(jukebox, type, { url: finalPath, source: 'local' });
+        if (duplicate) {
+          skipped++;
+          continue;
+        }
+      }
+
       // Create data object
-      const data = {
+      const data = normalizeTrackData({
         id: foundry.utils.randomID(),
         name: file.name,
         source: 'local',
         url: finalPath,
         tags: file.tags,
         thumbnail: ''
-      };
+      });
 
       if (type === 'soundboard') {
         data.volume = 1.0;
@@ -696,24 +698,66 @@ async function performImport({ selectedFiles, sourceMode, destination, type, sel
         data.endTime = null;
       }
 
-      await jukebox[config.addMethod](data);
-      imported++;
+      pendingLibraryEntries.push(data);
 
     } catch (error) {
       debugError(`Error importing ${file.name}:`, error);
       errors++;
     }
+  }
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+  if (pendingLibraryEntries.length > 0) {
+    html.find('.bulk-import-progress-file').text(localize('Dialog.BulkImport.Preparing'));
+    const { uniqueEntries, duplicates } = partitionUniqueTrackEntries(jukebox, type, pendingLibraryEntries);
+    skipped += duplicates.length;
+
+    if (uniqueEntries.length === 0) {
+      return { imported, errors, skipped };
+    }
+
+    try {
+      imported += await addImportedTracks(jukebox, type, config.addMethod, uniqueEntries);
+    } catch (batchError) {
+      debugWarn(`Batch library import failed for ${type}, retrying individually.`, batchError);
+
+      for (const data of uniqueEntries) {
+        if (!isImportingRef.value) break;
+
+        try {
+          await jukebox[config.addMethod](data);
+          imported++;
+        } catch (error) {
+          debugError(`Error finalizing ${data.name}:`, error);
+          errors++;
+        }
+      }
+    }
   }
 
   return { imported, errors, skipped };
 }
 
+async function addImportedTracks(jukebox, type, addMethod, entries) {
+  if (typeof jukebox.addTracksBatch === 'function') {
+    const createdTracks = await jukebox.addTracksBatch(type, entries);
+    return Array.isArray(createdTracks) ? createdTracks.length : 0;
+  }
+
+  let imported = 0;
+  for (const entry of entries) {
+    await jukebox[addMethod](entry);
+    imported++;
+  }
+  return imported;
+}
+
 /**
  * Ensure a folder exists, creating it if necessary
  */
-async function ensureFolder(FP, folderPath) {
+async function ensureFolder(FP, folderPath, cache = null) {
+  if (!folderPath) return;
+  if (cache?.has(folderPath)) return;
+
   try {
     await FP.browse("data", folderPath);
   } catch (folderError) {
@@ -734,6 +778,8 @@ async function ensureFolder(FP, folderPath) {
       }
     }
   }
+
+  cache?.add(folderPath);
 }
 
 /**

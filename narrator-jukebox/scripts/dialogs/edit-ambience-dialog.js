@@ -7,9 +7,10 @@ import { JUKEBOX } from '../core/constants.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl, showFieldError } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
-import { normalizeYouTubeUrl, probeYouTubePlayback } from '../utils/youtube-utils.js';
+import { extractYouTubeVideoId, normalizeYouTubeUrl, probeYouTubePlayback } from '../utils/youtube-utils.js';
 
 /**
  * Shows the Edit Ambience dialog
@@ -248,7 +249,9 @@ async function handleEditAmbienceSubmit(html, trackId, track, jukebox) {
     isValid = false;
   }
 
-  if (!validateUrl(urlInput.value, track.source || 'local')) {
+  const validationSource = extractYouTubeVideoId(form.url.value.trim()) ? 'youtube' : 'local';
+
+  if (!validateUrl(urlInput.value, validationSource)) {
     if (!validateField(urlInput, localize('Validation.ValidURLRequired'))) {
       isValid = false;
     }
@@ -259,7 +262,7 @@ async function handleEditAmbienceSubmit(html, trackId, track, jukebox) {
     return false;
   }
 
-  if (track.source === 'youtube') {
+  if (validationSource === 'youtube') {
     const diagnostic = await runYouTubeDiagnostic(html);
     if (!diagnostic.ok) {
       showFieldError(urlInput, diagnostic.details.userMessage);
@@ -268,14 +271,19 @@ async function handleEditAmbienceSubmit(html, trackId, track, jukebox) {
     }
   }
 
-  const data = {
-    name: form.name.value.trim(),
-    url: track.source === 'youtube'
-      ? normalizeYouTubeUrl(form.url.value.trim())
-      : form.url.value.trim(),
-    tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    thumbnail: form.thumbnail.value.trim()
-  };
+  const data = normalizeTrackData({
+    source: validationSource,
+    name: form.name.value,
+    url: form.url.value,
+    tags: form.tags.value,
+    thumbnail: form.thumbnail.value
+  }, { partial: true });
+
+  const duplicate = findDuplicateTrack(jukebox, 'ambience', data, { excludeId: trackId });
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
+  }
 
   try {
     await jukebox.updateAmbience(trackId, data);

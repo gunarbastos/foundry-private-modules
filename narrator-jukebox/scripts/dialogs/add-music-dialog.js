@@ -8,9 +8,10 @@ import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
-import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
+import { extractYouTubeVideoId, isYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * Shows the Add Music dialog
@@ -270,23 +271,22 @@ async function handleAddMusicSubmit(html, jukebox, isGM) {
     return false; // Prevent dialog from closing
   }
 
-  const rawUrl = formElement.url.value.trim();
-  const youtubeId = extractYouTubeVideoId(rawUrl);
-  const source = youtubeId ? 'youtube' : formElement.source.value;
-  const normalizedUrl = source === 'youtube'
-    ? normalizeYouTubeUrl(rawUrl)
-    : rawUrl;
-
-  const data = {
+  const data = normalizeTrackData({
     id: foundry.utils.randomID(),
-    name: formElement.name.value.trim(),
-    source,
-    url: normalizedUrl,
-    tags: formElement.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    thumbnail: formElement.thumbnail.value.trim() || (youtubeId ? getYouTubeThumbnail(youtubeId, 'high') : '')
-  };
+    name: formElement.name.value,
+    source: formElement.source.value,
+    url: formElement.url.value,
+    tags: formElement.tags.value,
+    thumbnail: formElement.thumbnail.value
+  });
 
   debugLog("Adding Music Data:", data);
+
+  const duplicate = findDuplicateTrack(jukebox, 'music', data);
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
+  }
 
   try {
     if (isGM) {

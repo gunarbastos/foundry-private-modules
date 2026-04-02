@@ -323,6 +323,44 @@ export class NarratorsJukeboxApp extends Application {
     PartialUpdates.updateModeToggle(this);
   }
 
+  handleStateChange(payload = {}) {
+    if (!this.element || !this.element.length) return;
+
+    const scope = payload?.scope || 'full';
+
+    if (this._windowState !== 'normal') {
+      this.render(false);
+      return;
+    }
+
+    if (scope === 'playback') {
+      this._updateNowPlaying(this.jukebox.channels.music.currentTrack);
+      this._updateAmbienceNowPlaying(this.jukebox.channels.ambience.currentTrack);
+      this._updatePlaybackState();
+      PartialUpdates.updateMusicVolume(this);
+      PartialUpdates.updateMusicTrackRows(this);
+      PartialUpdates.updateSidebarBadges(this);
+      return;
+    }
+
+    if (scope === 'mode') {
+      this._updateModeToggle();
+      return;
+    }
+
+    if (scope === 'ambienceLayers' && this.view !== 'ambience') {
+      PartialUpdates.updateSidebarBadges(this);
+      return;
+    }
+
+    if (scope === 'soundboard' && this.view !== 'soundboard') {
+      PartialUpdates.updateSidebarBadges(this);
+      return;
+    }
+
+    this.render(false);
+  }
+
   // ==========================================
   // Duration Loading
   // ==========================================
@@ -616,6 +654,154 @@ export class NarratorsJukeboxApp extends Application {
   }
 
   /**
+   * Set selection state for multiple items at once.
+   * @param {string[]} ids - Item IDs
+   * @param {boolean} selected - Whether the items should be selected
+   */
+  setTrackSelection(ids, selected = true) {
+    const set = this._getActiveSelectionSet();
+
+    for (const id of ids) {
+      if (!id) continue;
+      if (selected) {
+        set.add(id);
+      } else {
+        set.delete(id);
+      }
+    }
+
+    this._updateSelectionUI();
+  }
+
+  /**
+   * Toggle selection state for a group of items.
+   * If every item is already selected, deselect them all; otherwise select them all.
+   * @param {string[]} ids - Item IDs
+   */
+  toggleTrackGroup(ids) {
+    const uniqueIds = [...new Set((ids || []).filter(Boolean))];
+    if (!uniqueIds.length) return;
+
+    const set = this._getActiveSelectionSet();
+    const allSelected = uniqueIds.every(id => set.has(id));
+
+    uniqueIds.forEach(id => {
+      if (allSelected) {
+        set.delete(id);
+      } else {
+        set.add(id);
+      }
+    });
+
+    this._updateSelectionUI();
+  }
+
+  /**
+   * Get root-level visible IDs from the current DOM, excluding items inside folders.
+   * Used by Select All and Ctrl+A so folders behave as their own selectable groups.
+   * @returns {string[]}
+   * @private
+   */
+  _getRootSelectionIdsFromDOM() {
+    if (!this.element || !this.element.length) return [];
+
+    if (this.view === 'library') {
+      return this.element.find('#view-library .track-list > .track-row[data-music-id]')
+        .map((_, el) => $(el).data('musicId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    if (this.view === 'ambience') {
+      return this.element.find('#view-ambience > .ambience-layer-grid > .ambience-card[data-ambience-id]')
+        .map((_, el) => $(el).data('ambienceId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    if (this.view === 'soundboard') {
+      return this.element.find('#view-soundboard > .soundboard-grid > .soundboard-card[data-sound-id]')
+        .map((_, el) => $(el).data('soundId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
+   * Get item IDs contained within a folder section for the current view.
+   * @param {HTMLElement|JQuery} section - Folder section element
+   * @returns {string[]}
+   * @private
+   */
+  _getFolderItemIdsFromSection(section) {
+    const root = $(section);
+
+    if (this.view === 'library') {
+      return root.find('.track-row[data-music-id]')
+        .map((_, el) => $(el).data('musicId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    if (this.view === 'ambience') {
+      return root.find('.ambience-card[data-ambience-id]')
+        .map((_, el) => $(el).data('ambienceId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    if (this.view === 'soundboard') {
+      return root.find('.soundboard-card[data-sound-id]')
+        .map((_, el) => $(el).data('soundId'))
+        .get()
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  /**
+   * Update folder selection affordances for the current view.
+   * @param {Set<string>} set - Active selection set
+   * @private
+   */
+  _updateFolderSelectionUI(set) {
+    this.element.find('.folder-section').each((_, section) => {
+      const ids = this._getFolderItemIdsFromSection(section);
+      const selectedCount = ids.filter(id => set.has(id)).length;
+      const allSelected = ids.length > 0 && selectedCount === ids.length;
+      const partiallySelected = selectedCount > 0 && selectedCount < ids.length;
+
+      const header = $(section).find('.folder-header').first();
+      const button = header.find('.folder-select-btn').first();
+
+      header.toggleClass('is-selected', allSelected);
+      header.toggleClass('is-partial', partiallySelected);
+
+      if (!button.length) return;
+
+      button.toggleClass('selected', allSelected);
+      button.toggleClass('partial', partiallySelected);
+      button.attr('aria-pressed', allSelected ? 'true' : 'false');
+
+      const icon = button.find('i');
+      icon.removeClass('fa-square fa-square-check fa-square-minus');
+      icon.addClass(allSelected ? 'fa-square-check' : partiallySelected ? 'fa-square-minus' : 'fa-square');
+
+      const actionLabel = allSelected ? 'Deselect folder' : partiallySelected ? 'Select remaining items in folder' : 'Select folder';
+      const detailLabel = ids.length
+        ? `${selectedCount}/${ids.length} selected`
+        : 'Empty folder';
+
+      button.attr('aria-label', actionLabel);
+      button.attr('data-tooltip', `${actionLabel} (${detailLabel})`);
+      button.attr('title', `${actionLabel} (${detailLabel})`);
+    });
+  }
+
+  /**
    * Update selection UI without full re-render (for performance)
    * @private
    */
@@ -635,12 +821,15 @@ export class NarratorsJukeboxApp extends Application {
         const id = $(el).data('musicId');
         $(el).toggleClass('selected', set.has(id));
       });
+      this._updateFolderSelectionUI(set);
+
       // Update select all checkbox
-      const visibleCount = this.element.find('.track-row[data-music-id]').length;
+      const rootIds = this._getRootSelectionIdsFromDOM();
+      const selectedRootCount = rootIds.filter(id => set.has(id)).length;
       const selectAllCheckbox = this.element.find('.select-all-checkbox');
       if (selectAllCheckbox.length) {
-        selectAllCheckbox.prop('checked', count > 0 && count === visibleCount);
-        selectAllCheckbox.prop('indeterminate', count > 0 && count < visibleCount);
+        selectAllCheckbox.prop('checked', rootIds.length > 0 && selectedRootCount === rootIds.length);
+        selectAllCheckbox.prop('indeterminate', selectedRootCount > 0 && selectedRootCount < rootIds.length);
       }
     } else if (this.view === 'ambience') {
       // Ambience: update card checkboxes and highlights
@@ -652,6 +841,7 @@ export class NarratorsJukeboxApp extends Application {
         const id = $(el).data('ambienceId');
         $(el).toggleClass('selected', set.has(id));
       });
+      this._updateFolderSelectionUI(set);
     } else if (this.view === 'soundboard') {
       // Soundboard: update card checkboxes and highlights
       this.element.find('.sb-select-checkbox').each((i, el) => {
@@ -662,6 +852,7 @@ export class NarratorsJukeboxApp extends Application {
         const id = $(el).data('soundId');
         $(el).toggleClass('selected', set.has(id));
       });
+      this._updateFolderSelectionUI(set);
     }
 
     // Update toolbar (shared)

@@ -514,14 +514,15 @@ class PlaybackService {
       audioElement.addEventListener('timeupdate', endTimeHandler);
     }
 
-    audioElement.addEventListener('ended', () => {
+    const endedHandler = () => {
       if (shouldManualLoop) {
         audioElement.currentTime = startTime;
         audioElement.play();
       } else if (!loop) {
         this.stopSoundboardSound(id);
       }
-    });
+    };
+    audioElement.addEventListener('ended', endedHandler);
 
     const errorHandler = (e) => {
       debugError(" Soundboard audio error:", e);
@@ -539,6 +540,7 @@ class PlaybackService {
       isPreview: preview,
       startTime,
       endTime,
+      endedHandler,
       endTimeHandler,
       errorHandler
     });
@@ -645,6 +647,9 @@ class PlaybackService {
     }
 
     if (activeSound.type === 'local' && activeSound.audio) {
+      if (activeSound.endedHandler) {
+        activeSound.audio.removeEventListener('ended', activeSound.endedHandler);
+      }
       if (activeSound.endTimeHandler) {
         activeSound.audio.removeEventListener('timeupdate', activeSound.endTimeHandler);
       }
@@ -654,7 +659,9 @@ class PlaybackService {
       }
       activeSound.audio.pause();
       activeSound.audio.currentTime = 0;
+      activeSound.audio.removeAttribute?.('src');
       activeSound.audio.src = '';
+      activeSound.audio.load?.();
     } else if (activeSound.type === 'youtube' && activeSound.player) {
       if (activeSound.player.stopVideo) activeSound.player.stopVideo();
       if (activeSound.player.destroy) activeSound.player.destroy();
@@ -761,6 +768,47 @@ class PlaybackService {
    */
   getAmbienceMasterVolume() {
     return ambienceLayerManager.masterVolume;
+  }
+
+  /**
+   * Set the player-local global volume for ambience layers.
+   * This does not change the GM's shared ambience mix.
+   * @param {number} volume - Volume value (0-1)
+   */
+  setAmbienceClientVolume(volume) {
+    const result = ambienceLayerManager.setClientMasterVolume(volume);
+    if (!game.user.isGM && volume > 0) {
+      this.isAmbienceMuted = false;
+    }
+    return result;
+  }
+
+  /**
+   * Get the player-local global volume for ambience layers.
+   * @returns {number}
+   */
+  getAmbienceClientVolume() {
+    return ambienceLayerManager.getClientMasterVolume();
+  }
+
+  /**
+   * Toggle the player-local mute for ambience layers.
+   * @returns {boolean}
+   */
+  toggleAmbienceClientMute() {
+    const muted = ambienceLayerManager.toggleClientMute();
+    if (!game.user.isGM) {
+      this.isAmbienceMuted = muted;
+    }
+    return muted;
+  }
+
+  /**
+   * Check if ambience layers are muted locally on this client.
+   * @returns {boolean}
+   */
+  isAmbienceClientMuted() {
+    return ambienceLayerManager.isClientMuted();
   }
 
   /**

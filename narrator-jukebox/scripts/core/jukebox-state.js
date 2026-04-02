@@ -9,7 +9,26 @@ import { AudioChannel } from './audio-channel.js';
 import { dataService } from '../services/data-service.js';
 import { playbackService, ambienceLayerManager } from '../services/playback-service.js';
 import { syncService } from '../services/sync-service.js';
+import { normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog } from '../utils/debug.js';
+
+function mapRemotePayloadToStateChange(payload = {}) {
+  switch (payload?.action) {
+    case 'play':
+    case 'pause':
+    case 'resume':
+    case 'stop':
+    case 'volume':
+    case 'seek':
+      return { scope: 'playback', remote: true };
+    case 'ambienceLayers':
+      return { scope: 'ambienceLayers', remote: true };
+    case 'soundboard':
+      return { scope: 'soundboard', remote: true };
+    default:
+      return { scope: 'full', remote: true };
+  }
+}
 
 /**
  * NarratorJukebox - Main singleton class
@@ -122,14 +141,14 @@ class NarratorJukebox {
             }
           } else {
             playbackService.isAmbiencePlaying = false;
-            Hooks.call('narratorJukeboxStateChanged');
+            Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
           }
         }
       });
 
       // Listen for remote command UI updates
-      Hooks.on('narratorJukeboxRemoteCommand', () => {
-        Hooks.call('narratorJukeboxStateChanged');
+      Hooks.on('narratorJukeboxRemoteCommand', (payload) => {
+        Hooks.call('narratorJukeboxStateChanged', mapRemotePayloadToStateChange(payload));
       });
     }
   }
@@ -224,11 +243,18 @@ class NarratorJukebox {
   }
 
   async addMusic(data) {
-    return await dataService.addMusic(data);
+    return await dataService.addMusic(normalizeTrackData(data));
+  }
+
+  async addTracksBatch(library, tracks) {
+    const normalizedTracks = Array.isArray(tracks)
+      ? tracks.map(track => normalizeTrackData(track))
+      : [];
+    return await dataService.addTracksBatch(library, normalizedTracks);
   }
 
   async updateMusic(id, data) {
-    return await dataService.updateMusic(id, data);
+    return await dataService.updateMusic(id, normalizeTrackData(data, { partial: true }));
   }
 
   async deleteMusic(id) {
@@ -248,12 +274,12 @@ class NarratorJukebox {
   }
 
   async addAmbience(data) {
-    return await dataService.addAmbience(data);
+    return await dataService.addAmbience(normalizeTrackData(data));
   }
 
   async updateAmbience(id, data) {
     ambienceLayerManager.clearLayerIssue?.(id);
-    return await dataService.updateAmbience(id, data);
+    return await dataService.updateAmbience(id, normalizeTrackData(data, { partial: true }));
   }
 
   async deleteAmbience(id) {
@@ -278,11 +304,11 @@ class NarratorJukebox {
   }
 
   async addSoundboardSound(data) {
-    return await dataService.addSoundboardSound(data);
+    return await dataService.addSoundboardSound(normalizeTrackData(data));
   }
 
   async updateSoundboardSound(id, data) {
-    return await dataService.updateSoundboardSound(id, data);
+    return await dataService.updateSoundboardSound(id, normalizeTrackData(data, { partial: true }));
   }
 
   async deleteSoundboardSound(id) {
@@ -377,7 +403,7 @@ class NarratorJukebox {
     try {
       const result = await playbackService.playMusic(id, channel);
       // Notify UI to update
-      Hooks.call('narratorJukeboxStateChanged');
+      Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
       return result;
     } catch (err) {
       // Handle autoplay policy
@@ -392,29 +418,29 @@ class NarratorJukebox {
 
   playPlaylist(id) {
     const result = playbackService.playPlaylist(id);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playlist' });
     return result;
   }
 
   togglePlay(channel = 'music') {
     playbackService.togglePlayPause(channel);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
   }
 
   stop(channel = 'music') {
     playbackService.stop(channel);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
   }
 
   next(wrap = false) {
     const result = playbackService.next(wrap);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
     return result;
   }
 
   prev() {
     const result = playbackService.prev();
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
     return result;
   }
 
@@ -424,24 +450,30 @@ class NarratorJukebox {
 
   toggleMute(channel = 'music') {
     playbackService.toggleMute(channel);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
   }
 
   toggleShuffle() {
-    return playbackService.toggleShuffle();
+    const result = playbackService.toggleShuffle();
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
+    return result;
   }
 
   toggleMusicLoop() {
-    return playbackService.toggleMusicLoop();
+    const result = playbackService.toggleMusicLoop();
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
+    return result;
   }
 
   toggleAmbienceLoop() {
-    return playbackService.toggleAmbienceLoop();
+    const result = playbackService.toggleAmbienceLoop();
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
+    return result;
   }
 
   playRandomByTag(tag) {
     const result = playbackService.playRandomByTag(tag);
-    if (result) Hooks.call('narratorJukeboxStateChanged');
+    if (result) Hooks.call('narratorJukeboxStateChanged', { scope: 'playback' });
     return result;
   }
 
@@ -451,18 +483,18 @@ class NarratorJukebox {
 
   async playSoundboardSound(id, options = {}) {
     const result = await playbackService.playSoundboardSound(id, options);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'soundboard' });
     return result;
   }
 
   stopSoundboardSound(id, broadcast = true) {
     playbackService.stopSoundboardSound(id, broadcast);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'soundboard' });
   }
 
   stopAllSoundboardSounds() {
     playbackService.stopAllSoundboardSounds();
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'soundboard' });
   }
 
   isSoundboardSoundPlaying(id) {
@@ -480,7 +512,7 @@ class NarratorJukebox {
    */
   async playAmbienceLayer(trackId) {
     const result = await playbackService.playAmbienceLayer(trackId);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return result;
   }
 
@@ -491,7 +523,7 @@ class NarratorJukebox {
    */
   stopAmbienceLayer(trackId, broadcast = true) {
     playbackService.stopAmbienceLayer(trackId, broadcast);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
   }
 
   /**
@@ -501,7 +533,7 @@ class NarratorJukebox {
    */
   async toggleAmbienceLayer(trackId) {
     const result = await playbackService.toggleAmbienceLayer(trackId);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return result;
   }
 
@@ -546,7 +578,7 @@ class NarratorJukebox {
    */
   toggleAmbienceMasterMute() {
     const result = playbackService.toggleAmbienceMasterMute();
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return result;
   }
 
@@ -606,7 +638,7 @@ class NarratorJukebox {
    */
   stopAllAmbienceLayers(broadcast = true) {
     playbackService.stopAllAmbienceLayers(broadcast);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
   }
 
   /**
@@ -624,7 +656,7 @@ class NarratorJukebox {
    */
   async restoreAmbienceLayersState(state, broadcast = false) {
     await playbackService.restoreAmbienceLayersState(state, broadcast);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
   }
 
   /**
@@ -664,7 +696,7 @@ class NarratorJukebox {
   async saveAmbiencePreset(name) {
     const layersState = this.getAmbienceLayersState();
     const preset = await dataService.saveAmbiencePreset({ name, layersState });
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return preset;
   }
 
@@ -676,7 +708,7 @@ class NarratorJukebox {
    */
   async updateAmbiencePreset(id, data) {
     const preset = await dataService.updateAmbiencePreset(id, data);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return preset;
   }
 
@@ -687,7 +719,7 @@ class NarratorJukebox {
    */
   async deleteAmbiencePreset(id) {
     const result = await dataService.deleteAmbiencePreset(id);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return result;
   }
 

@@ -3,7 +3,7 @@
  * Manages multiple simultaneous ambience layers for creating complex soundscapes
  */
 
-import { MAX_AMBIENCE_LAYERS } from './constants.js';
+import { JUKEBOX, MAX_AMBIENCE_LAYERS } from './constants.js';
 import { AudioChannel } from './audio-channel.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 
@@ -40,6 +40,12 @@ class AmbienceLayerManager {
     /** @type {number} Volume before mute for restore */
     this.volumeBeforeMute = 0.8;
 
+    /** @type {number} Player-local ambience layer volume multiplier */
+    this.clientVolume = 1;
+
+    /** @type {boolean} Player-local ambience layer mute state */
+    this.clientMuted = false;
+
     // Dependencies (injected)
     this.dataService = null;
     this.syncService = null;
@@ -63,6 +69,85 @@ class AmbienceLayerManager {
     this.syncService = syncService;
     // Reset interaction state - GM is always considered "interacted"
     this._userHasInteracted = game.user?.isGM ?? false;
+    this._loadClientPreferences();
+  }
+
+  _loadClientPreferences() {
+    if (game.user?.isGM) {
+      this.clientVolume = 1;
+      this.clientMuted = false;
+      return;
+    }
+
+    try {
+      this.clientVolume = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MASTER_VOLUME) ?? 1;
+    } catch {
+      this.clientVolume = 1;
+    }
+
+    try {
+      this.clientMuted = game.settings.get(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MUTED) ?? false;
+    } catch {
+      this.clientMuted = false;
+    }
+  }
+
+  _getEffectiveLayerVolume(layerVolume = 0.8) {
+    const clientVolume = game.user?.isGM ? 1 : this.clientVolume;
+    const clientMuted = game.user?.isGM ? false : this.clientMuted;
+
+    if (this.isMasterMuted || clientMuted) {
+      return 0;
+    }
+
+    return layerVolume * this.masterVolume * clientVolume;
+  }
+
+  _applyEffectiveVolumes() {
+    for (const layer of this.layers.values()) {
+      layer.channel.setVolume(this._getEffectiveLayerVolume(layer.volume));
+    }
+  }
+
+  setClientMasterVolume(volume) {
+    if (game.user?.isGM) return this.masterVolume;
+
+    this.clientVolume = Math.max(0, Math.min(volume, 1));
+    if (this.clientVolume > 0) {
+      this.clientMuted = false;
+    }
+
+    void game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MASTER_VOLUME, this.clientVolume);
+    if (this.clientVolume > 0) {
+      void game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MUTED, false);
+    }
+
+    this._applyEffectiveVolumes();
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
+    return this.clientVolume;
+  }
+
+  getClientMasterVolume() {
+    return game.user?.isGM ? this.masterVolume : this.clientVolume;
+  }
+
+  setClientMute(muted) {
+    if (game.user?.isGM) return this.isMasterMuted;
+
+    this.clientMuted = !!muted;
+    void game.settings.set(JUKEBOX.ID, JUKEBOX.SETTINGS.AMBIENCE_MUTED, this.clientMuted);
+
+    this._applyEffectiveVolumes();
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
+    return this.clientMuted;
+  }
+
+  toggleClientMute() {
+    return this.setClientMute(!this.clientMuted);
+  }
+
+  isClientMuted() {
+    return game.user?.isGM ? this.isMasterMuted : this.clientMuted;
   }
 
   /**
@@ -144,7 +229,7 @@ class AmbienceLayerManager {
       }
     }
 
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     Hooks.call('narratorJukeboxDeferredStateApplied', { layerCount: this.layerCount });
   }
 
@@ -204,9 +289,8 @@ class AmbienceLayerManager {
     const layer = new AmbienceLayer(trackId, track, channel);
     layer.volume = initialVolume;
 
-    // Apply effective volume to channel (individual * master)
-    const effectiveVolume = this.isMasterMuted ? 0 : layer.volume * this.masterVolume;
-    channel.volume = effectiveVolume;
+    // Apply effective volume to channel (layer * GM master * player-local control)
+    channel.volume = this._getEffectiveLayerVolume(layer.volume);
 
     // Start playback
     await channel.play(track);
@@ -245,7 +329,7 @@ class AmbienceLayerManager {
       }
 
       // Notify UI
-      Hooks.call('narratorJukeboxStateChanged');
+      Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
       Hooks.call('narratorJukeboxAmbienceLayerAdded', { trackId, track: layer.track });
 
       return layer;
@@ -343,7 +427,7 @@ class AmbienceLayerManager {
     }
 
     // Notify UI
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     Hooks.call('narratorJukeboxAmbienceLayerRemoved', { trackId });
 
     return true;
@@ -384,9 +468,7 @@ class AmbienceLayerManager {
 
     layer.volume = volume;
 
-    // Apply effective volume (considering master volume and mute)
-    const effectiveVolume = this.isMasterMuted ? 0 : volume * this.masterVolume;
-    layer.channel.setVolume(effectiveVolume);
+    layer.channel.setVolume(this._getEffectiveLayerVolume(volume));
     return true;
   }
 
@@ -434,11 +516,7 @@ class AmbienceLayerManager {
       this.isMasterMuted = false;
     }
 
-    // Apply to all layers
-    for (const layer of this.layers.values()) {
-      const effectiveVolume = this.isMasterMuted ? 0 : layer.volume * volume;
-      layer.channel.setVolume(effectiveVolume);
-    }
+    this._applyEffectiveVolumes();
   }
 
   /**
@@ -474,9 +552,7 @@ class AmbienceLayerManager {
       // Mute
       this.volumeBeforeMute = this.masterVolume;
       this.isMasterMuted = true;
-      for (const layer of this.layers.values()) {
-        layer.channel.setVolume(0);
-      }
+      this._applyEffectiveVolumes();
     } else {
       // Unmute
       this.isMasterMuted = false;
@@ -497,7 +573,7 @@ class AmbienceLayerManager {
       this.syncService.broadcastAmbienceMasterMute(newMuted);
     }
 
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return this.isMasterMuted;
   }
 
@@ -526,7 +602,7 @@ class AmbienceLayerManager {
       this.syncService.broadcastAmbienceLayersStopAll();
     }
 
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     Hooks.call('narratorJukeboxAmbienceStoppedAll');
   }
 
@@ -602,7 +678,7 @@ class AmbienceLayerManager {
         deferred: true
       });
 
-      Hooks.call('narratorJukeboxStateChanged');
+      Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
       return;
     }
 
@@ -659,7 +735,7 @@ class AmbienceLayerManager {
       this.syncService.broadcastAmbienceLayers(this.getLayersState());
     }
 
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
   }
 
   /**
@@ -682,7 +758,7 @@ class AmbienceLayerManager {
       }
     }
 
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
   }
 
   /**
@@ -738,7 +814,7 @@ class AmbienceLayerManager {
 
     this.layerIssues.set(trackId, issue);
     Hooks.call('narratorJukeboxAmbienceLayerIssue', issue);
-    Hooks.call('narratorJukeboxStateChanged');
+    Hooks.call('narratorJukeboxStateChanged', { scope: 'ambienceLayers' });
     return issue;
   }
 }

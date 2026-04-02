@@ -11479,6 +11479,46 @@
     background: rgba(255, 255, 255, 0.06);
 }
 
+.narrator-jukebox-app .folder-header.is-selected {
+    background: rgba(29, 185, 84, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(29, 185, 84, 0.24);
+}
+
+.narrator-jukebox-app .folder-header.is-partial {
+    background: rgba(255, 209, 102, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 209, 102, 0.2);
+}
+
+.narrator-jukebox-app .folder-select-btn {
+    background: none !important;
+    border: none !important;
+    padding: 2px;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.45);
+    box-shadow: none !important;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.narrator-jukebox-app .folder-select-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.04);
+}
+
+.narrator-jukebox-app .folder-select-btn.selected {
+    color: var(--jb-accent);
+}
+
+.narrator-jukebox-app .folder-select-btn.partial {
+    color: #ffd166;
+}
+
 .narrator-jukebox-app .folder-toggle {
     background: none !important;
     border: none !important;
@@ -11531,6 +11571,16 @@
     padding: 2px 8px;
     border-radius: 10px;
     flex-shrink: 0;
+}
+
+.narrator-jukebox-app .folder-header.is-selected .folder-count {
+    background: rgba(29, 185, 84, 0.18);
+    color: #d6ffe5;
+}
+
+.narrator-jukebox-app .folder-header.is-partial .folder-count {
+    background: rgba(255, 209, 102, 0.14);
+    color: #ffd166;
 }
 
 .narrator-jukebox-app .folder-actions {

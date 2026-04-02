@@ -9,6 +9,7 @@ import { getFilePicker } from '../utils/file-picker-compat.js';
 import { parseTimeInput } from '../utils/time-format.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
 
@@ -422,18 +423,24 @@ async function handleAddSoundboardSubmit(html, jukebox) {
   const startTime = parseTime(formElement.startTime.value);
   const endTime = parseTime(formElement.endTime.value);
 
-  const data = {
+  const data = normalizeTrackData({
     id: foundry.utils.randomID(),
-    name: formElement.name.value.trim(),
+    name: formElement.name.value,
     source: formElement.source.value,
-    url: formElement.url.value.trim(),
-    volume: parseInt(formElement.volume.value) / 100,
+    url: formElement.url.value,
+    volume: parseInt(formElement.volume.value, 10) / 100,
     color: formElement.color.value,
     icon: formElement.icon.value,
-    thumbnail: formElement.thumbnail.value.trim(),
-    startTime: startTime,
-    endTime: endTime
-  };
+    thumbnail: formElement.thumbnail.value,
+    startTime,
+    endTime
+  });
+
+  const duplicate = findDuplicateTrack(jukebox, 'soundboard', data);
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
+  }
 
   try {
     await jukebox.addSoundboardSound(data);

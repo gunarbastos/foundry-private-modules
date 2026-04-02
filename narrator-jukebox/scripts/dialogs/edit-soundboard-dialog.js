@@ -7,8 +7,10 @@ import { JUKEBOX } from '../core/constants.js';
 import { formatTimeForInput } from '../utils/time-format.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
+import { extractYouTubeVideoId } from '../utils/youtube-utils.js';
 
 /**
  * Color presets for soundboard cards
@@ -275,7 +277,9 @@ async function handleEditSoundboardSubmit(html, soundId, sound, jukebox) {
     isValid = false;
   }
 
-  if (!validateUrl(urlInput.value, sound.source || 'local')) {
+  const validationSource = extractYouTubeVideoId(form.url.value.trim()) ? 'youtube' : 'local';
+
+  if (!validateUrl(urlInput.value, validationSource)) {
     if (!validateField(urlInput, localize('Validation.ValidURLRequired'))) {
       isValid = false;
     }
@@ -286,16 +290,23 @@ async function handleEditSoundboardSubmit(html, soundId, sound, jukebox) {
     return false;
   }
 
-  const data = {
-    name: form.name.value.trim(),
-    url: form.url.value.trim(),
-    volume: parseInt(form.volume.value) / 100,
+  const data = normalizeTrackData({
+    source: validationSource,
+    name: form.name.value,
+    url: form.url.value,
+    volume: parseInt(form.volume.value, 10) / 100,
     color: form.color.value,
     icon: form.icon.value,
-    thumbnail: form.thumbnail.value.trim(),
+    thumbnail: form.thumbnail.value,
     startTime: parseTime(form.startTime.value),
     endTime: parseTime(form.endTime.value)
-  };
+  }, { partial: true });
+
+  const duplicate = findDuplicateTrack(jukebox, 'soundboard', data, { excludeId: soundId });
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
+  }
 
   try {
     await jukebox.updateSoundboardSound(soundId, data);

@@ -190,13 +190,30 @@ function activateTrackListListeners(app, html, jukebox) {
     });
 
     // Toggle track visibility (hide name/thumbnail from players)
-    html.on('click', '.track-visibility-btn', e => {
+    html.on('click', '.track-visibility-btn', async e => {
         e.stopPropagation();
-        const id = e.currentTarget.dataset.musicId;
+        const button = e.currentTarget;
+        const id = button.dataset.musicId;
         if (!id) return;
+        if (button.dataset.busy === 'true') return;
+
         const track = jukebox.music.find(m => m.id === id);
         if (!track) return;
-        jukebox.updateMusic(id, { hidden: !track.hidden });
+
+        button.dataset.busy = 'true';
+
+        try {
+            const updatedTrack = await jukebox.updateMusic(id, { hidden: !track.hidden });
+            if (!updatedTrack) return;
+
+            Hooks.call('narratorJukeboxStateChanged', { scope: 'library' });
+
+            if (game.user.isGM && !jukebox.isPreviewMode && jukebox.channels.music.currentTrack?.id === id) {
+                syncService.broadcastState();
+            }
+        } finally {
+            delete button.dataset.busy;
+        }
     });
 
     // Edit track button
@@ -272,11 +289,11 @@ function updateVolumeIcon(btn, volume, isMuted) {
 function updatePlayButton(btn, isPlaying) {
     const icon = $(btn).find('i');
     if (isPlaying) {
-        icon.removeClass('fa-play-circle').addClass('fa-pause-circle');
-        btn.title = localize('Player.Pause');
+        icon.removeClass('fa-play fa-play-circle').addClass('fa-pause');
+        $(btn).attr('data-tooltip', localize('Player.Pause'));
     } else {
-        icon.removeClass('fa-pause-circle').addClass('fa-play-circle');
-        btn.title = localize('Player.Play');
+        icon.removeClass('fa-pause fa-pause-circle').addClass('fa-play');
+        $(btn).attr('data-tooltip', localize('Player.Play'));
     }
 }
 

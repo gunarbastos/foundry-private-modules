@@ -176,7 +176,7 @@
                 </div>
             </div>
             <div class="track-list-header">
-                <div class="select-all-col"><input type="checkbox" class="select-all-checkbox" data-tooltip="Select all visible" data-tooltip-position="top"></div>
+                <div class="select-all-col"><input type="checkbox" class="select-all-checkbox" data-tooltip="Select tracks outside folders" data-tooltip-position="top"></div>
                 <div class="col-play">#</div>
                 <div class="col-thumb"></div>
                 <div class="col-title">Title</div>
@@ -243,7 +243,8 @@
                 {{#each musicFolderGroups}}
                 <div class="folder-section" data-folder-id="{{folder.id}}">
                     <div class="folder-header" style="--folder-color: {{folder.color}};">
-                        <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                        {{#if ../selectionMode}}<button type="button" class="folder-select-btn" data-tooltip="Select folder" data-tooltip-position="top" aria-label="Select folder"><i class="fas fa-square"></i></button>{{/if}}
+                        <button type="button" class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
                         <i class="{{folder.icon}} folder-icon"></i>
                         <span class="folder-name">{{folder.name}}</span>
                         <span class="folder-count">{{tracks.length}}</span>
@@ -695,7 +696,8 @@
             {{#each ambienceFolderGroups}}
             <div class="folder-section" data-folder-id="{{folder.id}}">
                 <div class="folder-header" style="--folder-color: {{folder.color}};">
-                    <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                    {{#if ../../selectionMode}}<button type="button" class="folder-select-btn" data-tooltip="Select folder" data-tooltip-position="top" aria-label="Select folder"><i class="fas fa-square"></i></button>{{/if}}
+                    <button type="button" class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
                     <i class="{{folder.icon}} folder-icon"></i>
                     <span class="folder-name">{{folder.name}}</span>
                     <span class="folder-count">{{tracks.length}}</span>
@@ -843,7 +845,8 @@
             {{#each soundboardFolderGroups}}
             <div class="folder-section" data-folder-id="{{folder.id}}">
                 <div class="folder-header" style="--folder-color: {{folder.color}};">
-                    <button class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
+                    {{#if ../../selectionMode}}<button type="button" class="folder-select-btn" data-tooltip="Select folder" data-tooltip-position="top" aria-label="Select folder"><i class="fas fa-square"></i></button>{{/if}}
+                    <button type="button" class="folder-toggle"><i class="fas fa-chevron-down folder-chevron {{#if collapsed}}collapsed{{/if}}"></i></button>
                     <i class="{{folder.icon}} folder-icon"></i>
                     <span class="folder-name">{{folder.name}}</span>
                     <span class="folder-count">{{tracks.length}}</span>

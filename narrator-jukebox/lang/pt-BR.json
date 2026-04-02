@@ -239,6 +239,7 @@
   "NARRATOR-JUKEBOX.Notifications.MoodBoardsSaved": "Mood boards salvos!",
   "NARRATOR-JUKEBOX.Notifications.SuggestionSent": "Sugestão enviada ao Mestre!",
   "NARRATOR-JUKEBOX.Notifications.AddedToLibrary": "Adicionado \"{name}\" à sua biblioteca",
+  "NARRATOR-JUKEBOX.Notifications.DuplicateInLibrary": "\"{name}\" já está na biblioteca",
   "NARRATOR-JUKEBOX.Notifications.AllAmbienceLayersStopped": "Todas as camadas de ambiência foram paradas",
   "NARRATOR-JUKEBOX.Notifications.AllSoundsStopped": "Todos os sons do soundboard foram parados",
   "NARRATOR-JUKEBOX.Notifications.ShuffleModeEnabled": "Modo aleatório ativado",

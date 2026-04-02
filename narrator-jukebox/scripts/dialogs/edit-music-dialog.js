@@ -7,9 +7,10 @@ import { JUKEBOX } from '../core/constants.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
-import { extractYouTubeVideoId, getYouTubeThumbnail, isYouTubeUrl, normalizeYouTubeUrl } from '../utils/youtube-utils.js';
+import { extractYouTubeVideoId, isYouTubeUrl } from '../utils/youtube-utils.js';
 
 /**
  * Shows the Edit Music dialog
@@ -197,21 +198,17 @@ async function handleEditMusicSubmit(html, trackId, track, jukebox) {
     return false; // Prevent dialog from closing
   }
 
-  const data = {
-    source: extractYouTubeVideoId(form.url.value.trim()) ? 'youtube' : 'local',
-    name: form.name.value.trim(),
-    url: extractYouTubeVideoId(form.url.value.trim())
-      ? normalizeYouTubeUrl(form.url.value.trim())
-      : form.url.value.trim(),
-    tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    thumbnail: form.thumbnail.value.trim()
-  };
+  const data = normalizeTrackData({
+    name: form.name.value,
+    url: form.url.value,
+    tags: form.tags.value,
+    thumbnail: form.thumbnail.value
+  }, { partial: true });
 
-  if (data.source === 'youtube' && !data.thumbnail) {
-    const youtubeId = extractYouTubeVideoId(data.url);
-    if (youtubeId) {
-      data.thumbnail = getYouTubeThumbnail(youtubeId, 'high');
-    }
+  const duplicate = findDuplicateTrack(jukebox, 'music', data, { excludeId: trackId });
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
   }
 
   try {

@@ -8,6 +8,7 @@ import { JukeboxBrowser } from '../utils/browser-detection.js';
 import { getFilePicker } from '../utils/file-picker-compat.js';
 import { applyDarkTheme, applyDialogClasses, DIALOG_CLASSES } from './base-dialog.js';
 import { validateField, validateUrl, showFieldError } from '../services/validation-service.js';
+import { findDuplicateTrack, normalizeTrackData } from '../services/track-data-service.js';
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { localize, format } from '../utils/i18n.js';
 import { normalizeYouTubeUrl, probeYouTubePlayback } from '../utils/youtube-utils.js';
@@ -392,16 +393,20 @@ async function handleAddAmbienceSubmit(html, jukebox) {
     }
   }
 
-  const data = {
+  const data = normalizeTrackData({
     id: foundry.utils.randomID(),
-    name: formElement.name.value.trim(),
+    name: formElement.name.value,
     source: formElement.source.value,
-    url: formElement.source.value === 'youtube'
-      ? normalizeYouTubeUrl(formElement.url.value.trim())
-      : formElement.url.value.trim(),
-    tags: formElement.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    thumbnail: formElement.thumbnail.value.trim()
-  };
+    url: formElement.url.value,
+    tags: formElement.tags.value,
+    thumbnail: formElement.thumbnail.value
+  });
+
+  const duplicate = findDuplicateTrack(jukebox, 'ambience', data);
+  if (duplicate) {
+    ui.notifications.warn(format('Notifications.DuplicateInLibrary', { name: duplicate.name || data.name }));
+    return false;
+  }
 
   try {
     await jukebox.addAmbience(data);

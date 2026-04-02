@@ -129,6 +129,11 @@
 
 import { debugLog, debugWarn, debugError } from '../utils/debug.js';
 import { extractYouTubeVideoId, getYouTubeThumbnail } from '../utils/youtube-utils.js';
+import {
+  normalizeTrackUrl as normalizeSharedTrackUrl,
+  normalizeTrackTags as normalizeSharedTrackTags,
+  normalizeTrackData as normalizeSharedTrackData
+} from '../services/track-data-service.js';
 
 /**
  * Public API for Narrator's Jukebox
@@ -319,12 +324,7 @@ export class NarratorJukeboxAPI {
    * @returns {string}
    */
   _normalizeTrackUrl(url, source = null) {
-    const trimmed = this._requireString(url, 'Track URL').trim();
-    const youtubeId = extractYouTubeVideoId(trimmed);
-    if (source === 'youtube' || youtubeId) {
-      return youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : trimmed;
-    }
-    return trimmed;
+    return normalizeSharedTrackUrl(url, source);
   }
 
   /**
@@ -334,17 +334,7 @@ export class NarratorJukeboxAPI {
    * @returns {string[]}
    */
   _normalizeTags(tags) {
-    if (tags == null || tags === '') return [];
-
-    const values = Array.isArray(tags)
-      ? tags
-      : String(tags).split(',');
-
-    return [...new Set(
-      values
-        .map(tag => String(tag).trim())
-        .filter(Boolean)
-    )];
+    return normalizeSharedTrackTags(tags);
   }
 
   /**
@@ -357,92 +347,7 @@ export class NarratorJukeboxAPI {
    * @returns {TrackInput}
    */
   _normalizeTrackData(trackData, options = {}) {
-    const { partial = false } = options;
-
-    if (!trackData || typeof trackData !== 'object' || Array.isArray(trackData)) {
-      throw new Error('Track data must be an object.');
-    }
-
-    const normalized = { ...trackData };
-
-    if (normalized.path && !normalized.url) {
-      normalized.url = normalized.path;
-    }
-
-    if (!partial || Object.hasOwn(normalized, 'name')) {
-      normalized.name = this._requireString(normalized.name, 'Track name').trim();
-    }
-
-    const hasUrlInput = Object.hasOwn(normalized, 'url') || Object.hasOwn(normalized, 'path');
-    if (!partial || hasUrlInput) {
-      normalized.url = this._normalizeTrackUrl(normalized.url, normalized.source ?? null);
-    }
-    const youtubeId = normalized.url ? extractYouTubeVideoId(normalized.url) : null;
-
-    if (Object.hasOwn(normalized, 'source') && normalized.source != null && normalized.source !== '') {
-      normalized.source = String(normalized.source).toLowerCase().trim();
-      if (!['local', 'youtube'].includes(normalized.source)) {
-        throw new Error(`Invalid track source: "${normalized.source}". Must be 'local' or 'youtube'.`);
-      }
-    } else if (normalized.url) {
-      normalized.source = youtubeId ? 'youtube' : 'local';
-    } else if (!partial) {
-      normalized.source = 'local';
-    }
-
-    if (youtubeId) {
-      normalized.source = 'youtube';
-    }
-
-    if (!partial || Object.hasOwn(normalized, 'tags')) {
-      normalized.tags = this._normalizeTags(normalized.tags);
-    }
-
-    if (Object.hasOwn(normalized, 'thumbnail')) {
-      normalized.thumbnail = normalized.thumbnail ? String(normalized.thumbnail).trim() : '';
-    }
-
-    if (normalized.source === 'youtube' && normalized.url && !normalized.thumbnail) {
-      if (youtubeId) {
-        normalized.thumbnail = getYouTubeThumbnail(youtubeId, 'high');
-      }
-    }
-
-    if (Object.hasOwn(normalized, 'volume') && normalized.volume !== '' && normalized.volume != null) {
-      normalized.volume = this._validateVolume(normalized.volume);
-    } else if (Object.hasOwn(normalized, 'volume')) {
-      delete normalized.volume;
-    }
-
-    for (const key of ['startTime', 'endTime']) {
-      if (!Object.hasOwn(normalized, key)) continue;
-      if (normalized[key] === '' || normalized[key] == null) {
-        delete normalized[key];
-        continue;
-      }
-
-      const value = Number(normalized[key]);
-      if (Number.isNaN(value) || value < 0) {
-        throw new Error(`${key} must be a number greater than or equal to 0.`);
-      }
-      normalized[key] = value;
-    }
-
-    if (normalized.startTime != null && normalized.endTime != null && normalized.endTime < normalized.startTime) {
-      throw new Error('endTime must be greater than or equal to startTime.');
-    }
-
-    if (Object.hasOwn(normalized, 'id')) {
-      if (normalized.id === '' || normalized.id == null) {
-        delete normalized.id;
-      } else {
-        normalized.id = String(normalized.id).trim();
-      }
-    }
-
-    delete normalized.path;
-
-    return normalized;
+    return normalizeSharedTrackData(trackData, options);
   }
 
   /**
@@ -1918,6 +1823,7 @@ export class NarratorJukeboxAPI {
       if (!existing) {
         throw new Error(`Music track "${id}" not found.`);
       }
+      const previousTrack = foundry.utils.deepClone(existing);
 
       const normalized = this._normalizeTrackData(data, { partial: true });
       const track = await this._dataService.updateMusic(id, normalized);
@@ -1926,7 +1832,7 @@ export class NarratorJukeboxAPI {
         library: 'music',
         action: 'updated',
         track,
-        previousTrack: existing
+        previousTrack
       });
       this._refreshOpenApp();
       return track;
