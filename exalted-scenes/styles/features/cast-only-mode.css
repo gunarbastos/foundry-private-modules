@@ -15,6 +15,7 @@
 
 .es-player-view--cast-only .es-pv-cast,
 .es-player-view--cast-only .es-emotion-picker,
+.es-player-view--cast-only .es-music-picker,
 .es-player-view--cast-only .es-border-picker,
 .es-player-view--cast-only .es-picker-preview {
   pointer-events: auto;

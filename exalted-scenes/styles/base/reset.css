@@ -160,6 +160,9 @@ div#exalted-scenes-audio-browser > header.window-header > button.header-control.
 /* Add To Cast Browser */
 div#exalted-scenes-add-to-cast-browser > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
 #exalted-scenes-add-to-cast-browser button.fa-solid.fa-xmark::before,
+/* Actor Character Importer */
+div#exalted-scenes-actor-character-importer > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
+#exalted-scenes-actor-character-importer button.fa-solid.fa-xmark::before,
 /* Themed Dialog */
 div[id^="exalted-scenes-dialog-"] > header.window-header > button.header-control.icon.fa-solid.fa-xmark[data-action="close"]::before,
 div[id^="exalted-scenes-dialog-"] button.fa-solid.fa-xmark::before,

@@ -150,6 +150,38 @@ export class ExaltedStore {
   }
 
   /**
+   * Ensures a scene and its referenced cast characters are available locally.
+   * This is a defensive fallback for secondary/display clients that may receive
+   * a broadcast before their in-memory store is fully hydrated.
+   *
+   * @param {string} sceneId - Scene ID to ensure is loaded
+   * @returns {SceneModel|null} The hydrated scene or null if it still cannot be found
+   */
+  ensureSceneAvailable(sceneId) {
+    if (!sceneId) return null;
+
+    let scene = this.scenes.get(sceneId) || null;
+    if (!scene) {
+      const scenesData = game.settings.get(CONFIG.MODULE_ID, CONFIG.SETTINGS.SCENES) || [];
+      this._loadScenes(scenesData);
+      scene = this.scenes.get(sceneId) || null;
+    }
+
+    if (!scene) return null;
+
+    const castIds = (scene.cast || [])
+      .map(member => member?.id)
+      .filter(id => typeof id === 'string' && id.length > 0);
+
+    if (castIds.some(id => !this.characters.has(id))) {
+      const charsData = game.settings.get(CONFIG.MODULE_ID, CONFIG.SETTINGS.CHARACTERS) || [];
+      this._loadCharacters(charsData);
+    }
+
+    return scene;
+  }
+
+  /**
    * Initializes the store by loading data from settings and setting up services.
    * Should be called once during module initialization.
    * @async

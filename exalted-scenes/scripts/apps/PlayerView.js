@@ -45,6 +45,7 @@ import {
 } from './player-view/theater-mode-utils.js';
 import { NarratorJukeboxIntegration } from '../data/NarratorJukeboxIntegration.js';
 import { localize, format } from '../utils/i18n.js';
+import { formatCharacterNotification } from '../utils/character-visibility.js';
 import {
   isYouTubeEmbedBlockedCode,
   normalizeYouTubeUrl,
@@ -120,6 +121,7 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
     this._preservedBackgroundMedia = null;
     this._theaterStripAbortController = null;
     this._renderAbortController = null;
+    this._mcdStyleGuards = new Map();
   }
 
   static DEFAULT_OPTIONS = {
@@ -201,6 +203,7 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
    */
   _onRender(context, options) {
     super._onRender(context, options);
+    this._syncMonksCommonDisplayVisibility();
 
     this._restorePreservedBackgroundMedia();
 
@@ -235,6 +238,7 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
   }
 
   _onClose(options) {
+    this._restoreMonksCommonDisplayVisibility();
     this._renderAbortController?.abort();
     this._renderAbortController = null;
     cleanupHandlers(this._handlers);
@@ -245,6 +249,147 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
     }
 
     super._onClose?.(options);
+  }
+
+  _rememberStyleGuard(element, property) {
+    if (!(element instanceof HTMLElement)) return;
+
+    let styleState = this._mcdStyleGuards.get(element);
+    if (!styleState) {
+      styleState = new Map();
+      this._mcdStyleGuards.set(element, styleState);
+    }
+
+    if (styleState.has(property)) return;
+
+    styleState.set(property, {
+      value: element.style.getPropertyValue(property),
+      priority: element.style.getPropertyPriority(property),
+      hadValue: element.style.getPropertyValue(property) !== ''
+    });
+  }
+
+  _setGuardedStyle(element, property, value, priority = 'important') {
+    if (!(element instanceof HTMLElement)) return;
+    this._rememberStyleGuard(element, property);
+    element.style.setProperty(property, value, priority);
+  }
+
+  _restoreMonksCommonDisplayVisibility() {
+    if (!this._mcdStyleGuards.size) return;
+
+    for (const [element, properties] of this._mcdStyleGuards.entries()) {
+      if (!(element instanceof HTMLElement)) continue;
+
+      for (const [property, previous] of properties.entries()) {
+        if (previous?.hadValue) {
+          element.style.setProperty(property, previous.value, previous.priority);
+        } else {
+          element.style.removeProperty(property);
+        }
+      }
+    }
+
+    this._mcdStyleGuards.clear();
+  }
+
+  _isMonksCommonDisplayClient() {
+    if (!game.modules.get('monks-common-display')?.active) return false;
+
+    try {
+      const playerData = game.settings.get('monks-common-display', 'playerdata') || {};
+      return playerData?.[game.user.id]?.display === true;
+    } catch (error) {
+      return document.body.classList.contains('hide-ui');
+    }
+  }
+
+  _getMonksCommonDisplaySidebarWidth() {
+    if (document.body.classList.contains('hide-chat')) return 0;
+
+    const sidebar = document.getElementById('sidebar');
+    if (!(sidebar instanceof HTMLElement) || sidebar.classList.contains('collapsed')) return 0;
+
+    const computed = window.getComputedStyle(sidebar);
+    if (computed.display === 'none' || computed.visibility === 'hidden') return 0;
+
+    const width = sidebar.getBoundingClientRect().width;
+    return Number.isFinite(width) && width > 0 ? Math.ceil(width) : 0;
+  }
+
+  _syncMonksCommonDisplayVisibility() {
+    this._restoreMonksCommonDisplayVisibility();
+
+    const hideUiActive = document.body.classList.contains('hide-ui');
+    if (!this._isMonksCommonDisplayClient() || !hideUiActive || !this.uiState.active) return;
+
+    const host = this.element;
+    if (!(host instanceof HTMLElement)) return;
+
+    const playerView = host.querySelector('.es-player-view');
+    const windowContent = host.querySelector('.window-content');
+    const sidebarWidth = this._getMonksCommonDisplaySidebarWidth();
+    const rightInset = `${sidebarWidth}px`;
+    const styledAncestors = [];
+
+    let current = host;
+    while (current instanceof HTMLElement && current !== document.body) {
+      styledAncestors.push(current);
+      current = current.parentElement;
+    }
+
+    for (const node of styledAncestors) {
+      const computed = window.getComputedStyle(node);
+
+      if (computed.display === 'none') {
+        const fallbackDisplay = node === host || node === windowContent ? 'flex' : 'block';
+        this._setGuardedStyle(node, 'display', fallbackDisplay);
+      }
+
+      if (computed.visibility === 'hidden') {
+        this._setGuardedStyle(node, 'visibility', 'visible');
+      }
+
+      if (Number.parseFloat(computed.opacity) === 0) {
+        this._setGuardedStyle(node, 'opacity', '1');
+      }
+    }
+
+    this._setGuardedStyle(host, 'position', 'fixed');
+    this._setGuardedStyle(host, 'top', '0');
+    this._setGuardedStyle(host, 'right', rightInset);
+    this._setGuardedStyle(host, 'bottom', '0');
+    this._setGuardedStyle(host, 'left', '0');
+    this._setGuardedStyle(host, 'width', sidebarWidth > 0 ? 'auto' : '100vw');
+    this._setGuardedStyle(host, 'height', '100vh');
+    this._setGuardedStyle(host, 'z-index', '1000');
+    this._setGuardedStyle(host, 'background', 'transparent');
+    this._setGuardedStyle(host, 'box-shadow', 'none');
+    this._setGuardedStyle(host, 'border', 'none');
+
+    if (windowContent instanceof HTMLElement) {
+      this._setGuardedStyle(windowContent, 'display', 'flex');
+      this._setGuardedStyle(windowContent, 'width', '100%');
+      this._setGuardedStyle(windowContent, 'height', '100%');
+      this._setGuardedStyle(windowContent, 'padding', '0');
+      this._setGuardedStyle(windowContent, 'background', 'transparent');
+      this._setGuardedStyle(windowContent, 'visibility', 'visible');
+      this._setGuardedStyle(windowContent, 'opacity', '1');
+      this._setGuardedStyle(windowContent, 'overflow', 'hidden');
+    }
+
+    if (playerView instanceof HTMLElement) {
+      this._setGuardedStyle(playerView, 'top', '0');
+      this._setGuardedStyle(playerView, 'right', rightInset);
+      this._setGuardedStyle(playerView, 'bottom', '0');
+      this._setGuardedStyle(playerView, 'left', '0');
+      this._setGuardedStyle(playerView, 'width', sidebarWidth > 0 ? 'auto' : '100vw');
+      this._setGuardedStyle(playerView, 'height', '100vh');
+      this._setGuardedStyle(playerView, 'display', 'block');
+      this._setGuardedStyle(playerView, 'visibility', 'visible');
+      this._setGuardedStyle(playerView, 'opacity', '1');
+      this._setGuardedStyle(playerView, 'z-index', '1001');
+    }
   }
 
   _positionOpenPopovers() {
@@ -1046,7 +1191,9 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
   }
 
   async _prepareContext(options) {
-    const scene = this.uiState.sceneId ? Store.scenes.get(this.uiState.sceneId) : null;
+    const scene = this.uiState.sceneId
+      ? (Store.ensureSceneAvailable(this.uiState.sceneId) || Store.scenes.get(this.uiState.sceneId))
+      : null;
     const theaterState = (!this.uiState.castOnlyMode && !this.uiState.slideshowMode)
       ? this._syncActiveTheaterShot(scene)
       : {
@@ -1351,7 +1498,11 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
 
     // Check if character is locked and user is not GM
     if (character?.locked && !game.user.isGM) {
-      ui.notifications.warn(format('Notifications.CharacterLocked', { name: character.name }));
+      ui.notifications.warn(formatCharacterNotification(
+        character,
+        'Notifications.CharacterLocked',
+        'Notifications.CharacterLockedHidden'
+      ));
       return;
     }
 
@@ -1359,7 +1510,11 @@ export class ExaltedScenesPlayerView extends HandlebarsApplicationMixin(Applicat
     if (!game.user.isGM && character) {
       const hasPermission = character.hasPermission(game.user.id, 'emotion');
       if (!hasPermission) {
-        ui.notifications.warn(format('Notifications.NoPermissionEdit', { name: character.name }));
+        ui.notifications.warn(formatCharacterNotification(
+          character,
+          'Notifications.NoPermissionEdit',
+          'Notifications.NoPermissionEditHidden'
+        ));
         return;
       }
     }

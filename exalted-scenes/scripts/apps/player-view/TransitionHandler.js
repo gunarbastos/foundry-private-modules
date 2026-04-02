@@ -40,6 +40,22 @@ export class TransitionHandler extends BaseHandler {
   }
 
   /**
+   * Clear pending transition cleanup work when the handler is recycled.
+   * The actual media pruning happens only inside transition flows, otherwise
+   * a normal full render would remove the freshly rendered background.
+   *
+   * @override
+   */
+  cleanup() {
+    if (this._transitionCleanupTimer) {
+      clearTimeout(this._transitionCleanupTimer);
+      this._transitionCleanupTimer = null;
+    }
+
+    super.cleanup();
+  }
+
+  /**
    * Sets up the "smart" fit mode that dynamically chooses cover or contain
    * based on the aspect ratio difference between image and viewport.
    * @private
@@ -248,9 +264,8 @@ export class TransitionHandler extends BaseHandler {
 
     // Handle cut transition (instant)
     if (transitionType === 'cut') {
-      if (currentMedia) {
-        currentMedia.remove();
-      }
+      this._pruneBackgroundMedia(bgContainer);
+      this._resetBackgroundTransitionClasses(newMedia);
       bgContainer.appendChild(newMedia);
       return;
     }
@@ -378,6 +393,71 @@ export class TransitionHandler extends BaseHandler {
   }
 
   /**
+   * Remove transition-only classes from a background media element.
+   *
+   * @param {HTMLElement} media - Background media element
+   * @private
+   */
+  _resetBackgroundTransitionClasses(media) {
+    if (!(media instanceof HTMLElement)) return;
+
+    media.classList.remove('es-bg-incoming', 'es-bg-outgoing', 'es-bg-active');
+
+    for (const className of Array.from(media.classList)) {
+      if (className.startsWith('es-bg-transition-')) {
+        media.classList.remove(className);
+      }
+    }
+  }
+
+  /**
+   * Stop and remove a background media element.
+   * Video elements are explicitly unloaded so the browser can release decoder/GPU resources promptly.
+   *
+   * @param {HTMLElement|null} media - Media element to dispose
+   * @private
+   */
+  _disposeBackgroundMedia(media) {
+    if (!(media instanceof HTMLElement)) return;
+
+    if (media instanceof HTMLVideoElement) {
+      try {
+        media.pause();
+      } catch (_) {}
+
+      media.removeAttribute('src');
+
+      for (const source of media.querySelectorAll('source')) {
+        source.removeAttribute('src');
+      }
+
+      try {
+        media.load();
+      } catch (_) {}
+    }
+
+    media.remove();
+  }
+
+  /**
+   * Remove stale background media left behind by interrupted transitions.
+   *
+   * @param {HTMLElement} container - Background media container
+   * @param {HTMLElement[]} [keep=[]] - Media nodes to preserve
+   * @private
+   */
+  _pruneBackgroundMedia(container, keep = []) {
+    if (!(container instanceof HTMLElement)) return;
+
+    const keepSet = new Set(keep.filter(media => media instanceof HTMLElement));
+    const mediaNodes = container.querySelectorAll('.es-pv-bg-media');
+    for (const media of mediaNodes) {
+      if (keepSet.has(media)) continue;
+      this._disposeBackgroundMedia(media);
+    }
+  }
+
+  /**
    * Triggers the background transition animation using requestAnimationFrame.
    * Handles adding/removing classes and cleanup after transition.
    *
@@ -388,6 +468,17 @@ export class TransitionHandler extends BaseHandler {
    * @private
    */
   _triggerBackgroundTransition(newMedia, currentMedia, transitionClass, durationMs) {
+    const bgContainer = newMedia.parentElement || currentMedia?.parentElement || null;
+
+    if (bgContainer instanceof HTMLElement) {
+      // Rapid scene/slide changes can interrupt the previous cleanup timer and leave hidden media behind.
+      this._pruneBackgroundMedia(bgContainer, [currentMedia, newMedia]);
+    }
+
+    if (currentMedia) {
+      this._resetBackgroundTransitionClasses(currentMedia);
+    }
+
     // Cancel any pending cleanup from a previous transition
     if (this._transitionCleanupTimer) {
       clearTimeout(this._transitionCleanupTimer);
@@ -400,6 +491,7 @@ export class TransitionHandler extends BaseHandler {
         newMedia.classList.add('es-bg-active');
 
         if (currentMedia) {
+          currentMedia.classList.add(transitionClass);
           currentMedia.classList.add('es-bg-outgoing');
         }
 
@@ -407,11 +499,14 @@ export class TransitionHandler extends BaseHandler {
         this._transitionCleanupTimer = setTimeout(() => {
           this._transitionCleanupTimer = null;
           if (currentMedia && currentMedia.parentNode) {
-            currentMedia.remove();
+            this._disposeBackgroundMedia(currentMedia);
+          }
+          if (bgContainer instanceof HTMLElement) {
+            this._pruneBackgroundMedia(bgContainer, [newMedia]);
           }
           // Clean up transition classes from new media (only if still in DOM)
           if (newMedia.parentNode) {
-            newMedia.classList.remove('es-bg-incoming', transitionClass, 'es-bg-active');
+            this._resetBackgroundTransitionClasses(newMedia);
           }
         }, durationMs + 50);
       });

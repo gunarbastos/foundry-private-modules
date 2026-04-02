@@ -178,6 +178,7 @@
   gap: var(--es-space-sm);
   /* Phase 5: Match thumbnail radius */
   border-radius: var(--es-radius-md);
+  z-index: 1;
 }
 
 .es-card:hover .es-card-overlay {
@@ -863,6 +864,11 @@
   pointer-events: none;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--es-shadow-sm);
+}
+
+.es-grid:not(.es-grid--list-view) .es-card[data-type="character"] .es-emotion-badge {
+  top: var(--es-space-sm);
+  right: calc(var(--es-space-sm) + 28px + var(--es-space-xs));
 }
 
 .es-emotion-badge i {

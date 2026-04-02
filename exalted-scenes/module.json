@@ -1,7 +1,7 @@
 {
   "id": "exalted-scenes",
   "title": "Exalted Scenes",
-  "version": "6.1.2",
+  "version": "6.1.4",
   "description": "A cinematic scene manager for narrative RPGs. Create immersive visual novel-style scenes with character emotions, slideshows, and real-time broadcasting to players. Features include drag-and-drop character management, emotion states with preview, folder organization, favorites system, and a beautiful dark UI inspired by the Mandate of Heaven palette.",
   "authors": [
     {
@@ -13,7 +13,7 @@
   ],
   "compatibility": {
     "minimum": "12",
-    "verified": "12",
+    "verified": "13",
     "maximum": "13"
   },
   "socket": true,

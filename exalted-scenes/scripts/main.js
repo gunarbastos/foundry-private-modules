@@ -403,8 +403,22 @@ class ExaltedScenes {
            MCD uses body.hide-ui > *:not(#a):not(#b)... (~30 :not(#id) = ~30,1,1).
            We counter with repeated ID selectors for sufficient specificity. */
         body.hide-ui ${sp} {
-          display: block !important;
+          display: flex !important;
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
           visibility: visible !important;
+          opacity: 1 !important;
+          z-index: 1000 !important;
+        }
+
+        body.hide-ui ${sp} > .window-content {
+          display: flex !important;
+          width: 100% !important;
+          height: 100% !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
 
         /* The inner player view respects its own active/inactive state via opacity,
@@ -416,7 +430,8 @@ class ExaltedScenes {
 
         /* Active broadcast must sit above the Foundry canvas on MCD displays */
         body.hide-ui ${sp} .es-player-view--active {
-          z-index: 1000 !important;
+          opacity: 1 !important;
+          z-index: 1001 !important;
         }
 
         /* Hide Foundry canvas during full-scene broadcast to prevent

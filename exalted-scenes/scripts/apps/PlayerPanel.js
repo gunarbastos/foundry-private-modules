@@ -4,6 +4,7 @@ import { SocketHandler } from '../data/SocketHandler.js';
 import { CharacterEditor } from './CharacterEditor.js';
 import { NarratorJukeboxIntegration } from '../data/NarratorJukeboxIntegration.js';
 import { localize, format } from '../utils/i18n.js';
+import { formatCharacterNotification } from '../utils/character-visibility.js';
 import { borderStyleToInline } from '../utils/border-utils.js';
 import { mediaFocusToInlineStyle } from '../utils/media-focus.js';
 import {
@@ -438,7 +439,11 @@ export class ExaltedScenesPlayerPanel extends HandlebarsApplicationMixin(Applica
     const character = Store.characters.get(charId);
 
     if (character?.locked) {
-      ui.notifications.warn(format('Notifications.CharacterLocked', { name: character.name }));
+      ui.notifications.warn(formatCharacterNotification(
+        character,
+        'Notifications.CharacterLocked',
+        'Notifications.CharacterLockedHidden'
+      ));
       return;
     }
 
